@@ -191,6 +191,7 @@
                 <div class="list-actions-row">
                   <router-link class="btn btn-outline btn-sm" :to="{name:'ListShare', params:{id: ls.id}}">查看/分享</router-link>
                   <button class="btn btn-outline btn-sm" @click="togglePrivacy(ls.id)">{{ ls.isPublic ? '设为私密' : '设为公开' }}</button>
+                <button class="btn btn-outline btn-sm" @click="copyListLink(ls.id)">复制链接</button>
                 </div>
               </div>
             </div>
@@ -458,6 +459,14 @@ function togglePrivacy(id){
   const ls = library.lists[id]
   if (!ls) return
   ls.isPublic = !ls.isPublic
+}
+
+async function copyListLink(id){
+  try{
+    const url = library.exportShareUrl(id)
+    await navigator.clipboard.writeText(url)
+    alert('片单链接已复制')
+  }catch{}
 }
 </script>
 

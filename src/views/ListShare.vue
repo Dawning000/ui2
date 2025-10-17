@@ -13,7 +13,10 @@
         <div class="poster" :style="{ backgroundImage: entry(id)?.poster ? `url(${entry(id)?.poster})` : undefined }"></div>
         <div class="meta">
           <h3>{{ entry(id)?.title }}</h3>
-          <p class="sub">{{ entry(id)?.year || '-' }}</p>
+          <p class="sub">{{ entry(id)?.year || '-' }}<span v-if="entry(id)?.rating"> · 我的评分 {{ entry(id)?.rating }}/10</span></p>
+          <div class="tags" v-if="(entry(id)?.tags || []).length">
+            <span v-for="t in (entry(id)?.tags || [])" :key="t" class="tag">#{{ t }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -54,6 +57,9 @@ async function copyUrl(){
 .card{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }
 .poster{ height:160px; background:#f3f4f6; background-size:cover; background-position:center; }
 .meta{ padding:10px; }
+.meta .sub{ color:#6b7280; font-size:12px; margin:6px 0; }
+.meta .tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+.meta .tag{ padding:2px 6px; background:#f3f4f6; border-radius:6px; font-size:11px; }
 .btn{ border:1px solid #e5e7eb; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; }
 </style>
 

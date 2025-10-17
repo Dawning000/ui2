@@ -81,8 +81,16 @@
                 <span v-for="g in (it.genres || [])" :key="g" class="tag">{{ g }}</span>
               </div>
               <div class="actions">
-                <WatchlistButtons v-model="getEntry(it).status" @update:modelValue="v=>updateStatus(it,v)" />
-                <RatingStars :tooltip-base="'我的评分'" v-model="getEntry(it).rating" @update:modelValue="v=>updateRating(it,v)" />
+                <div class="left">
+                  <WatchlistButtons v-model="getEntry(it).status" @update:modelValue="v=>updateStatus(it,v)" />
+                  <RatingStars :tooltip-base="'我的评分'" v-model="getEntry(it).rating" @update:modelValue="v=>updateRating(it,v)" />
+                </div>
+                <div class="right">
+                  <AddToList :media-id="it.id" />
+                </div>
+              </div>
+              <div class="my-tags">
+                <TagChipsEditor v-model="getEntry(it).tags" @update:modelValue="v=>updateTags(it,v)" />
               </div>
             </div>
           </article>
@@ -110,6 +118,8 @@ import { useSearchStore } from '@/stores/search'
 import { useLibraryStore } from '@/stores/library'
 import WatchlistButtons from '@/components/WatchlistButtons.vue'
 import RatingStars from '@/components/RatingStars.vue'
+import TagChipsEditor from '@/components/TagChipsEditor.vue'
+import AddToList from '@/components/AddToList.vue'
 import { nextTick } from 'vue'
 const store = useSearchStore()
 const library = useLibraryStore()
@@ -164,6 +174,10 @@ function updateStatus(it:any, v:any){
 
 function updateRating(it:any, v:any){
   library.setRating(it.id, v as number|undefined)
+}
+
+function updateTags(it:any, v:string[]){
+  library.setTags(it.id, v)
 }
 </script>
 
@@ -224,7 +238,10 @@ function updateRating(it:any, v:any){
   .card .meta .sub { margin: 6px 0; color: #6b7280; font-size: 12px; }
   .card .meta .tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .card .meta .tag { padding: 2px 6px; background: #f3f4f6; border-radius: 6px; font-size: 11px; }
-  .card .meta .actions { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .card .meta .actions { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .card .meta .actions .left{ display:flex; align-items:center; gap:8px; }
+  .card .meta .actions .right{ display:flex; align-items:center; gap:8px; }
+  .card .meta .my-tags{ margin-top:8px; }
   .skeleton { height: 240px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: 12px; }
 }
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
