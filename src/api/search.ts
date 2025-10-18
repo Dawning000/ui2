@@ -1,4 +1,5 @@
 import type { SearchQueryParams, SearchResponse, SuggestItem } from '@/types/search'
+import { http } from '@/api/http'
 
 const API_BASE = '/api'
 
@@ -31,16 +32,12 @@ export async function search(params: SearchQueryParams, signal?: AbortSignal): P
     page_size: params.pageSize
   })
 
-  const res = await fetch(`${API_BASE}/search?${query}`, { signal })
-  if (!res.ok) throw new Error(`Search failed: ${res.status}`)
-  return res.json() as Promise<SearchResponse>
+  return http<SearchResponse>(`/search?${query}`, { signal })
 }
 
 export async function suggest(q: string, signal?: AbortSignal): Promise<SuggestItem[]> {
   const query = new URLSearchParams({ q })
-  const res = await fetch(`${API_BASE}/suggest?${query.toString()}`, { signal })
-  if (!res.ok) throw new Error(`Suggest failed: ${res.status}`)
-  return res.json() as Promise<SuggestItem[]>
+  return http<SuggestItem[]>(`/suggest?${query.toString()}`, { signal })
 }
 
 

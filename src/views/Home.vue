@@ -43,6 +43,7 @@
     <section class="categories">
       <div class="container">
         <h2 class="section-title">热门分类</h2>
+        <p class="section-subtitle">发现你感兴趣的领域，加入讨论与分享</p>
         <div class="categories-grid">
           <router-link 
             v-for="category in categories" 
@@ -56,7 +57,8 @@
             <h3>{{ category.name }}</h3>
             <p>{{ category.description }}</p>
             <div class="category-stats">
-              <span>{{ category.postsCount }} 个帖子</span>
+              <span class="count">{{ category.postsCount }}</span>
+              <span class="suffix">个帖子</span>
             </div>
           </router-link>
         </div>
@@ -528,8 +530,43 @@ onMounted(() => {
 
 // 分类区域
 .categories {
-  padding: 80px 0;
-  background: var(--bg-secondary);
+  padding: 100px 0;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 300px at 20% 0%, rgba(255, 186, 73, 0.18), transparent 60%),
+    radial-gradient(1200px 300px at 80% 0%, rgba(255, 115, 29, 0.16), transparent 60%),
+    var(--bg-secondary);
+}
+
+.categories::before,
+.categories::after{
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.categories::before{
+  top: -160px;
+  left: -160px;
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(255, 186, 73, 0.28) 0%, rgba(255, 186, 73, 0.00) 62%);
+}
+
+.categories::after{
+  top: -140px;
+  right: -200px;
+  width: 820px;
+  height: 820px;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(255, 115, 29, 0.22) 0%, rgba(255, 115, 29, 0.00) 60%);
+}
+.section-subtitle {
+  text-align: center;
+  margin-top: -30px;
+  margin-bottom: 40px;
+  color: #6b7280;
 }
 
 .categories-grid {
@@ -540,23 +577,33 @@ onMounted(() => {
 
 .category-card {
   background: white;
-  padding: 40px 30px;
+  padding: 42px 30px;
   border-radius: 16px;
   text-align: center;
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
+  transition: transform .3s ease, box-shadow .3s ease;
+  position: relative;
+  overflow: hidden;
   
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    transform: translateY(-6px);
+    box-shadow: 0 30px 60px rgba(15, 23, 42, 0.12);
+  }
+  
+  &::after{
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(320px 140px at 70% -10%, rgba(251,191,36,.24), transparent 62%);
+    pointer-events: none;
   }
   
   .category-icon {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    background: linear-gradient(135deg, #ff8a00, #ff5e00);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -582,10 +629,9 @@ onMounted(() => {
     line-height: 1.5;
   }
   
-  .category-stats {
-    color: var(--primary-color);
-    font-weight: 500;
-  }
+  .category-stats { display:flex; justify-content:center; align-items:baseline; gap:6px; }
+  .category-stats .count { color:#ef6c00; font-size:18px; font-weight:700; }
+  .category-stats .suffix { color:#9ca3af; font-size:12px; }
 }
 
 // 热门帖子
@@ -685,6 +731,7 @@ onMounted(() => {
     color: #6b7280;
     line-height: 1.6;
     display: -webkit-box;
+    line-clamp: 3;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
