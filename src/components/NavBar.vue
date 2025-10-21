@@ -91,6 +91,11 @@
           <i class="nav-icon icon-star"></i>
           <span class="nav-text">热门</span>
         </router-link>
+
+        <router-link to="/actors" class="nav-item" :class="{ active: $route.name === 'Actors' }">
+          <i class="nav-icon icon-user"></i>
+          <span class="nav-text">演员/导演</span>
+        </router-link>
       </div>
 
       <!-- 用户区域 -->

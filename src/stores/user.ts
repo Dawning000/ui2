@@ -13,15 +13,21 @@ export const useUserStore = defineStore('user', () => {
   // 动作
   const login = async (credentials: LoginCredentials): Promise<ApiResponse> => {
     try {
-      const res = await http<ApiResponse<User>>('/auth/login', {
+      const formData = new FormData()
+      formData.append('username', credentials.username)
+      formData.append('password', credentials.password)
+      if (credentials.remember) formData.append('remember-me', '1')
+
+      const res = await http<any>('/user/login', {
         method: 'POST',
-        body: jsonBody(credentials)
+        body: formData
       })
-      if (res.success && res.user) {
-        user.value = res.user as unknown as User
+      // 兼容后端返回: { code: 200, data: {...}, message: 'success' }
+      if ((res && (res.code === 200 || res.code === '200')) && res.data) {
+        user.value = res.data as unknown as User
         return { success: true }
       }
-      return { success: false, message: res.message || '登录失败' }
+      return { success: false, message: (res && res.message) || '登录失败' }
     } catch (error) {
       return { success: false, message: '登录失败，请稍后重试' }
     }
@@ -29,15 +35,21 @@ export const useUserStore = defineStore('user', () => {
 
   const register = async (userData: RegisterData): Promise<ApiResponse> => {
     try {
-      const res = await http<ApiResponse<User>>('/auth/register', {
+      // 注册接口: /api/user/register，字段：username, nickname, password, email, favors(string[])
+      const res = await http<any>('/user/register', {
         method: 'POST',
-        body: jsonBody(userData)
+        body: jsonBody({
+          username: userData.username,
+          nickname: userData.nickname,
+          password: userData.password,
+          email: userData.email,
+          favors: userData.favors
+        })
       })
-      if (res.success && res.user) {
-        user.value = res.user as unknown as User
+      if ((res && (res.code === 200 || res.code === '200'))) {
         return { success: true }
       }
-      return { success: false, message: res.message || '注册失败' }
+      return { success: false, message: (res && res.message) || '注册失败' }
     } catch (error) {
       return { success: false, message: '注册失败，请稍后重试' }
     }

@@ -271,12 +271,12 @@ const handleRegister = async () => {
       nickname: form.nickname || form.username,
       email: form.email,
       password: form.password,
-      interests: form.interests
+      favors: form.interests
     })
     
     if (result.success) {
-      // 注册成功，跳转到首页
-      router.push('/')
+      // 注册成功，跳转到登录页
+      router.push('/login')
     } else {
       errors.value.general = result.message || '注册失败，请稍后重试'
     }

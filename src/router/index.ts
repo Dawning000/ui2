@@ -10,6 +10,8 @@ import Register from '../views/Register.vue'
 import Test from '../views/Test.vue'
 import Search from '../views/Search.vue'
 import ListShare from '../views/ListShare.vue'
+import Actors from '../views/Actors.vue'
+import ActorDetail from '../views/ActorDetail.vue'
 
 const routes: AppRouteRecord[] = [
   {
@@ -27,6 +29,17 @@ const routes: AppRouteRecord[] = [
     path: '/search',
     name: 'Search',
     component: Search
+  },
+  {
+    path: '/actors',
+    name: 'Actors',
+    component: Actors
+  },
+  {
+    path: '/actor/:id',
+    name: 'ActorDetail',
+    component: ActorDetail,
+    props: true
   },
   {
     path: '/forum',

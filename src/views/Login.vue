@@ -143,7 +143,8 @@ const handleLogin = async () => {
   try {
     const result = await userStore.login({
       username: form.username,
-      password: form.password
+      password: form.password,
+      remember: !!form.remember
     })
     
     if (result.success) {
