@@ -1,6 +1,6 @@
-// const API_BASE = 'https://filmforum.billadom.top/api'
+const API_BASE = 'https://filmforum.billadom.top/api'
 
-const API_BASE = 'http://127.0.0.1:8082/api'
+// const API_BASE = 'http://127.0.0.1:8082/api'
 function getCsrfToken(): string | undefined {
   const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/)
   return match ? decodeURIComponent(match[1]) : undefined

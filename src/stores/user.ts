@@ -56,7 +56,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const logout = async (): Promise<void> => {
-    try { await http('/auth/logout', { method: 'POST' }) } catch {}
+    try { await http('/user/logout', { method: 'POST' }) } catch {}
     user.value = null
   }
 
