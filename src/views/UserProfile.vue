@@ -11,7 +11,7 @@
         <div class="profile-card">
           <div class="profile-header">
             <div class="avatar-section">
-              <img :src="user.avatar" :alt="user.username" class="user-avatar" />
+              <img :src="user.avatar || '/avatar.png'" :alt="user.username" class="user-avatar" />
               <button class="edit-avatar-btn" @click="showAvatarModal = true">
                 <i class="icon-camera"></i>
               </button>

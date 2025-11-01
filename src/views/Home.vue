@@ -171,28 +171,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import Carousel from '../components/Carousel.vue'
+import { fetchMovies } from '@/api/movies'
 
 // 响应式数据
-const featuredMovies = ref([
-  {
-    id: 1,
-    title: '阿凡达：水之道',
-    poster: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=200&h=300&fit=crop',
-    rating: 8.5
-  },
-  {
-    id: 2,
-    title: '流浪地球2',
-    poster: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=200&h=300&fit=crop',
-    rating: 8.2
-  },
-  {
-    id: 3,
-    title: '满江红',
-    poster: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=200&h=300&fit=crop',
-    rating: 7.8
-  }
-])
+const featuredMovies = ref([])
 
 const categories = ref([
   {
@@ -277,40 +259,7 @@ const hotPosts = ref([
   }
 ])
 
-const latestMovies = ref([
-  {
-    id: 1,
-    title: '阿凡达：水之道',
-    poster: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=200&h=300&fit=crop',
-    genre: '科幻/冒险',
-    year: '2022',
-    rating: 8.5
-  },
-  {
-    id: 2,
-    title: '流浪地球2',
-    poster: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=200&h=300&fit=crop',
-    genre: '科幻/灾难',
-    year: '2023',
-    rating: 8.2
-  },
-  {
-    id: 3,
-    title: '满江红',
-    poster: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=200&h=300&fit=crop',
-    genre: '剧情/悬疑',
-    year: '2023',
-    rating: 7.8
-  },
-  {
-    id: 4,
-    title: '深海',
-    poster: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=200&h=300&fit=crop',
-    genre: '动画/奇幻',
-    year: '2023',
-    rating: 7.5
-  }
-])
+const latestMovies = ref([])
 
 const stats = ref({
   totalUsers: 125678,
@@ -335,9 +284,39 @@ const formatTime = (date) => {
   }
 }
 
-onMounted(() => {
-  // 组件挂载后的初始化逻辑
-})
+function avgRating(ratings) {
+  if (!Array.isArray(ratings) || ratings.length === 0) return 0
+  const sum = ratings.reduce((a, b) => a + Number(b || 0), 0)
+  return Number((sum / ratings.length).toFixed(1))
+}
+
+async function loadMovies() {
+  // Featured 区域：取第一页 6 条
+  const res1 = await fetchMovies({ page: 1, size: 6 })
+  const data1 = (res1 && res1.data) ? res1.data : res1
+  const items1 = Array.isArray(data1?.movies) ? data1.movies : []
+  featuredMovies.value = items1.map(m => ({
+    id: m.id,
+    title: m.title,
+    poster: m.poster,
+    rating: avgRating(m.ratings)
+  }))
+
+  // 最新电影推荐：取第一页 12 条
+  const res2 = await fetchMovies({ page: 1, size: 12 })
+  const data2 = (res2 && res2.data) ? res2.data : res2
+  const items2 = Array.isArray(data2?.movies) ? data2.movies : []
+  latestMovies.value = items2.map(m => ({
+    id: m.id,
+    title: m.title,
+    poster: m.poster,
+    genre: m.genre || '',
+    year: String(m.year || ''),
+    rating: avgRating(m.ratings)
+  }))
+}
+
+onMounted(loadMovies)
 </script>
 
 <style lang="scss" scoped>
