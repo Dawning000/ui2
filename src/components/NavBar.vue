@@ -53,19 +53,19 @@
               <div class="dropdown-section">
                 <h4 class="section-title">影视分类</h4>
                 <div class="category-grid">
-                  <router-link to="/forum/movie" class="category-item">
+                  <router-link :to="{ name: 'Search', query: { type: 'movie' } }" class="category-item">
                     <i class="category-icon icon-film"></i>
                     <span>电影</span>
                   </router-link>
-                  <router-link to="/forum/tv" class="category-item">
+                  <router-link :to="{ name: 'Search', query: { type: 'tv' } }" class="category-item">
                     <i class="category-icon icon-tv"></i>
                     <span>电视剧</span>
                   </router-link>
-                  <router-link to="/forum/anime" class="category-item">
+                  <router-link :to="{ name: 'Search', query: { type: 'anime' } }" class="category-item">
                     <i class="category-icon icon-anime"></i>
                     <span>动漫</span>
                   </router-link>
-                  <router-link to="/forum/variety" class="category-item">
+                  <router-link :to="{ name: 'Search', query: { type: 'variety' } }" class="category-item">
                     <i class="category-icon icon-variety"></i>
                     <span>综艺</span>
                   </router-link>

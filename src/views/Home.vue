@@ -43,12 +43,12 @@
     <section class="categories">
       <div class="container">
         <h2 class="section-title">热门分类</h2>
-        <p class="section-subtitle">发现你感兴趣的领域，加入讨论与分享</p>
+        <p class="section-subtitle">浏览你感兴趣的内容，发现精彩影视作品</p>
         <div class="categories-grid">
           <router-link 
             v-for="category in categories" 
             :key="category.id"
-            :to="`/forum/${category.slug}`"
+            :to="{ name: 'Search', query: { type: category.slug } }"
             class="category-card"
           >
             <div class="category-icon">
@@ -58,7 +58,7 @@
             <p>{{ category.description }}</p>
             <div class="category-stats">
               <span class="count">{{ category.postsCount }}</span>
-              <span class="suffix">个帖子</span>
+              <span class="suffix">部作品</span>
             </div>
           </router-link>
         </div>
@@ -182,7 +182,7 @@ const categories = ref([
     name: '电影',
     slug: 'movie',
     icon: 'icon-film',
-    description: '最新电影评论与讨论',
+    description: '最新电影作品',
     postsCount: 1234
   },
   {
@@ -190,7 +190,7 @@ const categories = ref([
     name: '电视剧',
     slug: 'tv',
     icon: 'icon-tv',
-    description: '热播剧集深度解析',
+    description: '热播剧集推荐',
     postsCount: 856
   },
   {
@@ -206,7 +206,7 @@ const categories = ref([
     name: '综艺',
     slug: 'variety',
     icon: 'icon-variety',
-    description: '娱乐综艺节目讨论',
+    description: '娱乐综艺节目',
     postsCount: 234
   }
 ])
@@ -292,27 +292,25 @@ function avgRating(ratings) {
 
 async function loadMovies() {
   // Featured 区域：取第一页 6 条
-  const res1 = await fetchMovies({ page: 1, size: 6 })
-  const data1 = (res1 && res1.data) ? res1.data : res1
+  const data1 = await fetchMovies({ page: 1, size: 6 })
   const items1 = Array.isArray(data1?.movies) ? data1.movies : []
   featuredMovies.value = items1.map(m => ({
     id: m.id,
     title: m.title,
     poster: m.poster,
-    rating: avgRating(m.ratings)
+    rating: m.rating || 0
   }))
 
   // 最新电影推荐：取第一页 12 条
-  const res2 = await fetchMovies({ page: 1, size: 12 })
-  const data2 = (res2 && res2.data) ? res2.data : res2
+  const data2 = await fetchMovies({ page: 1, size: 12 })
   const items2 = Array.isArray(data2?.movies) ? data2.movies : []
   latestMovies.value = items2.map(m => ({
     id: m.id,
     title: m.title,
     poster: m.poster,
-    genre: m.genre || '',
+    genre: Array.isArray(m.tag) ? m.tag.join(',') : (m.tag || ''),
     year: String(m.year || ''),
-    rating: avgRating(m.ratings)
+    rating: m.rating || 0
   }))
 }
 

@@ -17,7 +17,7 @@ function toggle(next: WatchStatus){
 </script>
 
 <style scoped>
-.watchlist-buttons{ display:flex; gap:6px; flex-wrap:wrap; }
+.watchlist-buttons{ display:flex; gap:6px; flex-wrap:nowrap; }
 .wbtn{ border:1px solid #e5e7eb; background:#fff; border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
 .wbtn.active{ border-color: var(--primary-color); color: var(--primary-color); background: var(--bg-primary); }
 </style>

@@ -25,6 +25,7 @@ export const useSearchStore = defineStore('search', () => {
 
   // query state
   const q = ref<string>('')
+  const type = ref<SearchQueryParams['type']>(undefined)
   const genres = ref<string[]>([])
   const regions = ref<string[]>([])
   const yearGte = ref<number | undefined>(undefined)
@@ -48,6 +49,7 @@ export const useSearchStore = defineStore('search', () => {
 
   const params = computed<SearchQueryParams>(() => ({
     q: q.value || undefined,
+    type: type.value,
     genres: genres.value.length ? genres.value : undefined,
     regions: regions.value.length ? regions.value : undefined,
     yearGte: yearGte.value,
@@ -62,6 +64,7 @@ export const useSearchStore = defineStore('search', () => {
   function syncFromRoute(): void {
     const query = route.query
     q.value = (query.q as string) || ''
+    type.value = (query.type as SearchQueryParams['type']) || undefined
     genres.value = parseArray(query.genres) || []
     regions.value = parseArray(query.regions) || []
     yearGte.value = parseNumber(query.year_gte)
@@ -76,6 +79,7 @@ export const useSearchStore = defineStore('search', () => {
   async function syncToRoute(replace = false): Promise<void> {
     const query: Record<string, any> = {}
     if (q.value) query.q = q.value
+    if (type.value) query.type = type.value
     if (genres.value.length) query.genres = genres.value.join(',')
     if (regions.value.length) query.regions = regions.value.join(',')
     if (yearGte.value !== undefined) query.year_gte = yearGte.value
@@ -112,6 +116,7 @@ export const useSearchStore = defineStore('search', () => {
 
   function clearAll(): void {
     q.value = ''
+    type.value = undefined
     genres.value = []
     regions.value = []
     yearGte.value = undefined
@@ -131,7 +136,7 @@ export const useSearchStore = defineStore('search', () => {
   // public API
   return {
     // state
-    q, genres, regions, yearGte, yearLte, ratingGte, ratingLte, sort, page, pageSize,
+    q, type, genres, regions, yearGte, yearLte, ratingGte, ratingLte, sort, page, pageSize,
     items, total, hasMore, facets, loading, error,
     // computed
     params,

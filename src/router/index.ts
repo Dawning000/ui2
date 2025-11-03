@@ -12,6 +12,7 @@ import Search from '../views/Search.vue'
 import ListShare from '../views/ListShare.vue'
 import Actors from '../views/Actors.vue'
 import ActorDetail from '../views/ActorDetail.vue'
+import MovieDetail from '../views/MovieDetail.vue'
 
 const routes: AppRouteRecord[] = [
   {
@@ -39,6 +40,12 @@ const routes: AppRouteRecord[] = [
     path: '/actor/:id',
     name: 'ActorDetail',
     component: ActorDetail,
+    props: true
+  },
+  {
+    path: '/movie/:id',
+    name: 'MovieDetail',
+    component: MovieDetail,
     props: true
   },
   {

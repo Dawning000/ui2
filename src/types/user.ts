@@ -9,6 +9,7 @@ export interface User {
   postsCount: number;
   followersCount: number;
   followingCount: number;
+  role?: string; // 用户角色，如 "ADMIN"
 }
 
 export interface LoginCredentials {

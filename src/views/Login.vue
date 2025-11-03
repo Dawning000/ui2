@@ -101,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 
@@ -117,6 +117,45 @@ const form = reactive({
   username: '',
   password: '',
   remember: false
+})
+
+// 页面加载时，如果有保存的账号密码，自动填充并尝试自动登录
+onMounted(async () => {
+  // 如果已经登录，直接跳转
+  if (userStore.isLoggedIn) {
+    router.push('/')
+    return
+  }
+  
+  // 获取保存的账号密码
+  const savedCredentials = userStore.getSavedCredentials()
+  if (savedCredentials) {
+    // 填充表单
+    form.username = savedCredentials.username
+    form.password = savedCredentials.password
+    form.remember = true
+    
+    // 自动尝试登录
+    loading.value = true
+    try {
+      const result = await userStore.login({
+        username: savedCredentials.username,
+        password: savedCredentials.password,
+        remember: true
+      })
+      
+      if (result.success) {
+        // 自动登录成功，跳转到首页
+        const redirect = router.currentRoute.value.query.redirect || '/'
+        router.push(redirect)
+      }
+    } catch (error) {
+      // 自动登录失败，不清除表单，让用户手动重试
+      console.error('自动登录失败:', error)
+    } finally {
+      loading.value = false
+    }
+  }
 })
 
 // 方法

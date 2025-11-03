@@ -3,6 +3,41 @@ import { ref, computed } from 'vue'
 import type { User, LoginCredentials, RegisterData, ApiResponse, ProfileUpdateData } from '@/types/user'
 import { http, jsonBody } from '@/api/http'
 
+// localStorage 键名
+const STORAGE_KEY_CREDENTIALS = 'remembered_credentials'
+
+// 保存账号密码到 localStorage
+function saveCredentials(username: string, password: string): void {
+  try {
+    const credentials = { username, password }
+    localStorage.setItem(STORAGE_KEY_CREDENTIALS, JSON.stringify(credentials))
+  } catch (error) {
+    console.error('保存账号密码失败:', error)
+  }
+}
+
+// 从 localStorage 读取账号密码
+function loadCredentials(): { username: string; password: string } | null {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY_CREDENTIALS)
+    if (data) {
+      return JSON.parse(data)
+    }
+  } catch (error) {
+    console.error('读取账号密码失败:', error)
+  }
+  return null
+}
+
+// 清除保存的账号密码
+function clearCredentials(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY_CREDENTIALS)
+  } catch (error) {
+    console.error('清除账号密码失败:', error)
+  }
+}
+
 export const useUserStore = defineStore('user', () => {
   // 状态
   const user = ref<User | null>(null)
@@ -25,6 +60,15 @@ export const useUserStore = defineStore('user', () => {
       // 兼容后端返回: { code: 200, data: {...}, message: 'success' }
       if ((res && (res.code === 200 || res.code === '200')) && res.data) {
         user.value = res.data as unknown as User
+        
+        // 如果勾选了"记住我"且登录成功，保存账号密码
+        if (credentials.remember) {
+          saveCredentials(credentials.username, credentials.password)
+        } else {
+          // 如果没有勾选"记住我"，清除之前保存的账号密码
+          clearCredentials()
+        }
+        
         return { success: true }
       }
       return { success: false, message: (res && res.message) || '登录失败' }
@@ -58,13 +102,39 @@ export const useUserStore = defineStore('user', () => {
   const logout = async (): Promise<void> => {
     try { await http('/user/logout', { method: 'POST' }) } catch {}
     user.value = null
+    // 退出登录时不清除保存的账号密码，以便下次自动登录
+  }
+
+  // 自动登录：使用保存的账号密码进行登录
+  const autoLogin = async (): Promise<boolean> => {
+    const credentials = loadCredentials()
+    if (!credentials || !credentials.username || !credentials.password) {
+      return false
+    }
+    
+    try {
+      const result = await login({
+        username: credentials.username,
+        password: credentials.password,
+        remember: true // 自动登录时也保持"记住我"状态
+      })
+      return result.success
+    } catch (error) {
+      return false
+    }
+  }
+
+  // 获取保存的账号密码（用于填充登录表单）
+  const getSavedCredentials = (): { username: string; password: string } | null => {
+    return loadCredentials()
   }
 
   const loadUserFromStorage = async (): Promise<void> => {
     try {
-      const res = await http<ApiResponse<User>>('/auth/me')
-      if (res.success && res.user) {
-        user.value = res.user as unknown as User
+      // 后端返回格式: { code: 200, data: {...}, message: 'success' }
+      const res = await http<any>('/auth/me')
+      if (res && res.code === 200 && res.data) {
+        user.value = res.data as unknown as User
       } else {
         user.value = null
       }
@@ -96,6 +166,8 @@ export const useUserStore = defineStore('user', () => {
     register,
     logout,
     loadUserFromStorage,
-    updateProfile
+    updateProfile,
+    autoLogin,
+    getSavedCredentials
   }
 })

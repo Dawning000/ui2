@@ -1,5 +1,6 @@
 export interface SearchQueryParams {
   q?: string;
+  type?: 'movie' | 'tv' | 'anime' | 'variety';
   genres?: string[];
   regions?: string[];
   yearGte?: number;
