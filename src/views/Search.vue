@@ -17,38 +17,26 @@
     <div class="search-body">
       <aside class="facet-panel">
         <section class="facet-section">
-          <h4>类型</h4>
-          <div class="chips">
-            <button
-              v-for="g in (store.facets?.genres || [])"
-              :key="g.value"
-              :class="['chip', { active: store.genres.includes(g.value) }]"
-              @click="toggleArray(store.genres, g.value)"
-            >{{ g.value }}<span class="count">{{ g.count }}</span></button>
-          </div>
-        </section>
-
-        <section class="facet-section">
-          <h4>地区</h4>
-          <div class="chips">
-            <button
-              v-for="r in (store.facets?.regions || [])"
-              :key="r.value"
-              :class="['chip', { active: store.regions.includes(r.value) }]"
-              @click="toggleArray(store.regions, r.value)"
-            >{{ r.value }}<span class="count">{{ r.count }}</span></button>
-          </div>
-        </section>
-
-        <section class="facet-section">
           <h4>筛选</h4>
           <div class="range-row">
-            <label>年份 ≥</label>
-            <input type="number" v-model.number="store.yearGte" placeholder="如 2018" />
+            <label>标签</label>
+            <input type="text" v-model="store.tag" placeholder="如 动作" />
+          </div>
+          <div class="range-row">
+            <label>年份 =</label>
+            <input type="number" v-model.number="store.year" placeholder="如 2018" min="1900" max="2099" />
           </div>
           <div class="range-row">
             <label>评分 ≥</label>
-            <input type="number" step="0.1" v-model.number="store.ratingGte" placeholder="如 7" />
+            <input type="number" step="0.1" v-model.number="store.ratingGte" placeholder="如 7" min="0" max="10" />
+          </div>
+          <div class="range-row">
+            <label>演员</label>
+            <input type="text" v-model="store.actor" placeholder="如 张三（只要名字）" />
+          </div>
+          <div class="range-row">
+            <label>奖项</label>
+            <input type="text" v-model="store.award" placeholder="如 奥斯卡（只要名字）" />
           </div>
           <button class="apply-btn" @click="applySearch(true)">应用筛选</button>
           <button class="clear-btn" @click="clearAll">清空</button>
@@ -87,31 +75,18 @@
               <div class="poster" :style="{ backgroundImage: it.poster ? `url(${it.poster})` : undefined }"></div>
               <div class="meta">
                 <h3 v-html="it.highlight?.title || it.title"></h3>
-                <div class="tags">
-                  <span v-for="g in (it.genres || [])" :key="g" class="tag">{{ g }}</span>
-                </div>
-                <div class="rating-row">
-                  <RatingStars :readonly="true" :modelValue="it.rating" tooltip-base="评分" />
-                  <span v-if="it.rating" class="rating-text">{{ it.rating }}/10</span>
-                </div>
                 <div class="sub">
                   <span>{{ it.year || '-' }}</span>
                 </div>
+                <div class="tags">
+                  <span v-for="(g, idx) in (it.genres || [])" :key="g" :class="['tag', `tag-${idx % 6}`]">{{ g }}</span>
+                </div>
+                <div class="rating-row">
+                  <RatingStars :readonly="true" :modelValue="it.rating" tooltip-base="评分" />
+                  <span v-if="it.rating" class="rating-text">{{ (it.rating / 2).toFixed(1) }}/5</span>
+                </div>
               </div>
             </router-link>
-            <div class="actions-overlay">
-              <div class="actions">
-                <div class="left">
-                  <WatchlistButtons v-model="getEntry(it).status" @update:modelValue="v=>updateStatus(it,v)" />
-                </div>
-                <div class="right">
-                  <AddToList :media-id="it.id" />
-                </div>
-              </div>
-              <div class="my-tags">
-                <TagChipsEditor v-model="getEntry(it).tags" @update:modelValue="v=>updateTags(it,v)" />
-              </div>
-            </div>
           </article>
         </div>
 
@@ -215,18 +190,13 @@
 
 <script setup lang="ts">
 import { useSearchStore } from '@/stores/search'
-import { useLibraryStore } from '@/stores/library'
 import { useUserStore } from '@/stores/user'
-import WatchlistButtons from '@/components/WatchlistButtons.vue'
 import RatingStars from '@/components/RatingStars.vue'
-import TagChipsEditor from '@/components/TagChipsEditor.vue'
-import AddToList from '@/components/AddToList.vue'
 import MovieForm from '@/components/MovieForm.vue'
 import { saveMovie } from '@/api/movies'
 import type { MovieSaveData } from '@/api/movies'
 import { nextTick, ref, computed, watch } from 'vue'
 const store = useSearchStore()
-const library = useLibraryStore()
 const userStore = useUserStore()
 
 const showMovieForm = ref(false)
@@ -338,29 +308,6 @@ watch(() => store.page, (newPage) => {
   jumpPage.value = newPage
 })
 
-function getEntry(it:any){
-  const existing = library.entries[it.id]
-  if (existing) return existing
-  return library.upsertEntry({
-    mediaId: it.id,
-    mediaType: 'movie',
-    title: it.title,
-    poster: it.poster,
-    year: it.year
-  })
-}
-
-function updateStatus(it:any, v:any){
-  library.setStatus(it.id, v)
-}
-
-function updateRating(it:any, v:any){
-  library.setRating(it.id, v as number|undefined)
-}
-
-function updateTags(it:any, v:string[]){
-  library.setTags(it.id, v)
-}
 
 function getPlaceholder(): string {
   const typeMap = {
@@ -434,7 +381,25 @@ async function handleMovieSubmit(movieData: MovieSaveData) {
     &.active { background: var(--bg-primary); color: var(--primary-color); border-color: var(--primary-color); }
     .count { margin-left: 6px; color: #9ca3af; }
   }
-  .range-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+  .range-row { 
+    display: flex; 
+    align-items: center;
+    gap: 8px; 
+    margin: 8px 0; 
+    label {
+      font-size: 13px;
+      color: #6b7280;
+      font-weight: 500;
+      min-width: 60px;
+    }
+    input {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+  }
   .apply-btn { width: 100%; padding: 8px 10px; border: none; background: var(--primary-color); color: #fff; border-radius: 8px; cursor: pointer; }
   .clear-btn { width: 100%; margin-top: 6px; padding: 8px 10px; border: 1px solid #e5e7eb; background: #fff; border-radius: 8px; cursor: pointer; }
 }
@@ -485,15 +450,43 @@ async function handleMovieSubmit(movieData: MovieSaveData) {
   .card .meta h3 { margin: 0; font-size: 14px; color: #111827; }
   .card-link:hover h3 { color: var(--primary-color); }
   .card .meta .sub { margin: 6px 0; color: #6b7280; font-size: 12px; }
-  .card .meta .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .card .meta .tag { padding: 2px 6px; background: #f3f4f6; border-radius: 6px; font-size: 11px; }
+  .card .meta .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .card .meta .tag { 
+    padding: 4px 10px; 
+    border: none;
+    border-radius: 12px; 
+    font-size: 11px; 
+    font-weight: 500;
+    color: #fff;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    display: inline-block;
+  }
+  .card .meta .tag.tag-0 {
+    background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  }
+  .card .meta .tag.tag-1 {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  }
+  .card .meta .tag.tag-2 {
+    background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+  }
+  .card .meta .tag.tag-3 {
+    background: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
+  }
+  .card .meta .tag.tag-4 {
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  }
+  .card .meta .tag.tag-5 {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  }
+  .card .meta .tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    opacity: 0.9;
+  }
   .card .meta .rating-row { margin-top: 6px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
   .card .meta .rating-text { color: #6b7280; font-size: 12px; }
-  .card .actions-overlay { padding: 0 10px 10px; }
-  .card .actions { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .card .actions .left{ display:flex; align-items:center; gap:8px; }
-  .card .actions .right{ display:flex; align-items:center; gap:8px; }
-  .card .my-tags{ margin-top:8px; }
   .skeleton { height: 240px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: 12px; }
   .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; }
   .pagination-container { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }

@@ -135,11 +135,35 @@
                   {{ actor.name }}
                 </option>
               </select>
-              <div v-if="form.actors.length > 0" class="selected-list">
-                <span v-for="actorId in form.actors" :key="actorId" class="selected-item">
-                  {{ getActorName(actorId) }}
-                  <button type="button" @click="removeActor(actorId)" class="item-remove">×</button>
-                </span>
+              <div v-if="form.actors.length > 0" class="actors-list">
+                <div v-for="(actor, index) in form.actors" :key="index" class="actor-item">
+                  <div class="actor-header">
+                    <span class="actor-name">{{ getActorName(actor.id) }}</span>
+                    <button type="button" @click="removeActor(index)" class="item-remove">×</button>
+                  </div>
+                  <div class="actor-fields">
+                    <div class="actor-field">
+                      <label>角色 <span class="required">*</span></label>
+                      <input 
+                        v-model="actor.role" 
+                        type="text" 
+                        placeholder="如：主演、配角、幕后等"
+                        required
+                        class="actor-input"
+                      />
+                    </div>
+                    <div class="actor-field">
+                      <label>描述 <span class="required">*</span></label>
+                      <input 
+                        v-model="actor.description" 
+                        type="text" 
+                        placeholder="描述演员在该电影中的表现"
+                        required
+                        class="actor-input"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -147,11 +171,12 @@
 
         <div class="form-group">
           <label>海报图URL <span class="required">*</span></label>
-          <input 
-            v-model="form.poster" 
-            type="text" 
-            required 
-            placeholder="请输入海报图片URL"
+          <ImageUploader
+            v-model="form.poster"
+            placeholder="请输入海报图片URL或点击上传"
+            upload-type="image"
+            button-text="上传海报"
+            required
           />
         </div>
 
@@ -179,11 +204,11 @@
           <div class="photos-input">
             <div v-if="form.photos.length > 0" class="photos-list">
               <div v-for="(photo, index) in form.photos" :key="index" class="photo-item">
-                <input 
-                  v-model="form.photos[index]" 
-                  type="text" 
-                  placeholder="照片URL"
-                  class="photo-input"
+                <ImageUploader
+                  v-model="form.photos[index]"
+                  placeholder="请输入照片URL或点击上传"
+                  upload-type="image"
+                  button-text="上传照片"
                 />
                 <button type="button" @click="removePhoto(index)" class="photo-remove">删除</button>
               </div>
@@ -238,7 +263,8 @@
 import { ref, reactive, computed } from 'vue'
 import { fetchActors } from '@/api/actors'
 import type { ActorListItem } from '@/types/actors'
-import type { MovieSaveData } from '@/api/movies'
+import type { MovieSaveData, MovieActor } from '@/api/movies'
+import ImageUploader from './ImageUploader.vue'
 
 interface AwardOption {
   id: number
@@ -277,7 +303,7 @@ const form = reactive<Omit<MovieSaveData, 'id'>>({
   year: new Date().getFullYear(),
   tags: [],
   director: 0,
-  actors: [],
+  actors: [] as MovieActor[],
   poster: '',
   summary: '',
   awards: [],
@@ -296,7 +322,11 @@ if (props.initialData) {
     year: props.initialData.year || new Date().getFullYear(),
     tags: props.initialData.tags || props.initialData.genre || [],
     director: props.initialData.director?.id || props.initialData.director || 0,
-    actors: props.initialData.actors?.map((a: any) => a.id || a) || [],
+    actors: props.initialData.actors?.map((a: any) => ({
+      id: a.id || a,
+      role: a.role || '',
+      description: a.description || ''
+    } as MovieActor)) || [],
     poster: props.initialData.poster || '',
     summary: props.initialData.summary || '',
     awards: props.initialData.awards?.map((a: any) => a.id || a) || [],
@@ -371,16 +401,23 @@ function removeTag(index: number) {
 // 添加演员
 function addActor() {
   const actorId = selectedActor.value
-  if (actorId && !form.actors.includes(actorId)) {
-    form.actors.push(actorId)
-    selectedActor.value = 0
+  if (actorId) {
+    // 检查是否已添加
+    const exists = form.actors.find(a => a.id === actorId)
+    if (!exists) {
+      form.actors.push({
+        id: actorId,
+        role: '',
+        description: ''
+      })
+      selectedActor.value = 0
+    }
   }
 }
 
 // 删除演员
-function removeActor(actorId: number) {
-  const index = form.actors.indexOf(actorId)
-  if (index > -1) {
+function removeActor(index: number) {
+  if (index > -1 && index < form.actors.length) {
     form.actors.splice(index, 1)
   }
 }
@@ -430,18 +467,39 @@ async function handleSubmit() {
   try {
     // 验证必填字段
     if (!form.title || !form.year || form.tags.length === 0 || 
-        !form.director || form.actors.length === 0 || !form.poster || 
+        !form.director || form.director <= 0 || form.actors.length === 0 || !form.poster || 
         !form.summary || !form.duration ||
         !form.country || !form.language || form.photos.length === 0) {
       alert('请填写所有必填字段')
       return
     }
 
+    // 验证演员的 role 和 description
+    const invalidActors = form.actors.filter(a => !a.role || !a.description)
+    if (invalidActors.length > 0) {
+      alert('请为所有演员填写角色和描述')
+      return
+    }
+
     const submitData: MovieSaveData = {
-      ...form,
+      title: form.title,
       original_title: form.original_title || undefined,
+      year: form.year,
+      tags: form.tags,
+      director: Number(form.director), // 确保是数字类型
+      actors: form.actors.map(actor => ({
+        id: Number(actor.id),
+        role: actor.role.trim(),
+        description: actor.description.trim()
+      })),
+      poster: form.poster,
+      summary: form.summary,
+      duration: Number(form.duration),
+      country: form.country,
+      language: form.language,
       trailer: form.trailer || undefined,
-      awards: form.awards.length > 0 ? form.awards : undefined
+      photos: form.photos.filter(p => p.trim()), // 过滤空字符串
+      awards: form.awards.length > 0 ? form.awards.map(id => Number(id)) : undefined
     }
     
     // 如果是编辑模式，添加id字段
@@ -678,6 +736,69 @@ loadActors()
   font-size: 13px;
 }
 
+.actors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.actor-item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.actor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.actor-name {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.actor-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.actor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.actor-field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0;
+}
+
+.actor-input {
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.actor-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
 .item-remove {
   border: none;
   background: none;
@@ -709,11 +830,11 @@ loadActors()
 .photo-item {
   display: flex;
   gap: 8px;
+  align-items: flex-start;
 }
 
-.photo-input {
+.photo-item :deep(.image-uploader) {
   flex: 1;
-  margin: 0;
 }
 
 .photo-remove {

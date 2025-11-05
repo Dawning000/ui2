@@ -212,6 +212,15 @@
         <div class="modal-body">
           <form @submit.prevent="handleUpdateProfile">
             <div class="form-group">
+              <label>头像URL</label>
+              <ImageUploader
+                v-model="editForm.avatar"
+                placeholder="请输入头像图片URL或点击上传"
+                upload-type="avatar"
+                button-text="上传头像"
+              />
+            </div>
+            <div class="form-group">
               <label>昵称</label>
               <input 
                 type="text" 
@@ -259,6 +268,34 @@
         </div>
       </div>
     </div>
+
+    <!-- 头像上传模态框 -->
+    <div v-if="showAvatarModal" class="modal-overlay" @click="closeAvatarModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>更换头像</h3>
+          <button class="close-btn" @click="closeAvatarModal">
+            <i class="icon-close"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <ImageUploader
+            v-model="avatarUrl"
+            placeholder="请输入头像图片URL或点击上传"
+            upload-type="avatar"
+            button-text="上传头像"
+          />
+          <div class="form-actions" style="margin-top: 20px;">
+            <button type="button" class="btn btn-outline" @click="closeAvatarModal">
+              取消
+            </button>
+            <button type="button" class="btn btn-primary" @click="handleUpdateAvatar" :disabled="updating">
+              {{ updating ? '保存中...' : '保存' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -266,6 +303,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLibraryStore } from '@/stores/library'
+import ImageUploader from '@/components/ImageUploader.vue'
 
 const route = useRoute()
 const library = useLibraryStore()
@@ -283,11 +321,14 @@ const updating = ref(false)
 const isFollowing = ref(false)
 
 const editForm = reactive({
+  avatar: '',
   nickname: '',
   bio: '',
   location: '',
   website: ''
 })
+
+const avatarUrl = ref('')
 
 const tabs = [
   { id: 'posts', label: '帖子', icon: 'icon-edit' },
@@ -398,10 +439,12 @@ const loadUserProfile = async () => {
     ]
     
     // 初始化编辑表单
+    editForm.avatar = user.value.avatar || ''
     editForm.nickname = user.value.nickname
     editForm.bio = user.value.bio
     editForm.location = user.value.location
     editForm.website = user.value.website
+    avatarUrl.value = user.value.avatar || ''
   } finally {
     loading.value = false
   }
@@ -428,6 +471,11 @@ const closeEditModal = () => {
   showEditModal.value = false
 }
 
+const closeAvatarModal = () => {
+  showAvatarModal.value = false
+  avatarUrl.value = user.value?.avatar || ''
+}
+
 const handleUpdateProfile = async () => {
   updating.value = true
   try {
@@ -435,12 +483,33 @@ const handleUpdateProfile = async () => {
     await new Promise(resolve => setTimeout(resolve, 1000))
     
     // 更新用户信息
+    if (editForm.avatar) {
+      user.value.avatar = editForm.avatar
+    }
     user.value.nickname = editForm.nickname
     user.value.bio = editForm.bio
     user.value.location = editForm.location
     user.value.website = editForm.website
     
     closeEditModal()
+  } finally {
+    updating.value = false
+  }
+}
+
+const handleUpdateAvatar = async () => {
+  updating.value = true
+  try {
+    // 模拟API调用
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // 更新头像
+    if (avatarUrl.value && user.value) {
+      user.value.avatar = avatarUrl.value
+      editForm.avatar = avatarUrl.value
+    }
+    
+    closeAvatarModal()
   } finally {
     updating.value = false
   }

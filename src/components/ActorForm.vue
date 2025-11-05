@@ -19,11 +19,12 @@
 
         <div class="form-group">
           <label>头像URL <span class="required">*</span></label>
-          <input 
-            v-model="form.avatar" 
-            type="text" 
-            required 
-            placeholder="请输入头像图片URL"
+          <ImageUploader
+            v-model="form.avatar"
+            placeholder="请输入头像图片URL或点击上传"
+            upload-type="avatar"
+            button-text="上传头像"
+            required
           />
         </div>
 
@@ -122,6 +123,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import type { ActorSaveData, ActorAward } from '@/types/actors'
+import ImageUploader from './ImageUploader.vue'
 
 interface Props {
   isEdit?: boolean

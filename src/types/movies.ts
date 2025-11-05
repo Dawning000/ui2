@@ -28,11 +28,15 @@ export interface MovieItem {
 export interface MoviesListQuery {
   page?: number;
   size?: number;
+  keyword?: string; // 搜索关键词
   genre?: string;
+  tag?: string; // 标签（与genre功能类似，但参数名不同）
   year?: number;
   rating?: number;
   actor?: string;
   award?: string;
+  country?: string; // 国家/地区筛选
+  language?: string; // 语言筛选
 }
 
 export interface MoviesListResponse {
@@ -69,6 +73,8 @@ export interface MovieDetail {
   photos: string[];
   views: number;
   likes: number;
+  isLiked?: boolean; // 当前用户是否已点赞
+  isFavorited?: boolean; // 当前用户是否已收藏
 }
 
 

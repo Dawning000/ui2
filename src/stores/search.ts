@@ -28,10 +28,17 @@ export const useSearchStore = defineStore('search', () => {
   const type = ref<SearchQueryParams['type']>(undefined)
   const genres = ref<string[]>([])
   const regions = ref<string[]>([])
+  const languages = ref<string[]>([])
+  const country = ref<string>('') // 国家（输入框）
+  const language = ref<string>('') // 语言（输入框）
+  const year = ref<number | undefined>(undefined) // 年份（等于）
   const yearGte = ref<number | undefined>(undefined)
   const yearLte = ref<number | undefined>(undefined)
   const ratingGte = ref<number | undefined>(undefined)
   const ratingLte = ref<number | undefined>(undefined)
+  const tag = ref<string>('') // 标签筛选
+  const actor = ref<string>('') // 演员筛选（只要名字）
+  const award = ref<string>('') // 奖项筛选（只要名字）
   const sort = ref<SearchQueryParams['sort']>('relevance_desc')
   const page = ref<number>(1)
   const pageSize = ref<number>(24)
@@ -52,10 +59,17 @@ export const useSearchStore = defineStore('search', () => {
     type: type.value,
     genres: genres.value.length ? genres.value : undefined,
     regions: regions.value.length ? regions.value : undefined,
+    languages: languages.value.length ? languages.value : undefined,
+    country: country.value || undefined,
+    language: language.value || undefined,
+    year: year.value,
     yearGte: yearGte.value,
     yearLte: yearLte.value,
     ratingGte: ratingGte.value,
     ratingLte: ratingLte.value,
+    tag: tag.value || undefined,
+    actor: actor.value || undefined,
+    award: award.value || undefined,
     sort: sort.value,
     page: page.value,
     pageSize: pageSize.value
@@ -67,10 +81,17 @@ export const useSearchStore = defineStore('search', () => {
     type.value = (query.type as SearchQueryParams['type']) || undefined
     genres.value = parseArray(query.genres) || []
     regions.value = parseArray(query.regions) || []
+    languages.value = parseArray(query.languages) || []
+    country.value = (query.country as string) || ''
+    language.value = (query.language as string) || ''
+    year.value = parseNumber(query.year)
     yearGte.value = parseNumber(query.year_gte)
     yearLte.value = parseNumber(query.year_lte)
     ratingGte.value = parseNumber(query.rating_gte)
     ratingLte.value = parseNumber(query.rating_lte)
+    tag.value = (query.tag as string) || ''
+    actor.value = (query.actor as string) || ''
+    award.value = (query.award as string) || ''
     sort.value = (query.sort as any) || 'relevance_desc'
     page.value = parseNumber(query.page) || 1
     pageSize.value = parseNumber(query.page_size) || 24
@@ -82,10 +103,17 @@ export const useSearchStore = defineStore('search', () => {
     if (type.value) query.type = type.value
     if (genres.value.length) query.genres = genres.value.join(',')
     if (regions.value.length) query.regions = regions.value.join(',')
+    if (languages.value.length) query.languages = languages.value.join(',')
+    if (country.value) query.country = country.value
+    if (language.value) query.language = language.value
+    if (year.value !== undefined) query.year = year.value
     if (yearGte.value !== undefined) query.year_gte = yearGte.value
     if (yearLte.value !== undefined) query.year_lte = yearLte.value
     if (ratingGte.value !== undefined) query.rating_gte = ratingGte.value
     if (ratingLte.value !== undefined) query.rating_lte = ratingLte.value
+    if (tag.value) query.tag = tag.value
+    if (actor.value) query.actor = actor.value
+    if (award.value) query.award = award.value
     if (sort.value) query.sort = sort.value
     if (page.value && page.value !== 1) query.page = page.value
     if (pageSize.value && pageSize.value !== 24) query.page_size = pageSize.value
@@ -116,13 +144,21 @@ export const useSearchStore = defineStore('search', () => {
 
   function clearAll(): void {
     q.value = ''
-    type.value = undefined
+    // type 不重置，保留当前值，这样新增电影按钮不会消失
+    // type.value = undefined
     genres.value = []
     regions.value = []
+    languages.value = []
+    country.value = ''
+    language.value = ''
+    year.value = undefined
     yearGte.value = undefined
     yearLte.value = undefined
     ratingGte.value = undefined
     ratingLte.value = undefined
+    tag.value = ''
+    actor.value = ''
+    award.value = ''
     sort.value = 'relevance_desc'
     page.value = 1
   }
@@ -136,7 +172,7 @@ export const useSearchStore = defineStore('search', () => {
   // public API
   return {
     // state
-    q, type, genres, regions, yearGte, yearLte, ratingGte, ratingLte, sort, page, pageSize,
+    q, type, genres, regions, languages, country, language, year, yearGte, yearLte, ratingGte, ratingLte, tag, actor, award, sort, page, pageSize,
     items, total, hasMore, facets, loading, error,
     // computed
     params,
