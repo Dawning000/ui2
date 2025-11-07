@@ -165,62 +165,6 @@
         </div>
       </div>
     </section>
-    
-    <!-- 最新电视剧推荐 -->
-    <section class="movie-recommendations">
-      <div class="container">
-        <h2 class="section-title">最新电视剧推荐</h2>
-        <div class="movies-slider">
-          <div class="movie-item" v-for="tvshow in latestTvshows" :key="tvshow.id">
-            <div class="movie-poster">
-              <img :src="tvshow.poster" :alt="tvshow.title" />
-              <div class="movie-overlay">
-                <button class="play-btn">
-                  <i class="icon-play"></i>
-                </button>
-                <div class="movie-rating">
-                  <i class="icon-star"></i>
-                  <span>{{ tvshow.rating }}</span>
-                </div>
-              </div>
-            </div>
-            <div class="movie-info">
-              <h4 class="movie-title">{{ tvshow.title }}</h4>
-              <p class="movie-genre">{{ tvshow.genre }}</p>
-              <p class="movie-year">{{ tvshow.year }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    
-    <!-- 最新综艺推荐 -->
-    <section class="movie-recommendations">
-      <div class="container">
-        <h2 class="section-title">最新综艺推荐</h2>
-        <div class="movies-slider">
-          <div class="movie-item" v-for="variety in latestVarieties" :key="variety.id">
-            <div class="movie-poster">
-              <img :src="variety.poster" :alt="variety.title" />
-              <div class="movie-overlay">
-                <button class="play-btn">
-                  <i class="icon-play"></i>
-                </button>
-                <div class="movie-rating">
-                  <i class="icon-star"></i>
-                  <span>{{ variety.rating }}</span>
-                </div>
-              </div>
-            </div>
-            <div class="movie-info">
-              <h4 class="movie-title">{{ variety.title }}</h4>
-              <p class="movie-genre">{{ variety.genre }}</p>
-              <p class="movie-year">{{ variety.year }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   </div>
 </template>
 
@@ -228,8 +172,6 @@
 import { ref, onMounted } from 'vue'
 import Carousel from '../components/Carousel.vue'
 import { fetchMovies } from '@/api/movies'
-import { fetchTvshows } from '@/api/tvshows'
-import { fetchVarieties } from '@/api/varieties'
 
 // 响应式数据
 const featuredMovies = ref([])
@@ -285,7 +227,7 @@ const hotPosts = ref([
       username: '剧评达人',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face'
     },
-    category: 'tvshow',
+    category: 'tv',
     categoryName: '电视剧',
     views: 2156,
     comments: 134,
@@ -310,8 +252,6 @@ const hotPosts = ref([
 ])
 
 const latestMovies = ref([])
-const latestTvshows = ref([])
-const latestVarieties = ref([])
 
 const stats = ref({
   totalUsers: 125678,
@@ -343,7 +283,7 @@ function avgRating(ratings) {
 }
 
 async function loadMovies() {
-  // Featured 区域：取第一页 6 条电影
+  // Featured 区域：取第一页 6 条
   const data1 = await fetchMovies({ page: 1, size: 6 })
   const items1 = Array.isArray(data1?.movies) ? data1.movies : []
   featuredMovies.value = items1.map(m => ({
@@ -363,30 +303,6 @@ async function loadMovies() {
     genre: Array.isArray(m.tag) ? m.tag.join(',') : (m.tag || ''),
     year: String(m.year || ''),
     rating: m.rating || 0
-  }))
-  
-  // 最新电视剧推荐：取第一页 12 条
-  const tvshowData = await fetchTvshows({ page: 1, size: 12 })
-  const tvshowItems = Array.isArray(tvshowData?.tvshows) ? tvshowData.tvshows : []
-  latestTvshows.value = tvshowItems.map(t => ({
-    id: t.id,
-    title: t.title,
-    poster: t.poster,
-    genre: Array.isArray(t.tag) ? t.tag.join(',') : (t.tag || ''),
-    year: String(t.year || ''),
-    rating: t.rating || 0
-  }))
-  
-  // 最新综艺推荐：取第一页 12 条
-  const varietyData = await fetchVarieties({ page: 1, size: 12 })
-  const varietyItems = Array.isArray(varietyData?.varieties) ? varietyData.varieties : []
-  latestVarieties.value = varietyItems.map(v => ({
-    id: v.id,
-    title: v.title,
-    poster: v.poster,
-    genre: Array.isArray(v.tag) ? v.tag.join(',') : (v.tag || ''),
-    year: String(v.year || ''),
-    rating: v.rating || 0
   }))
 }
 

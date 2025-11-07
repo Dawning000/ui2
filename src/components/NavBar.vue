@@ -57,7 +57,7 @@
                     <i class="category-icon icon-film"></i>
                     <span>电影</span>
                   </router-link>
-                  <router-link :to="{ name: 'Search', query: { type: 'tvshow' } }" class="category-item">
+                  <router-link :to="{ name: 'Search', query: { type: 'tv' } }" class="category-item">
                     <i class="category-icon icon-tv"></i>
                     <span>电视剧</span>
                   </router-link>
