@@ -102,7 +102,24 @@ export const useUserStore = defineStore('user', () => {
   const logout = async (): Promise<void> => {
     try { await http('/user/logout', { method: 'POST' }) } catch {}
     user.value = null
-    // 退出登录时不清除保存的账号密码，以便下次自动登录
+    
+    // 完全清空浏览器本地存储中的所有登录相关数据
+    try {
+      // 清除特定的用户相关存储项
+      localStorage.removeItem('remembered_credentials')
+      localStorage.removeItem('autoLogin')
+      localStorage.removeItem('user_token')
+      localStorage.removeItem('user_info')
+      
+      // 清除会话存储中的用户相关项
+      sessionStorage.removeItem('user_token')
+      sessionStorage.removeItem('user_info')
+      
+      // 清除任何可能存储在localStorage中的用户认证相关数据
+      // 这里可以根据需要添加更多特定的键名
+    } catch (error) {
+      console.error('清除本地存储失败:', error)
+    }
   }
 
   // 自动登录：使用保存的账号密码进行登录

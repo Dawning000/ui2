@@ -128,6 +128,11 @@ export const useSearchStore = defineStore('search', () => {
     abortController = new AbortController()
     loading.value = true
     error.value = null
+    // 清空现有数据，确保切换分类时不会显示旧数据
+    items.value = []
+    total.value = 0
+    hasMore.value = false
+    facets.value = undefined
     try {
       const res = await api.search(params.value, abortController.signal)
       items.value = res.items
@@ -168,6 +173,14 @@ export const useSearchStore = defineStore('search', () => {
     syncFromRoute()
     runSearch()
   }, { immediate: true })
+
+  // 监听type变化，确保切换分类时立即清空数据
+  watch(() => type.value, () => {
+    items.value = []
+    total.value = 0
+    hasMore.value = false
+    facets.value = undefined
+  })
 
   // public API
   return {

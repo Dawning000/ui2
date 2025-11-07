@@ -103,21 +103,22 @@ const slides = ref([
     subtitle: '扫黑风暴下的正义与人性',
     description: '一部扫黑除恶题材的电视剧，展现正义与邪恶的较量，人性的复杂与救赎。',
     image: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=1920&h=1080&fit=crop',
-    link: '/forum/tv',
+    link: '/forum/tvshow',
     buttonText: '追剧讨论',
     trailer: 'https://example.com/trailer2',
     icon: '📺'
   },
+
   {
     id: 4,
-    title: '鬼灭之刃',
-    subtitle: '刀光剑影，热血沸腾',
-    description: '大正时代，少年炭治郎为了拯救变成鬼的妹妹，踏上了斩鬼之路的冒险故事。',
+    title: '向往的生活',
+    subtitle: '慢综艺，慢生活',
+    description: '明星嘉宾们回归田园，远离城市喧嚣，享受自然与美食，体验朴实乡村生活。',
     image: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=1920&h=1080&fit=crop',
-    link: '/forum/anime',
-    buttonText: '动漫讨论',
+    link: '/forum/variety',
+    buttonText: '综艺讨论',
     trailer: 'https://example.com/trailer3',
-    icon: '⚔️'
+    icon: '🏕️'
   },
   {
     id: 5,

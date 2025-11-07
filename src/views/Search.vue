@@ -55,6 +55,22 @@
               <i class="icon-plus"></i>
               新增电影
             </button>
+            <button 
+              v-else-if="isAdmin && store.type === 'tvshow'" 
+              @click="showTvshowForm = true" 
+              class="add-movie-btn"
+            >
+              <i class="icon-plus"></i>
+              新增电视剧
+            </button>
+            <button 
+              v-else-if="isAdmin && store.type === 'variety'" 
+              @click="showVarietyForm = true" 
+              class="add-movie-btn"
+            >
+              <i class="icon-plus"></i>
+              新增综艺
+            </button>
             <select v-model="store.sort" @change="applySearch(true)">
               <option value="relevance_desc">相关度</option>
               <option value="hot_desc">热度</option>
@@ -71,7 +87,7 @@
 
         <div v-else-if="store.items.length" class="grid">
           <article v-for="it in store.items" :key="it.id" class="card">
-            <router-link :to="`/movie/${it.id}`" class="card-link">
+            <router-link :to="getItemLink(it)" class="card-link">
               <div class="poster" :style="{ backgroundImage: it.poster ? `url(${it.poster})` : undefined }"></div>
               <div class="meta">
                 <h3 v-html="it.highlight?.title || it.title"></h3>
@@ -83,7 +99,7 @@
                 </div>
                 <div class="rating-row">
                   <RatingStars :readonly="true" :modelValue="it.rating" tooltip-base="评分" />
-                  <span v-if="it.rating" class="rating-text">{{ (it.rating / 2).toFixed(1) }}/5</span>
+                  <span v-if="it.rating" class="rating-text">{{ it.rating.toFixed(1) }}/10</span>
                 </div>
               </div>
             </router-link>
@@ -185,6 +201,20 @@
       @submit="handleMovieSubmit"
       @cancel="showMovieForm = false"
     />
+    <!-- 电视剧表单弹窗 -->
+    <TvshowForm 
+      v-if="showTvshowForm" 
+      :is-edit="false"
+      @submit="handleTvshowSubmit"
+      @cancel="showTvshowForm = false"
+    />
+    <!-- 综艺表单弹窗 -->
+    <VarietyForm 
+      v-if="showVarietyForm" 
+      :is-edit="false"
+      @submit="handleVarietySubmit"
+      @cancel="showVarietyForm = false"
+    />
   </div>
 </template>
 
@@ -193,13 +223,21 @@ import { useSearchStore } from '@/stores/search'
 import { useUserStore } from '@/stores/user'
 import RatingStars from '@/components/RatingStars.vue'
 import MovieForm from '@/components/MovieForm.vue'
+import TvshowForm from '@/components/TvshowForm.vue'
+import VarietyForm from '@/components/VarietyForm.vue'
 import { saveMovie } from '@/api/movies'
+import { saveTvshow } from '@/api/tvshows'
+import { saveVariety } from '@/api/varieties'
 import type { MovieSaveData } from '@/api/movies'
+import type { TvshowSaveData } from '@/api/tvshows'
+import type { VarietySaveData } from '@/api/varieties'
 import { nextTick, ref, computed, watch } from 'vue'
 const store = useSearchStore()
 const userStore = useUserStore()
 
 const showMovieForm = ref(false)
+const showTvshowForm = ref(false)
+const showVarietyForm = ref(false)
 const jumpPage = ref(1)
 
 // 检查是否为管理员
@@ -312,11 +350,27 @@ watch(() => store.page, (newPage) => {
 function getPlaceholder(): string {
   const typeMap = {
     movie: '搜索电影...',
+    film: '搜索电影...',
     tv: '搜索电视剧...',
+    tvshow: '搜索电视剧...',
     anime: '搜索动漫...',
     variety: '搜索综艺...'
   }
   return typeMap[store.type] || '搜索电影、剧集、动漫、人物或标签'
+}
+
+// 获取项目链接
+function getItemLink(item: any): string {
+  switch (store.type) {
+    case 'movie':
+      return `/movie/${item.id}`
+    case 'tvshow':
+      return `/tvshow/${item.id}`
+    case 'variety':
+      return `/variety/${item.id}`
+    default:
+      return `/movie/${item.id}`
+  }
 }
 
 // 处理电影表单提交
@@ -329,6 +383,60 @@ async function handleMovieSubmit(movieData: MovieSaveData) {
     await applySearch(true)
   } catch (error: any) {
     alert(error?.message || '保存失败，请稍后重试')
+  }
+}
+
+// 处理电视剧表单提交
+async function handleTvshowSubmit(tvshowData: TvshowSaveData) {
+  try {
+    await saveTvshow(tvshowData)
+    alert('电视剧保存成功！')
+    showTvshowForm.value = false
+    // 刷新搜索结果
+    await applySearch(true)
+  } catch (error: any) {
+    alert(error?.message || '保存失败，请稍后重试')
+  }
+}
+
+// 处理综艺表单提交
+async function handleVarietySubmit(varietyData: VarietySaveData) {
+  try {
+    await saveVariety(varietyData)
+    alert('综艺保存成功！')
+    showVarietyForm.value = false
+    // 刷新搜索结果
+    await applySearch(true)
+  } catch (error: any) {
+    alert(error?.message || '保存失败，请稍后重试')
+  }
+}
+
+// 获取类型名称
+function getTypeName(type: string): string {
+  switch (type) {
+    case 'movie':
+      return '电影'
+    case 'tvshow':
+      return '电视剧'
+    case 'variety':
+      return '综艺'
+    default:
+      return '电影'
+  }
+}
+
+// 获取项目链接
+function getItemLink(item: any): string {
+  switch (store.type) {
+    case 'movie':
+      return `/movie/${item.id}`
+    case 'tvshow':
+      return `/tvshow/${item.id}`
+    case 'variety':
+      return `/variety/${item.id}`
+    default:
+      return `/movie/${item.id}`
   }
 }
 </script>

@@ -17,13 +17,22 @@
         <div class="info">
           <div class="title-row">
             <h1>{{ detail.title }}</h1>
-            <button 
-              v-if="isAdmin" 
-              class="edit-btn"
-              @click="handleEditClick"
-            >
-              修改电影信息
-            </button>
+            <div class="admin-actions" v-if="isAdmin">
+              <button 
+                class="edit-btn"
+                @click="handleEditClick"
+                :disabled="deleteLoading"
+              >
+                修改电影信息
+              </button>
+              <button 
+                class="delete-btn"
+                @click="handleDeleteClick"
+                :disabled="deleteLoading"
+              >
+                {{ deleteLoading ? '删除中...' : '删除电影' }}
+              </button>
+            </div>
           </div>
           <div class="sub-title" v-if="detail.originalTitle">
             {{ detail.originalTitle }}
@@ -36,7 +45,7 @@
           </div>
           <div class="rating-row" v-if="detail.rating >= 0">
             <RatingStars :readonly="true" :modelValue="detail.rating" tooltip-base="评分" />
-            <span class="rating-text">{{ (detail.rating / 2).toFixed(1) }}/5</span>
+            <span class="rating-text">{{ detail.rating.toFixed(1) }}/10</span>
           </div>
           <div class="tags-row" v-if="detail.tags && detail.tags.length > 0">
             <span v-for="(tag, idx) in detail.tags" :key="tag" :class="['tag', `tag-${idx % 6}`]">{{ tag }}</span>
@@ -181,7 +190,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { fetchMovieDetail, saveMovie, likeMovie, unlikeMovie, rateMovie, favoriteMovie, unfavoriteMovie, type MovieSaveData, type MovieRateData } from '@/api/movies'
+import { fetchMovieDetail, saveMovie, likeMovie, unlikeMovie, rateMovie, favoriteMovie, unfavoriteMovie, deleteMovie, type MovieSaveData, type MovieRateData } from '@/api/movies'
 import type { MovieDetail } from '@/types/movies'
 import MovieForm from '@/components/MovieForm.vue'
 import RatingStars from '@/components/RatingStars.vue'
@@ -198,6 +207,7 @@ const showEditForm = ref(false)
 const likeLoading = ref(false)
 const favoriteLoading = ref(false)
 const ratingLoading = ref(false)
+const deleteLoading = ref(false)
 const userRating = ref<MovieRateData>({
   score: 0,
   comment: ''
@@ -300,6 +310,26 @@ async function handleFormSubmit(data: MovieSaveData) {
 // 取消编辑
 function handleFormCancel() {
   showEditForm.value = false
+}
+
+// 处理删除按钮点击
+async function handleDeleteClick() {
+    if (!confirm('确定要删除这部电影吗？此操作无法撤销！')) {
+      return
+    }
+    
+    deleteLoading.value = true
+    try {
+      await deleteMovie(id)
+      alert('电影删除成功！')
+      // 删除成功后跳转到电影列表页面
+      window.location.href = '/search?type=movie'
+  } catch (err: any) {
+    console.error('删除电影失败:', err)
+    alert(err?.message || '删除失败，请稍后重试')
+  } finally {
+    deleteLoading.value = false
+  }
 }
 
 // 处理点赞
@@ -454,10 +484,14 @@ onMounted(load)
 }
 .info { display: flex; flex-direction: column; gap: 12px; flex: 1; }
 .title-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.admin-actions { display: flex; gap: 12px; }
 .info h1 { font-size: 32px; font-weight: 700; color: #111827; margin: 0; flex: 1; }
 .sub-title { font-size: 20px; color: #6b7280; font-style: italic; }
 .edit-btn { padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-.edit-btn:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.edit-btn:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.delete-btn { padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.delete-btn:hover:not(:disabled) { background: #dc2626; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.edit-btn:disabled, .delete-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .meta { color: #6b7280; font-size: 14px; }
 .rating-row { display: flex; align-items: center; gap: 8px; }
 .rating-text { color: #6b7280; font-size: 14px; }

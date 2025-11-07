@@ -351,7 +351,6 @@ const getCategoryTitle = () => {
   const categoryMap = {
     movie: '电影讨论',
     tv: '电视剧讨论',
-    anime: '动漫讨论',
     variety: '综艺讨论'
   }
   return categoryMap[route.params.category] || '影视论坛'
@@ -361,7 +360,6 @@ const getCategoryDescription = () => {
   const descMap = {
     movie: '分享最新电影评论，讨论经典影片',
     tv: '热播剧集深度解析，追剧心得分享',
-    anime: '二次元世界精彩内容讨论',
     variety: '娱乐综艺节目观后感分享'
   }
   return descMap[route.params.category] || '与千万影迷一起讨论精彩内容'
@@ -430,23 +428,23 @@ const loadPosts = async () => {
       },
       {
         id: 3,
-        title: '《鬼灭之刃》剧场版观后感：热血与感动的完美结合',
-        excerpt: '作为鬼灭之刃的忠实粉丝，看完剧场版后内心久久不能平静。这部作品在保持原有风格的基础上...',
+        title: '《王牌对王牌》第八季首期嘉宾阵容公布',
+        excerpt: '作为一档长寿综艺节目，王牌对王牌一直深受观众喜爱。第八季首期将邀请...',
         content: '详细内容...',
         author: {
-          id: 3,
-          username: '动漫爱好者',
-          avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face'
+          id: 4,
+          username: '综艺迷小李',
+          avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=40&h=40&fit=crop&crop=face'
         },
-        category: 'anime',
-        categoryName: '动漫',
-        tags: ['鬼灭之刃', '剧场版', '热血'],
-        views: 987,
-        comments: 67,
-        votes: 123,
-        userVote: null,
+        category: 'variety',
+        categoryName: '综艺',
+        tags: ['王牌对王牌', '综艺节目', '娱乐'],
+        views: 765,
+        comments: 45,
+        votes: 98,
+        userVote: 'up',
         isBookmarked: false,
-        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000)
+        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000)
       }
     ]
   } finally {

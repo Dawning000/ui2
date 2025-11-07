@@ -36,7 +36,7 @@
             <li><router-link to="/forum">论坛</router-link></li>
             <li><router-link to="/forum/movie">电影</router-link></li>
             <li><router-link to="/forum/tv">电视剧</router-link></li>
-            <li><router-link to="/forum/anime">动漫</router-link></li>
+
             <li><router-link to="/forum/variety">综艺</router-link></li>
           </ul>
         </div>

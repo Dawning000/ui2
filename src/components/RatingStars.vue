@@ -29,8 +29,8 @@ const starValue = computed(() => {
   return value.value / 2 // 10分制转5星制
 })
 const displayTitle = computed(() => {
-  const stars = starValue.value.toFixed(1)
-  return props.tooltipBase ? `${props.tooltipBase}：${stars}/5` : `${stars}/5`
+  const score = value.value.toFixed(1)
+  return props.tooltipBase ? `${props.tooltipBase}：${score}/10` : `${score}/10`
 })
 
 // 点击星星时，支持设置完整星或半星

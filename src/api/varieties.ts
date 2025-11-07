@@ -1,5 +1,5 @@
 import { http, jsonBody } from '@/api/http'
-import type { MoviesListQuery, MoviesListResponse, MovieDetail } from '@/types/movies'
+import type { VarietiesListQuery, VarietiesListResponse, VarietyDetail } from '@/types/varieties'
 
 function buildQuery(params: Record<string, unknown>): string {
   const s = new URLSearchParams()
@@ -10,7 +10,7 @@ function buildQuery(params: Record<string, unknown>): string {
   return s.toString()
 }
 
-export async function fetchMovies(params: MoviesListQuery = {}, signal?: AbortSignal): Promise<MoviesListResponse> {
+export async function fetchVarieties(params: VarietiesListQuery = {}, signal?: AbortSignal): Promise<VarietiesListResponse> {
   const query = buildQuery({
     page: params.page,
     size: params.size,
@@ -20,20 +20,20 @@ export async function fetchMovies(params: MoviesListQuery = {}, signal?: AbortSi
     actor: params.actor,
     award: params.award
   })
-  // 后端接口: GET /api/movies
-  const res = await http<{ code: number; data: any }>(`/movies${query ? `?${query}` : ''}`, { signal })
+  // 后端接口: GET /api/varieties
+  const res = await http<{ code: number; data: any }>(`/varieties${query ? `?${query}` : ''}`, { signal })
   const data = res.data
   // 转换后端格式到前端格式
   return {
-    movies: data.movies || [],
+    varieties: data.varieties || [],
     total: data.pagination?.total || 0,
     page: data.pagination?.page || params.page || 1,
     size: data.pagination?.size || params.size || 10
   }
 }
 
-// 获取电影列表 - 使用 /api/movies/list 接口
-export async function fetchMoviesList(params: MoviesListQuery = {}, signal?: AbortSignal): Promise<MoviesListResponse> {
+// 获取综艺列表 - 使用 /api/varieties/list 接口
+export async function fetchVarietiesList(params: VarietiesListQuery = {}, signal?: AbortSignal): Promise<VarietiesListResponse> {
   const query = buildQuery({
     page: params.page,
     size: params.size,
@@ -42,14 +42,13 @@ export async function fetchMoviesList(params: MoviesListQuery = {}, signal?: Abo
     rating: params.rating,
     actor: params.actor,
     award: params.award
-    // 注意：根据API文档，/api/movies/list 不支持 country 和 language 参数
   })
-  // 后端接口: GET /api/movies/list
-  const res = await http<{ code: number; data: any }>(`/movies/list${query ? `?${query}` : ''}`, { signal })
+  // 后端接口: GET /api/varieties/list
+  const res = await http<{ code: number; data: any }>(`/varieties/list${query ? `?${query}` : ''}`, { signal })
   const data = res.data
   // 转换后端格式到前端格式
   return {
-    movies: data.movies || [],
+    varieties: data.varieties || [],
     total: data.pagination?.total || 0,
     page: data.pagination?.page || params.page || 1,
     size: data.pagination?.size || params.size || 10,
@@ -57,20 +56,20 @@ export async function fetchMoviesList(params: MoviesListQuery = {}, signal?: Abo
   }
 }
 
-export interface MovieActor {
+export interface VarietyActor {
   id: number; // 演员ID（必需）
   role: string; // 演员表演角色（必需）
   description: string; // 描述（必需）
 }
 
-export interface MovieSaveData {
+export interface VarietySaveData {
   id?: number; // 有id则修改，无id则添加
   title: string;
   original_title?: string;
   year: number;
   tags: string[];
   director: number; // 导演ID
-  actors: MovieActor[]; // 演员列表，每个包含id、role、description
+  actors: VarietyActor[]; // 演员列表，每个包含id、role、description
   poster: string;
   summary: string;
   awards?: number[]; // 奖项ID数组（可选）
@@ -81,72 +80,72 @@ export interface MovieSaveData {
   photos: string[];
 }
 
-export async function saveMovie(movieData: MovieSaveData, signal?: AbortSignal): Promise<{ id: number }> {
+export async function saveVariety(varietyData: VarietySaveData, signal?: AbortSignal): Promise<{ id: number }> {
 
-  const res = await http<{ code: number; data: { id: number } }>('/movies/add', {
+  const res = await http<{ code: number; data: { id: number } }>('/varieties/add', {
     method: 'POST',
-    body: jsonBody(movieData),
+    body: jsonBody(varietyData),
     signal
   })
   return res.data
 }
 
-// 获取电影详情
-export async function fetchMovieDetail(id: number | string, signal?: AbortSignal): Promise<MovieDetail> {
-  const res = await http<{ code: number; data: any }>(`/movies/${id}`, { signal })
+// 获取综艺详情
+export async function fetchVarietyDetail(id: number | string, signal?: AbortSignal): Promise<VarietyDetail> {
+  const res = await http<{ code: number; data: any }>(`/varieties/${id}`, { signal })
   const data = res.data
   // 数据已经符合前端类型，直接返回
   return data
 }
 
-// 点赞电影
-export async function likeMovie(id: number | string, signal?: AbortSignal): Promise<void> {
-  await http(`/movies/${id}/like`, {
+// 点赞综艺
+export async function likeVariety(id: number | string, signal?: AbortSignal): Promise<void> {
+  await http(`/varieties/${id}/like`, {
     method: 'POST',
     signal
   })
 }
 
-// 取消点赞电影
-export async function unlikeMovie(id: number | string, signal?: AbortSignal): Promise<void> {
-  await http(`/movies/${id}/unlike`, {
+// 取消点赞综艺
+export async function unlikeVariety(id: number | string, signal?: AbortSignal): Promise<void> {
+  await http(`/varieties/${id}/unlike`, {
     method: 'POST',
     signal
   })
 }
 
 // 提交评分
-export interface MovieRateData {
+export interface VarietyRateData {
   score: number; // 1-10整数
   comment: string; // 最大长度1000字
 }
 
-export async function rateMovie(id: number | string, data: MovieRateData, signal?: AbortSignal): Promise<void> {
-  await http(`/movies/${id}/rate`, {
+export async function rateVariety(id: number | string, data: VarietyRateData, signal?: AbortSignal): Promise<void> {
+  await http(`/varieties/${id}/rate`, {
     method: 'POST',
     body: jsonBody(data),
     signal
   })
 }
 
-// 收藏电影
-export async function favoriteMovie(id: number | string, signal?: AbortSignal): Promise<void> {
-  await http(`/movies/${id}/favorite`, {
+// 收藏综艺
+export async function favoriteVariety(id: number | string, signal?: AbortSignal): Promise<void> {
+  await http(`/varieties/${id}/favorite`, {
     method: 'POST',
     signal
   })
 }
 
-// 取消收藏电影
-export async function unfavoriteMovie(id: number | string, signal?: AbortSignal): Promise<void> {
-  await http(`/movies/${id}/unfavorite`, {
+// 取消收藏综艺
+export async function unfavoriteVariety(id: number | string, signal?: AbortSignal): Promise<void> {
+  await http(`/varieties/${id}/unfavorite`, {
     method: 'POST',
     signal
   })
 }
 
-// 搜索电影 - 使用 /api/movies/search 接口
-export async function searchMovies(params: MoviesListQuery = {}, signal?: AbortSignal): Promise<MoviesListResponse> {
+// 搜索综艺 - 使用 /api/varieties/search 接口
+export async function searchVarieties(params: VarietiesListQuery = {}, signal?: AbortSignal): Promise<VarietiesListResponse> {
   // keyword 是必填项
   if (!params.keyword || !params.keyword.trim()) {
     throw new Error('keyword 参数是必填项，不能为空')
@@ -161,14 +160,13 @@ export async function searchMovies(params: MoviesListQuery = {}, signal?: AbortS
     rating: params.rating,
     actor: params.actor,
     award: params.award
-    // 注意：country 和 language 参数后端API不支持，已移除
   })
-  // 后端接口: GET /api/movies/search
-  const res = await http<{ code: number; data: any }>(`/movies/search${query ? `?${query}` : ''}`, { signal })
+  // 后端接口: GET /api/varieties/search
+  const res = await http<{ code: number; data: any }>(`/varieties/search${query ? `?${query}` : ''}`, { signal })
   const data = res.data
   // 转换后端格式到前端格式
   return {
-    movies: data.movies || [],
+    varieties: data.varieties || [],
     total: data.pagination?.total || 0,
     page: data.pagination?.page || params.page || 1,
     size: data.pagination?.size || params.size || 10,
@@ -176,14 +174,10 @@ export async function searchMovies(params: MoviesListQuery = {}, signal?: AbortS
   }
 }
 
-// 删除电影
-export async function deleteMovie(id: number | string, signal?: AbortSignal): Promise<void> {
-  await http(`/movies/${id}/delete`, {
+// 删除综艺
+export async function deleteVariety(id: number | string, signal?: AbortSignal): Promise<void> {
+  await http(`/varieties/${id}/delete`, {
     method: 'POST',
     signal
   })
 }
-
-
-
-
