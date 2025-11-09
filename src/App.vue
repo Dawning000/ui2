@@ -7,6 +7,20 @@
       </div>
     </main>
     <Footer />
+    <!-- 全局通知组件 -->
+    <Notification />
+    <ConfirmDialog 
+      :visible="confirmConfig.visible"
+      :title="confirmConfig.title"
+      :message="confirmConfig.message"
+      :confirm-text="confirmConfig.confirmText"
+      :cancel-text="confirmConfig.cancelText"
+      :type="confirmConfig.type"
+      :is-processing="confirmConfig.isProcessing"
+      @confirm="confirmService.handleConfirm"
+      @cancel="confirmService.handleCancel"
+      @close="confirmService.close"
+    />
   </div>
 </template>
 
@@ -14,7 +28,10 @@
 import { onMounted } from 'vue'
 import NavBar from './components/NavBar.vue'
 import Footer from './components/Footer.vue'
+import Notification from './components/Notification.vue'
+import ConfirmDialog from './components/ConfirmDialog.vue'
 import { useUserStore } from './stores/user'
+import { confirmService, confirmConfig } from './utils/confirm'
 
 const userStore = useUserStore()
 

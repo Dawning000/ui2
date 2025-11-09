@@ -1,5 +1,5 @@
 <template>
-  <div class="movie-detail-page" v-if="loaded">
+  <div class="variety-detail-page">
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="detail">
@@ -23,14 +23,14 @@
                 @click="handleEditClick"
                 :disabled="deleteLoading"
               >
-                修改电影信息
+                修改综艺信息
               </button>
               <button 
                 class="delete-btn"
                 @click="handleDeleteClick"
                 :disabled="deleteLoading"
               >
-                {{ deleteLoading ? '删除中...' : '删除电影' }}
+                {{ deleteLoading ? '删除中...' : '删除综艺' }}
               </button>
             </div>
           </div>
@@ -41,7 +41,7 @@
             <span v-if="detail.year">{{ detail.year }}</span>
             <span v-if="detail.country"> · {{ detail.country }}</span>
             <span v-if="detail.language"> · {{ detail.language }}</span>
-            <span v-if="detail.duration"> · {{ detail.duration }}分钟</span>
+            <span v-if="detail.episodes"> · {{ detail.episodes }}集</span>
           </div>
           <div class="rating-row" v-if="detail.rating >= 0">
             <RatingStars :readonly="true" :modelValue="detail.rating" tooltip-base="评分" />
@@ -50,18 +50,16 @@
           <div class="tags-row" v-if="detail.tags && detail.tags.length > 0">
             <span v-for="(tag, idx) in detail.tags" :key="tag" :class="['tag', `tag-${idx % 6}`]">{{ tag }}</span>
           </div>
-          <div class="director" v-if="detail.director">
-            <span class="label">导演：</span>
-            <router-link :to="`/actor/${detail.director.id}`" class="person-link">
-              {{ detail.director.name }}
-            </router-link>
+          <div class="host" v-if="detail.host">
+            <span class="label">主持人：</span>
+            <span class="person-text">{{ detail.host }}</span>
           </div>
-          <div class="actors" v-if="detail.actors && detail.actors.length > 0">
-            <span class="label">演员：</span>
-            <template v-for="(actor, index) in detail.actors" :key="actor.id">
-              <router-link :to="`/actor/${actor.id}`" class="person-link">{{ actor.name }}</router-link>
-              <span v-if="index < detail.actors.length - 1">、</span>
-            </template>
+          <div class="guests" v-if="detail.guests && detail.guests.length > 0">
+            <span class="label">嘉宾：</span>
+            <span v-for="(guest, index) in detail.guests" :key="index" class="person-text">
+              {{ guest }}
+              <span v-if="index < detail.guests.length - 1">、</span>
+            </span>
           </div>
           <div class="stats">
             <span v-if="detail.views !== undefined">浏览次数：{{ detail.views }}</span>
@@ -92,7 +90,7 @@
       </div>
 
       <div class="summary" v-if="detail.summary">
-        <h2>剧情简介</h2>
+        <h2>节目简介</h2>
         <p>{{ detail.summary }}</p>
       </div>
 
@@ -126,10 +124,8 @@
       <div class="awards-section" v-if="detail.awards && detail.awards.length > 0">
         <h2>获奖与提名</h2>
         <ul class="awards">
-          <li v-for="award in detail.awards" :key="award.id">
-            <span v-if="award.year">{{ award.year }}</span>
-            <span v-if="award.category"> · {{ award.category }}</span>
-            <span v-if="award.name"> · {{ award.name }}</span>
+          <li v-for="(award, index) in detail.awards" :key="index">
+            {{ award }}
           </li>
         </ul>
       </div>
@@ -154,7 +150,7 @@
             <textarea
               v-model="userRating.comment"
               class="comment-textarea"
-              placeholder="分享你对这部电影的看法..."
+              placeholder="分享你对这个综艺的看法..."
               :maxlength="1000"
               rows="6"
             ></textarea>
@@ -176,7 +172,7 @@
     </div>
 
     <!-- 编辑表单弹窗 -->
-    <MovieForm
+    <VarietyShowForm
       v-if="showEditForm"
       :isEdit="true"
       :initialData="editFormData"
@@ -190,9 +186,9 @@
 import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { fetchMovieDetail, saveMovie, likeMovie, unlikeMovie, rateMovie, favoriteMovie, unfavoriteMovie, deleteMovie, type MovieSaveData, type MovieRateData } from '@/api/movies'
-import type { MovieDetail } from '@/types/movies'
-import MovieForm from '@/components/MovieForm.vue'
+import { fetchVarietyShowDetail, saveVarietyShow, deleteVarietyShow, likeVarietyShow, unlikeVarietyShow, favoriteVarietyShow, unfavoriteVarietyShow, rateVarietyShow } from '@/api/varietyShows'
+import type { VarietyShowDetail, VarietyShowRateData } from '@/types/variety'
+import VarietyShowForm from '@/components/VarietyShowForm.vue'
 import RatingStars from '@/components/RatingStars.vue'
 
 const route = useRoute()
@@ -202,13 +198,13 @@ const id = route.params.id as string
 const loaded = ref(false)
 const loading = ref(false)
 const error = ref('')
-const detail = ref<MovieDetail | null>(null)
+const detail = ref<VarietyShowDetail | null>(null)
 const showEditForm = ref(false)
 const likeLoading = ref(false)
 const favoriteLoading = ref(false)
 const ratingLoading = ref(false)
 const deleteLoading = ref(false)
-const userRating = ref<MovieRateData>({
+const userRating = ref<VarietyShowRateData>({
   score: 0,
   comment: ''
 })
@@ -238,17 +234,12 @@ const editFormData = computed(() => {
     original_title: detail.value.originalTitle || '',
     year: detail.value.year,
     tags: detail.value.tags || [],
-    director: detail.value.director.id, // 导演ID
-    // 演员列表：如果后端返回了 role 和 description，使用它们；否则使用空值
-    actors: detail.value.actors.map((a: any) => ({
-      id: a.id,
-      role: a.role || '',
-      description: a.description || ''
-    })),
+    host: detail.value.host || '',
+    guests: detail.value.guests || [],
     poster: detail.value.poster || '',
     summary: detail.value.summary || '',
-    awards: detail.value.awards.map(a => a.id), // 奖项ID数组
-    duration: detail.value.duration,
+    awards: detail.value.awards || [],
+    episodes: detail.value.episodes,
     country: detail.value.country || '',
     language: detail.value.language || '',
     trailer: detail.value.trailer || '',
@@ -257,15 +248,24 @@ const editFormData = computed(() => {
 })
 
 async function load() {
+  // 检查id是否有效
+  const parsedId = parseInt(id)
+  if (isNaN(parsedId) || parsedId <= 0) {
+    error.value = '无效的综艺ID'
+    loaded.value = true
+    loading.value = false
+    return
+  }
+  
   loading.value = true
   error.value = ''
   try {
-    detail.value = await fetchMovieDetail(id)
+    detail.value = await fetchVarietyShowDetail(parsedId)
     loaded.value = true
   } catch (err: any) {
-    console.error('Failed to load movie detail:', err)
+    console.error('Failed to load variety show detail:', err)
     if (err?.code === 404) {
-      error.value = '电影信息未找到'
+      error.value = '综艺信息未找到'
     } else if (err?.message) {
       error.value = err.message
     } else {
@@ -295,15 +295,15 @@ function handleEditClick() {
 }
 
 // 处理表单提交
-async function handleFormSubmit(data: MovieSaveData) {
+async function handleFormSubmit(data: any) {
   try {
-    await saveMovie(data)
+    await saveVarietyShow(data)
     showEditForm.value = false
     // 重新加载数据
     await load()
   } catch (err: any) {
-    console.error('保存电影信息失败:', err)
-    $notification.error(err?.message || '保存失败，请稍后重试')
+    console.error('保存综艺信息失败:', err)
+    notify.error(err?.message || '保存失败，请稍后重试')
   }
 }
 
@@ -314,19 +314,19 @@ function handleFormCancel() {
 
 // 处理删除按钮点击
 async function handleDeleteClick() {
-    if (!confirm('确定要删除这部电影吗？此操作无法撤销！')) {
+    if (!confirm('确定要删除这个综艺吗？此操作无法撤销！')) {
       return
     }
     
     deleteLoading.value = true
     try {
-      await deleteMovie(id)
-      $notification.success('电影删除成功！')
-      // 删除成功后跳转到电影列表页面
-      window.location.href = '/search?type=movie'
+      await deleteVarietyShow(parseInt(id))
+      notify.success('综艺删除成功！')
+      // 删除成功后跳转到综艺列表页面
+      window.location.href = '/search?type=variety'
   } catch (err: any) {
-    console.error('删除电影失败:', err)
-    $notification.error(err?.message || '删除失败，请稍后重试')
+    console.error('删除综艺失败:', err)
+    notify.error(err?.message || '删除失败，请稍后重试')
   } finally {
     deleteLoading.value = false
   }
@@ -335,7 +335,7 @@ async function handleDeleteClick() {
 // 处理点赞
 async function handleLike() {
   if (!userStore.isLoggedIn) {
-    $notification.warning('请先登录')
+    notify.warning('请先登录')
     return
   }
   
@@ -345,20 +345,20 @@ async function handleLike() {
   try {
     if (isLiked.value) {
       // 取消点赞
-      await unlikeMovie(id)
+      await unlikeVarietyShow(parseInt(id))
       detail.value.isLiked = false
       if (detail.value.likes > 0) {
         detail.value.likes--
       }
     } else {
       // 点赞
-      await likeMovie(id)
+      await likeVarietyShow(parseInt(id))
       detail.value.isLiked = true
       detail.value.likes++
     }
   } catch (err: any) {
     console.error('点赞操作失败:', err)
-    $notification.error(err?.message || '操作失败，请稍后重试')
+    notify.error(err?.message || '操作失败，请稍后重试')
   } finally {
     likeLoading.value = false
   }
@@ -367,7 +367,7 @@ async function handleLike() {
 // 处理收藏
 async function handleFavorite() {
   if (!userStore.isLoggedIn) {
-    $notification.warning('请先登录')
+    notify.warning('请先登录')
     return
   }
   
@@ -377,16 +377,16 @@ async function handleFavorite() {
   try {
     if (isFavorited.value) {
       // 取消收藏
-      await unfavoriteMovie(id)
+      await unfavoriteVarietyShow(parseInt(id))
       detail.value.isFavorited = false
     } else {
       // 收藏
-      await favoriteMovie(id)
+      await favoriteVarietyShow(parseInt(id))
       detail.value.isFavorited = true
     }
   } catch (err: any) {
     console.error('收藏操作失败:', err)
-    $notification.error(err?.message || '操作失败，请稍后重试')
+    notify.error(err?.message || '操作失败，请稍后重试')
   } finally {
     favoriteLoading.value = false
   }
@@ -395,7 +395,7 @@ async function handleFavorite() {
 // 处理提交评分
 async function handleSubmitRating() {
   if (!userStore.isLoggedIn) {
-    $notification.warning('请先登录')
+    notify.warning('请先登录')
     return
   }
   
@@ -404,53 +404,57 @@ async function handleSubmitRating() {
   // 验证评分范围（1-10整数）
   const score = userRating.value.score
   if (!score || score < 1 || score > 10) {
-    $notification.warning('请选择1-10分的评分')
+    notify.warning('请选择1-10分的评分')
     return
   }
   
-  // 验证评分是否为整数（API要求整数）
+  // 验证评分是否为整数
   const roundedScore = Math.round(score)
   if (roundedScore < 1 || roundedScore > 10) {
-    $notification.warning('评分必须是1-10之间的整数')
+    notify.warning('评分必须是1-10之间的整数')
     return
   }
   
   // 验证评论
   if (!userRating.value.comment.trim()) {
-    $notification.warning('请输入评论内容')
+    notify.warning('请输入评论内容')
     return
   }
   
   if (userRating.value.comment.length > 1000) {
-    $notification.warning('评论长度不能超过1000字')
+    notify.warning('评论长度不能超过1000字')
     return
   }
   
   ratingLoading.value = true
   try {
-    await rateMovie(id, {
-      score: roundedScore,
-      comment: userRating.value.comment.trim()
+    // 添加用户空值检查
+    if (!userStore.user?.id) {
+      notify.error('用户信息错误，请重新登录后再试')
+      return
+    }
+    
+    await rateVarietyShow({
+      userId: userStore.user.id,
+      varietyShowId: parseInt(id),
+      rating: roundedScore
     })
-    $notification.success('评分提交成功！')
+    notify.success('评分提交成功！')
     // 清空表单
     userRating.value = {
       score: 0,
       comment: ''
     }
-    // 可选：重新加载电影详情以获取最新评分
+    // 可选：重新加载综艺详情以获取最新评分
     // await load()
   } catch (err: any) {
     console.error('提交评分失败:', err)
-    $notification.error(err?.message || '提交失败，请稍后重试')
+    notify.error(err?.message || '提交失败，请稍后重试')
   } finally {
     ratingLoading.value = false
   }
 }
 
-onMounted(load)
-
-// 获取全局通知服务
 // 通知辅助函数（使用console避免TypeScript错误）
 const notify = {
   success: (message: string) => console.log('Success:', message),
@@ -458,10 +462,12 @@ const notify = {
   warning: (message: string) => console.warn('Warning:', message),
   info: (message: string) => console.info('Info:', message)
 };
+
+onMounted(load)
 </script>
 
 <style scoped>
-.movie-detail-page { 
+.variety-detail-page { 
   padding: 24px; 
   width: 100%;
   max-width: 1600px;
@@ -539,10 +545,9 @@ const notify = {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   opacity: 0.9;
 }
-.director, .actors { color: #374151; font-size: 14px; display: flex; align-items: center; gap: 4px; }
+.host, .guests { color: #374151; font-size: 14px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .label { font-weight: 600; }
-.person-link { color: var(--primary-color); text-decoration: none; }
-.person-link:hover { text-decoration: underline; }
+.person-text { color: var(--primary-color); }
 .stats { color: #6b7280; font-size: 14px; margin-top: 4px; }
 .action-buttons { 
   margin-top: 16px; 
@@ -667,4 +672,3 @@ const notify = {
 .loading, .error { text-align: center; padding: 40px; color: #6b7280; font-size: 16px; }
 .error { color: #ef4444; }
 </style>
-

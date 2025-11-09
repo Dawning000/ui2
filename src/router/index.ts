@@ -13,6 +13,8 @@ import ListShare from '../views/ListShare.vue'
 import Actors from '../views/Actors.vue'
 import ActorDetail from '../views/ActorDetail.vue'
 import MovieDetail from '../views/MovieDetail.vue'
+import TvDetail from '../views/TvDetail.vue'
+import VarietyDetail from '../views/VarietyDetail.vue'
 
 const routes: AppRouteRecord[] = [
   {
@@ -46,6 +48,18 @@ const routes: AppRouteRecord[] = [
     path: '/movie/:id',
     name: 'MovieDetail',
     component: MovieDetail,
+    props: true
+  },
+  {
+    path: '/tv/:id',
+    name: 'TvDetail',
+    component: TvDetail,
+    props: true
+  },
+  {
+    path: '/variety/:id',
+    name: 'VarietyDetail',
+    component: VarietyDetail,
     props: true
   },
   {

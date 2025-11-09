@@ -141,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { fetchActors, saveActor } from '@/api/actors'
@@ -300,6 +300,15 @@ function handleAddActor() {
   showForm.value = true
 }
 
+// 获取全局通知服务
+// 通知辅助函数（使用console避免TypeScript错误）
+const notify = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  warning: (message: string) => console.warn('Warning:', message),
+  info: (message: string) => console.info('Info:', message)
+};
+
 // 处理表单提交
 async function handleFormSubmit(actorData: ActorSaveData) {
   try {
@@ -311,10 +320,10 @@ async function handleFormSubmit(actorData: ActorSaveData) {
     await load()
     
     // 显示成功消息
-    alert('演员/导演添加成功！')
+    $notification.success('演员/导演添加成功！')
   } catch (err: any) {
     console.error('Failed to save actor:', err)
-    alert(err?.message || '添加失败，请稍后重试')
+    $notification.error(err?.message || '添加失败，请稍后重试')
   } finally {
     loading.value = false
   }

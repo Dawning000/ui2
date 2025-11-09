@@ -54,6 +54,10 @@
               <i class="icon-calendar"></i>
               <span>加入时间：{{ formatDate(user.joinDate) }}</span>
             </div>
+            <div class="detail-item" v-if="user.exp">
+              <i class="icon-level"></i>
+              <span>等级：{{ user.level }} | 当前经验：{{ user.exp.now }} | 升级经验：{{ user.exp.next }}</span>
+            </div>
             <div class="detail-item" v-if="user.location">
               <i class="icon-location"></i>
               <span>{{ user.location }}</span>
@@ -61,6 +65,10 @@
             <div class="detail-item" v-if="user.website">
               <i class="icon-link"></i>
               <a :href="user.website" target="_blank" class="website-link">{{ user.website }}</a>
+            </div>
+            <div class="detail-item" v-if="user.role">
+              <i class="icon-role"></i>
+              <span>角色：{{ user.role === 'ADMIN' ? '管理员' : '普通用户' }}</span>
             </div>
           </div>
         </div>
@@ -129,7 +137,7 @@
               <div v-for="bookmark in bookmarks" :key="bookmark.id" class="bookmark-item">
                 <div class="bookmark-header">
                   <div class="bookmark-meta">
-                    <img :src="bookmark.post.author.avatar" :alt="bookmark.post.author.username" class="author-avatar" />
+                    <img :src="bookmark.post.author.avatar" :alt="bookmark.post.author.username" class="author-avatar" @error="e => e.target.src = '/avatar.png'" />
                     <div class="author-info">
                       <span class="author-name">{{ bookmark.post.author.username }}</span>
                       <span class="bookmark-time">{{ formatTime(bookmark.createdAt) }}</span>
@@ -153,7 +161,7 @@
             </div>
             <div v-else class="following-list">
               <div v-for="followedUser in following" :key="followedUser.id" class="following-item">
-                <img :src="followedUser.avatar" :alt="followedUser.username" class="following-avatar" />
+                <img :src="followedUser.avatar" :alt="followedUser.username" class="following-avatar" @error="e => e.target.src = '/avatar.png'" />
                 <div class="following-info">
                   <h4 class="following-name">
                     <router-link :to="`/user/${followedUser.id}`">{{ followedUser.username }}</router-link>
@@ -300,10 +308,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLibraryStore } from '@/stores/library'
 import ImageUploader from '@/components/ImageUploader.vue'
+import { userApi } from '@/api/users'
+import { http, jsonBody } from '@/api/http'
 
 const route = useRoute()
 const library = useLibraryStore()
@@ -362,89 +372,48 @@ const formatTime = (date) => {
 const loadUserProfile = async () => {
   loading.value = true
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 使用真实API获取用户信息
+    const userId = parseInt(route.params.id)
+    const response = await userApi.getUserInfo(userId)
     
-    // 模拟数据
-    user.value = {
-      id: parseInt(route.params.id),
-      username: '科幻迷小王',
-      nickname: '小王',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      bio: '热爱科幻电影的影迷，喜欢分享观影心得',
-      location: '北京',
-      website: 'https://example.com',
-      joinDate: '2024-01-01',
-      postsCount: 156,
-      followersCount: 1234,
-      followingCount: 567
+    if (response && response.code === 200 && response.data) {
+      // 将API返回的snake_case格式数据转换为camelCase
+      user.value = {
+        id: response.data.id,
+        username: response.data.username,
+        email: response.data.email,
+        avatar: response.data.avatar || '/avatar.png',
+        nickname: response.data.nickname,
+        level: response.data.level,
+        exp: response.data.exp,
+        joinDate: response.data.join_date,
+        postsCount: response.data.posts_count,
+        followersCount: response.data.followers_count,
+        followingCount: response.data.following_count,
+        role: response.data.role,
+        // 以下字段API可能未提供，保留以保持兼容性
+        bio: '',
+        location: '',
+        website: ''
+      }
+      
+      // 初始化编辑表单
+      editForm.avatar = user.value.avatar || ''
+      editForm.nickname = user.value.nickname
+      editForm.bio = user.value.bio || ''
+      editForm.location = user.value.location || ''
+      editForm.website = user.value.website || ''
+      avatarUrl.value = user.value.avatar || ''
+      
+      // 其他数据暂时保留模拟数据，后续可根据实际API扩展
+      userPosts.value = []
+      bookmarks.value = []
+      following.value = []
+    } else {
+      console.error('获取用户信息失败:', response?.message || '未知错误')
     }
-    
-    userPosts.value = [
-      {
-        id: 1,
-        title: '《流浪地球2》深度解析：中国科幻电影的里程碑',
-        excerpt: '作为《流浪地球》的续作，这部电影在视觉效果和故事深度上都有了显著提升...',
-        categoryName: '电影',
-        views: 1234,
-        comments: 89,
-        likes: 156,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
-      },
-      {
-        id: 2,
-        title: '《阿凡达：水之道》观后感',
-        excerpt: '时隔13年，卡梅隆再次带我们回到潘多拉星球...',
-        categoryName: '电影',
-        views: 856,
-        comments: 45,
-        likes: 98,
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
-      }
-    ]
-    
-    bookmarks.value = [
-      {
-        id: 1,
-        post: {
-          id: 3,
-          title: '《狂飙》为什么这么火？',
-          excerpt: '这部扫黑除恶题材的电视剧能够成为现象级作品...',
-          author: {
-            username: '剧评达人',
-            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face'
-          }
-        },
-        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000)
-      }
-    ]
-    
-    following.value = [
-      {
-        id: 2,
-        username: '剧评达人',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=60&h=60&fit=crop&crop=face',
-        bio: '专业剧评人，专注电视剧分析',
-        postsCount: 89,
-        followersCount: 2345
-      },
-      {
-        id: 3,
-        username: '动漫爱好者',
-        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=60&h=60&fit=crop&crop=face',
-        bio: '二次元世界探索者',
-        postsCount: 67,
-        followersCount: 1234
-      }
-    ]
-    
-    // 初始化编辑表单
-    editForm.avatar = user.value.avatar || ''
-    editForm.nickname = user.value.nickname
-    editForm.bio = user.value.bio
-    editForm.location = user.value.location
-    editForm.website = user.value.website
-    avatarUrl.value = user.value.avatar || ''
+  } catch (error) {
+    console.error('获取用户信息出错:', error)
   } finally {
     loading.value = false
   }
@@ -479,19 +448,38 @@ const closeAvatarModal = () => {
 const handleUpdateProfile = async () => {
   updating.value = true
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // 更新用户信息
-    if (editForm.avatar) {
-      user.value.avatar = editForm.avatar
+    // 构建更新数据，只包含已修改的字段
+    const updateData = {
+      nickname: editForm.nickname,
+      email: user.value.email, // 保留原邮箱，除非有专门的邮箱更新字段
+      avatar: editForm.avatar || user.value.avatar
+      // 注意：根据API文档，bio、location、website可能不在更新接口中，如有需要可添加
     }
-    user.value.nickname = editForm.nickname
-    user.value.bio = editForm.bio
-    user.value.location = editForm.location
-    user.value.website = editForm.website
     
-    closeEditModal()
+    // 调用更新用户信息的API
+    // 这里假设使用PUT /api/users/{id}接口，具体根据实际API调整
+    const userId = user.value.id
+    const response = await http(`/users/${userId}`, {
+      method: 'PUT',
+      body: jsonBody(updateData)
+    })
+    
+    if (response && response.code === 200) {
+      // 更新本地用户信息
+      if (editForm.avatar) {
+        user.value.avatar = editForm.avatar
+      }
+      user.value.nickname = editForm.nickname
+      user.value.bio = editForm.bio
+      user.value.location = editForm.location
+      user.value.website = editForm.website
+      
+      closeEditModal()
+    } else {
+      console.error('更新用户信息失败:', response?.message || '未知错误')
+    }
+  } catch (error) {
+    console.error('更新用户信息出错:', error)
   } finally {
     updating.value = false
   }
@@ -500,20 +488,38 @@ const handleUpdateProfile = async () => {
 const handleUpdateAvatar = async () => {
   updating.value = true
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // 更新头像
     if (avatarUrl.value && user.value) {
-      user.value.avatar = avatarUrl.value
-      editForm.avatar = avatarUrl.value
+      // 构建更新数据
+      const updateData = {
+        avatar: avatarUrl.value
+      }
+      
+      // 调用更新用户信息的API，只更新头像
+      const userId = user.value.id
+      const response = await http(`/users/${userId}`, {
+        method: 'PUT',
+        body: jsonBody(updateData)
+      })
+      
+      if (response && response.code === 200) {
+        // 更新本地用户信息
+        user.value.avatar = avatarUrl.value
+        editForm.avatar = avatarUrl.value
+        closeAvatarModal()
+      } else {
+        console.error('更新头像失败:', response?.message || '未知错误')
+      }
     }
-    
-    closeAvatarModal()
+  } catch (error) {
+    console.error('更新头像出错:', error)
   } finally {
     updating.value = false
   }
 }
+
+// 获取全局通知服务
+const instance = getCurrentInstance();
+const $notification = instance && instance.proxy && instance.proxy.$notification;
 
 onMounted(() => {
   loadUserProfile()
@@ -534,7 +540,7 @@ async function copyListLink(id){
   try{
     const url = library.exportShareUrl(id)
     await navigator.clipboard.writeText(url)
-    alert('片单链接已复制')
+    $notification.success('片单链接已复制')
   }catch{}
 }
 </script>

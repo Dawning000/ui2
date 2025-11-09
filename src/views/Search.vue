@@ -3,12 +3,12 @@
     <div class="search-header">
       <input
         v-model="store.q"
-        @keyup.enter="applySearch"
+        @keyup.enter="() => applySearch()"
         class="search-input"
         type="text"
         :placeholder="getPlaceholder()"
       />
-      <button class="search-btn" @click="applySearch">
+      <button class="search-btn" @click="() => applySearch()">
         <i class="icon-search"></i>
         搜索
       </button>
@@ -55,7 +55,22 @@
               <i class="icon-plus"></i>
               新增电影
             </button>
-
+            <button 
+              v-if="isAdmin && store.type === 'tv'" 
+              @click="showTvShowForm = true" 
+              class="add-movie-btn"
+            >
+              <i class="icon-plus"></i>
+              新增电视剧
+            </button>
+            <button 
+              v-if="isAdmin && store.type === 'variety'" 
+              @click="showVarietyShowForm = true" 
+              class="add-movie-btn"
+            >
+              <i class="icon-plus"></i>
+              新增综艺
+            </button>
           </div>
         </div>
 
@@ -65,7 +80,7 @@
 
         <div v-else-if="store.items.length" class="grid">
           <article v-for="it in store.items" :key="it.id" class="card">
-            <router-link :to="`/movie/${it.id}`" class="card-link">
+            <router-link :to="getItemLink(it)" class="card-link">
               <div class="poster" :style="{ backgroundImage: it.poster ? `url(${it.poster})` : undefined }"></div>
               <div class="meta">
                 <h3 v-html="it.highlight?.title || it.title"></h3>
@@ -179,6 +194,22 @@
       @submit="handleMovieSubmit"
       @cancel="showMovieForm = false"
     />
+    
+    <!-- 电视剧表单弹窗 -->
+    <TvShowForm 
+      v-if="showTvShowForm" 
+      :is-edit="false"
+      @submit="handleTvShowSubmit"
+      @cancel="showTvShowForm = false"
+    />
+    
+    <!-- 综艺表单弹窗 -->
+    <VarietyShowForm 
+      v-if="showVarietyShowForm" 
+      :is-edit="false"
+      @submit="handleVarietyShowSubmit"
+      @cancel="showVarietyShowForm = false"
+    />
   </div>
 </template>
 
@@ -187,13 +218,21 @@ import { useSearchStore } from '@/stores/search'
 import { useUserStore } from '@/stores/user'
 import RatingStars from '@/components/RatingStars.vue'
 import MovieForm from '@/components/MovieForm.vue'
+import TvShowForm from '@/components/TvShowForm.vue'
+import VarietyShowForm from '@/components/VarietyShowForm.vue'
 import { saveMovie } from '@/api/movies'
+import { saveTvShow } from '@/api/tvshows'
+import { saveVarietyShow } from '@/api/varietyShows'
 import type { MovieSaveData } from '@/api/movies'
-import { nextTick, ref, computed, watch } from 'vue'
+import type { TvShowSaveData } from '@/api/tvshows'
+import type { VarietyShowSaveData } from '@/api/varietyShows'
+import { nextTick, ref, computed, watch, getCurrentInstance } from 'vue'
 const store = useSearchStore()
 const userStore = useUserStore()
 
 const showMovieForm = ref(false)
+const showTvShowForm = ref(false)
+const showVarietyShowForm = ref(false)
 const jumpPage = ref(1)
 
 // 检查是否为管理员
@@ -246,7 +285,7 @@ const visiblePages = computed(() => {
   return pages
 })
 
-function toggleArray(arrRef, value) {
+function toggleArray(arrRef: string[], value: string) {
   const idx = arrRef.indexOf(value)
   if (idx >= 0) arrRef.splice(idx, 1)
   else arrRef.push(value)
@@ -264,7 +303,7 @@ function clearAll() {
   applySearch(true)
 }
 
-function quickGenre(value) {
+function quickGenre(value: string) {
   if (!store.genres.includes(value)) store.genres.push(value)
   applySearch(true)
 }
@@ -304,25 +343,69 @@ watch(() => store.page, (newPage) => {
 
 
 function getPlaceholder(): string {
-  const typeMap = {
+  const typeMap: Record<string, string> = {
     movie: '搜索电影...',
     tv: '搜索电视剧...',
     anime: '搜索动漫...',
     variety: '搜索综艺...'
   }
-  return typeMap[store.type] || '搜索电影、剧集、动漫、人物或标签'
+  return typeMap[store.type || ''] || '搜索电影、剧集、动漫、人物或标签'
 }
+
+// 获取项目链接
+function getItemLink(item: any): string {
+  // 添加空值检查，防止访问undefined的id属性
+  if (!item || item.id === undefined) return '#'
+  if (store.type === 'tv') return `/tv/${item.id}`
+  if (store.type === 'variety') return `/variety/${item.id}`
+  return `/movie/${item.id}`
+}
+
+// 获取全局通知服务
+// 通知辅助函数（使用console避免TypeScript错误）
+const notify = {
+  success: function(message: string) { console.log('Success:', message); },
+  error: function(message: string) { console.error('Error:', message); },
+  warning: function(message: string) { console.warn('Warning:', message); },
+  info: function(message: string) { console.info('Info:', message); }
+};
 
 // 处理电影表单提交
 async function handleMovieSubmit(movieData: MovieSaveData) {
   try {
     await saveMovie(movieData)
-    alert('电影保存成功！')
+    notify.success('电影保存成功！')
     showMovieForm.value = false
     // 刷新搜索结果
     await applySearch(true)
   } catch (error: any) {
-    alert(error?.message || '保存失败，请稍后重试')
+    notify.error(error?.message || '保存失败，请稍后重试')
+  }
+}
+
+// 处理电视剧表单提交
+async function handleTvShowSubmit(tvShowData: TvShowSaveData) {
+  try {
+    await saveTvShow(tvShowData)
+    notify.success('电视剧保存成功！')
+    showTvShowForm.value = false
+    // 刷新搜索结果
+    await applySearch(true)
+  } catch (error: any) {
+    notify.error(error?.message || '保存失败，请稍后重试')
+  }
+}
+
+// 处理综艺表单提交
+async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
+  try {
+    await saveVarietyShow(varietyShowData)
+    notify.success('综艺保存成功！')
+    showVarietyShowForm.value = false
+    // 刷新搜索结果
+    await applySearch(true)
+  } catch (error: any) {
+    notify.error(error?.message || '保存失败，请稍后重试')
   }
 }
 </script>

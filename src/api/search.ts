@@ -1,6 +1,7 @@
 import type { SearchQueryParams, SearchResponse, SuggestItem } from '@/types/search'
 import { http } from '@/api/http'
 import { fetchMoviesList, searchMovies } from './movies'
+import { fetchTvShowsList } from './tvshows'
 
 const API_BASE = '/api'
 
@@ -174,16 +175,16 @@ export async function search(params: SearchQueryParams, signal?: AbortSignal): P
           regions: item.regions || undefined,
           highlight: item.highlight
         })),
-        total: data.total || data.pagination?.total || 0,
-        page: data.page || data.pagination?.page || params.page || 1,
-        pageSize: data.pageSize || data.pagination?.size || params.pageSize || 24,
-        hasMore: data.hasMore !== undefined ? data.hasMore : ((data.page || 1) * (data.pageSize || 24) < (data.total || 0)),
+        total: data.total,
+        page: data.page,
+        pageSize: data.size,
+        hasMore: data.hasMore,
         facets: data.facets
       }
     } else {
-      // 没有搜索关键词时，使用电视剧列表接口: /api/tvshows/list
+      // 没有搜索关键词时，使用电视剧列表接口
       console.log(`[List接口] 使用电视剧列表接口`)
-      const query = buildQuery({
+      const tvshowsData = await fetchTvShowsList({
         page: params.page,
         size: params.pageSize,
         tag: params.tag || params.genres?.join(','),
@@ -191,27 +192,27 @@ export async function search(params: SearchQueryParams, signal?: AbortSignal): P
         rating: params.ratingGte,
         actor: params.actor,
         award: params.award
-      })
+      }, signal)
       
-      console.log(`[List接口] 请求URL: /tvshows/list?${query}`)
-      const res = await http<{ code: number; data: any }>(`/tvshows/list${query ? `?${query}` : ''}`, { signal })
-      const data = res.data
+      console.log(`[List接口] 获取的电视剧列表数据:`, tvshowsData)
+      const data = tvshowsData
       
+      // 转换电视剧列表格式为搜索响应格式
       return {
-        items: (data.items || []).map((item: any) => ({
+        items: data.tvshows.map((item: any) => ({
           id: item.id,
           title: item.title,
           year: item.year,
           rating: item.rating,
           genres: Array.isArray(item.tags) ? item.tags : (Array.isArray(item.genres) ? item.genres : (item.tags ? [item.tags] : [])),
           poster: item.poster,
-          regions: item.regions || undefined
+          regions: item.country ? [item.country] : item.regions || undefined
         })),
-        total: data.total || data.pagination?.total || 0,
-        page: data.page || data.pagination?.page || params.page || 1,
-        pageSize: data.pageSize || data.pagination?.size || params.pageSize || 24,
-        hasMore: data.hasMore !== undefined ? data.hasMore : ((data.page || 1) * (data.pageSize || 24) < (data.total || 0)),
-        facets: data.facets
+        total: data.total || 0,
+        page: data.page || params.page || 1,
+        pageSize: data.size || params.pageSize || 24,
+        hasMore: data.hasMore !== undefined ? data.hasMore : ((data.page || 1) * (data.size || 24) < (data.total || 0)),
+        facets: undefined
       }
     }
   }
@@ -278,7 +279,7 @@ export async function search(params: SearchQueryParams, signal?: AbortSignal): P
       const data = res.data
       
       return {
-        items: (data.items || []).map((item: any) => ({
+        items: (data.varieties || []).map((item: any) => ({
           id: item.id,
           title: item.title,
           year: item.year,
@@ -294,6 +295,16 @@ export async function search(params: SearchQueryParams, signal?: AbortSignal): P
         facets: data.facets
       }
     }
+  }
+  
+  // 添加默认返回值，确保所有代码路径都有返回
+  return {
+    items: [],
+    total: 0,
+    page: params.page || 1,
+    pageSize: params.pageSize || 24,
+    hasMore: false,
+    facets: undefined
   }
 }
 

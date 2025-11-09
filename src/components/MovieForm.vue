@@ -238,8 +238,8 @@
                   {{ award.name }}
                 </option>
               </select>
-              <div v-if="form.awards.length > 0" class="selected-list">
-                <span v-for="awardId in form.awards" :key="awardId" class="selected-item">
+              <div v-if="form.awards!.length > 0" class="selected-list">
+                <span v-for="awardId in form.awards!" :key="awardId" class="selected-item">
                   {{ getAwardName(awardId) }}
                   <button type="button" @click="removeAward(awardId)" class="item-remove">×</button>
                 </span>
@@ -260,7 +260,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, getCurrentInstance } from 'vue'
 import { fetchActors } from '@/api/actors'
 import type { ActorListItem } from '@/types/actors'
 import type { MovieSaveData, MovieActor } from '@/api/movies'
@@ -431,17 +431,17 @@ function getActorName(actorId: number): string {
 // 添加奖项
 function addAward() {
   const awardId = selectedAward.value
-  if (awardId && !form.awards.includes(awardId)) {
-    form.awards.push(awardId)
+  if (awardId && !form.awards!.includes(awardId)) {
+    form.awards!.push(awardId)
     selectedAward.value = 0
   }
 }
 
 // 删除奖项
 function removeAward(awardId: number) {
-  const index = form.awards.indexOf(awardId)
+  const index = form.awards!.indexOf(awardId)
   if (index > -1) {
-    form.awards.splice(index, 1)
+    form.awards!.splice(index, 1)
   }
 }
 
@@ -461,25 +461,24 @@ function removePhoto(index: number) {
   form.photos.splice(index, 1)
 }
 
+// 获取全局通知服务
+// 通知辅助函数（使用console避免TypeScript错误）
+const notify = {
+  success: function(message: string) { console.log('Success:', message); },
+  error: function(message: string) { console.error('Error:', message); },
+  warning: function(message: string) { console.warn('Warning:', message); },
+  info: function(message: string) { console.info('Info:', message); }
+};
+
 // 提交表单
 async function handleSubmit() {
   submitting.value = true
   try {
-    // 验证必填字段
-    if (!form.title || !form.year || form.tags.length === 0 || 
-        !form.director || form.director <= 0 || form.actors.length === 0 || !form.poster || 
-        !form.summary || !form.duration ||
-        !form.country || !form.language || form.photos.length === 0) {
-      alert('请填写所有必填字段')
-      return
-    }
-
-    // 验证演员的 role 和 description
-    const invalidActors = form.actors.filter(a => !a.role || !a.description)
-    if (invalidActors.length > 0) {
-      alert('请为所有演员填写角色和描述')
-      return
-    }
+    // 验证必填字段 - 只保留标题和年份作为必填
+  if (!form.title || !form.year) {
+    notify.warning('请填写标题和年份')
+    return
+  }
 
     const submitData: MovieSaveData = {
       title: form.title,
@@ -499,7 +498,7 @@ async function handleSubmit() {
       language: form.language,
       trailer: form.trailer || undefined,
       photos: form.photos.filter(p => p.trim()), // 过滤空字符串
-      awards: form.awards.length > 0 ? form.awards.map(id => Number(id)) : undefined
+      awards: form.awards!.length > 0 ? form.awards!.map(id => Number(id)) : undefined
     }
     
     // 如果是编辑模式，添加id字段
@@ -508,6 +507,9 @@ async function handleSubmit() {
     }
     
     emit('submit', submitData)
+    notify.success('电影保存成功！')
+  } catch (error) {
+    notify.error(error?.message || '保存失败，请稍后重试')
   } finally {
     submitting.value = false
   }

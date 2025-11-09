@@ -3,6 +3,16 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { SearchQueryParams, SearchResponse, SearchItem } from '@/types/search'
 import * as api from '@/api/search'
+import type { LocationQueryValue } from 'vue-router'
+
+// 辅助函数：将LocationQueryValue转换为string或string[]
+function convertQueryValue(value: LocationQueryValue | LocationQueryValue[] | null | undefined): string | string[] | null | undefined {
+  if (!value) return undefined
+  if (Array.isArray(value)) {
+    return value.map(v => v?.toString() || '').filter(Boolean)
+  }
+  return value?.toString() || ''
+}
 
 function parseArray(value: string | string[] | null | undefined): string[] | undefined {
   if (!value) return undefined
@@ -77,24 +87,24 @@ export const useSearchStore = defineStore('search', () => {
 
   function syncFromRoute(): void {
     const query = route.query
-    q.value = (query.q as string) || ''
-    type.value = (query.type as SearchQueryParams['type']) || undefined
-    genres.value = parseArray(query.genres) || []
-    regions.value = parseArray(query.regions) || []
-    languages.value = parseArray(query.languages) || []
-    country.value = (query.country as string) || ''
-    language.value = (query.language as string) || ''
-    year.value = parseNumber(query.year)
-    yearGte.value = parseNumber(query.year_gte)
-    yearLte.value = parseNumber(query.year_lte)
-    ratingGte.value = parseNumber(query.rating_gte)
-    ratingLte.value = parseNumber(query.rating_lte)
-    tag.value = (query.tag as string) || ''
-    actor.value = (query.actor as string) || ''
-    award.value = (query.award as string) || ''
-    sort.value = (query.sort as any) || 'relevance_desc'
-    page.value = parseNumber(query.page) || 1
-    pageSize.value = parseNumber(query.page_size) || 24
+    q.value = (convertQueryValue(query.q) as string) || ''
+    type.value = (convertQueryValue(query.type) as SearchQueryParams['type']) || undefined
+    genres.value = parseArray(convertQueryValue(query.genres)) || []
+    regions.value = parseArray(convertQueryValue(query.regions)) || []
+    languages.value = parseArray(convertQueryValue(query.languages)) || []
+    country.value = (convertQueryValue(query.country) as string) || ''
+    language.value = (convertQueryValue(query.language) as string) || ''
+    year.value = parseNumber(convertQueryValue(query.year))
+    yearGte.value = parseNumber(convertQueryValue(query.year_gte))
+    yearLte.value = parseNumber(convertQueryValue(query.year_lte))
+    ratingGte.value = parseNumber(convertQueryValue(query.rating_gte))
+    ratingLte.value = parseNumber(convertQueryValue(query.rating_lte))
+    tag.value = (convertQueryValue(query.tag) as string) || ''
+    actor.value = (convertQueryValue(query.actor) as string) || ''
+    award.value = (convertQueryValue(query.award) as string) || ''
+    sort.value = (convertQueryValue(query.sort) as any) || 'relevance_desc'
+    page.value = parseNumber(convertQueryValue(query.page)) || 1
+    pageSize.value = parseNumber(convertQueryValue(query.page_size)) || 24
   }
 
   async function syncToRoute(replace = false): Promise<void> {

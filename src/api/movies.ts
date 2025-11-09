@@ -94,9 +94,13 @@ export async function saveMovie(movieData: MovieSaveData, signal?: AbortSignal):
 // 获取电影详情
 export async function fetchMovieDetail(id: number | string, signal?: AbortSignal): Promise<MovieDetail> {
   const res = await http<{ code: number; data: any }>(`/movies/${id}`, { signal })
-  const data = res.data
-  // 数据已经符合前端类型，直接返回
-  return data
+  const data = res.data.data || res.data
+  // 确保返回的数据包含isLiked和isFavorited字段
+  return {
+    ...data,
+    isLiked: data.isLiked || false,
+    isFavorited: data.isFavorited || false
+  }
 }
 
 // 点赞电影

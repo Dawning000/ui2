@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 
 // 响应式数据
 const currentIndex = ref(0)
@@ -72,6 +72,18 @@ const autoplay = ref(true)
 const progress = ref(0)
 const autoplayInterval = ref(null)
 const progressInterval = ref(null)
+
+// 获取全局通知服务
+const instance = getCurrentInstance();
+const $notification = instance?.proxy;
+
+// 通知辅助函数
+const notify = {
+  success: (message) => $notification?.$notification?.success?.(message),
+  error: (message) => $notification?.$notification?.error?.(message),
+  warning: (message) => $notification?.$notification?.warning?.(message),
+  info: (message) => $notification?.$notification?.info?.(message)
+};
 
 // 轮播图数据
 const slides = ref([
@@ -140,7 +152,7 @@ const goToSlide = (index) => {
 
 const playTrailer = (slide) => {
   // 模拟播放预告片
-  alert(`播放 ${slide.title} 的预告片`)
+  notify.info(`播放 ${slide.title} 的预告片`)
 }
 
 const startAutoplay = () => {

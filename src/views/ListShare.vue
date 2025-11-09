@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLibraryStore } from '@/stores/library'
 
@@ -32,6 +32,15 @@ const route = useRoute()
 const library = useLibraryStore()
 const listId = computed(() => route.params.id as string)
 const list = computed(() => library.lists[listId.value])
+
+// 获取全局通知服务
+// 通知辅助函数（使用console避免TypeScript错误）
+const notify = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  warning: (message: string) => console.warn('Warning:', message),
+  info: (message: string) => console.info('Info:', message)
+};
 
 function entry(id: string|number){
   return library.entries[id]
@@ -41,7 +50,7 @@ async function copyUrl(){
   const url = window.location.href
   try{
     await navigator.clipboard.writeText(url)
-    alert('链接已复制')
+    $notification.success('链接已复制')
   }catch{
     // noop
   }

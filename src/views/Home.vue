@@ -76,7 +76,7 @@
           <div v-for="post in hotPosts" :key="post.id" class="post-card">
             <div class="post-header">
               <div class="post-meta">
-                <img :src="post.author.avatar" :alt="post.author.username" class="author-avatar" />
+                <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="e => e.target.src = '/avatar.png'" />
                 <div class="author-info">
                   <span class="author-name">{{ post.author.username }}</span>
                   <span class="post-time">{{ formatTime(post.createdAt) }}</span>

@@ -13,13 +13,22 @@
         <div class="info">
           <div class="title-row">
             <h1>{{ detail.name }}</h1>
-            <button 
-              v-if="isAdmin" 
-              class="edit-btn"
-              @click="handleEditClick"
-            >
-              修改演员信息
-            </button>
+            <div class="admin-actions">
+              <button 
+                v-if="isAdmin" 
+                class="edit-btn"
+                @click="handleEditClick"
+              >
+                修改演员信息
+              </button>
+              <button 
+                v-if="isAdmin" 
+                class="delete-btn"
+                @click="handleDeleteClick"
+              >
+                删除演员
+              </button>
+            </div>
           </div>
           <div class="meta">
             <span v-if="detail.birthDate">出生：{{ detail.birthDate }}</span>
@@ -91,14 +100,34 @@
       {{ saveError }}
       <button @click="saveError = ''" class="close-error-btn">×</button>
     </div>
+    
+    <!-- 自定义确认对话框 -->
+    <div v-if="showConfirmDialog" class="confirm-dialog-overlay">
+      <div class="confirm-dialog">
+        <div class="confirm-dialog-header">
+          <h3>确认删除</h3>
+        </div>
+        <div class="confirm-dialog-content">
+          <div class="confirm-dialog-icon">
+            <i class="icon-warning-circle"></i>
+          </div>
+          <p>确定要删除演员"{{detail.value?.name}}"吗？此操作不可撤销。删除后将自动跳转到演员列表页。</p>
+        </div>
+        <div class="confirm-dialog-footer">
+          <button class="confirm-dialog-cancel" @click="cancelDelete">取消</button>
+          <button class="confirm-dialog-confirm" @click="performDelete">确认删除</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { fetchActorDetail, saveActor } from '@/api/actors'
+import { fetchActorDetail, saveActor, deleteActor } from '@/api/actors'
+import { notificationService } from '@/utils/notification'
 import ActorForm from '@/components/ActorForm.vue'
 import type { ActorDetail, ActorSaveData, ActorAward } from '@/types/actors'
 
@@ -114,6 +143,7 @@ const fallbackAvatar = '/actor_avatar.png'
 const placeholder = '/actor_avatar.png'
 const showEditForm = ref(false)
 const saveError = ref('')
+const showConfirmDialog = ref(false)
 
 // 判断是否为管理员
 const isAdmin = computed(() => {
@@ -206,6 +236,43 @@ function handleFormCancel() {
   showEditForm.value = false
 }
 
+// 处理删除按钮点击
+function handleDeleteClick() {
+  // 显示自定义确认对话框
+  showConfirmDialog.value = true
+}
+
+// 取消删除操作
+function cancelDelete() {
+  showConfirmDialog.value = false
+}
+
+// 执行删除操作
+async function performDelete() {
+  if (!id) return
+  
+  // 隐藏确认对话框
+  showConfirmDialog.value = false
+  
+  loading.value = true
+  error.value = ''
+  try {
+    await deleteActor(id)
+    // 使用notify辅助函数显示成功通知
+    notify.success('演员删除成功')
+    // 使用Vue Router的方式跳转到演员列表页
+    window.location.href = '/actors'
+  } catch (err: any) {
+    console.error('删除演员失败:', err)
+    // 使用notify辅助函数显示错误通知
+    notify.error(err?.message || '删除失败，请稍后重试')
+    loading.value = false
+  }
+}
+
+// 使用项目中的通知服务
+const notify = notificationService;
+
 onMounted(load)
 </script>
 
@@ -221,7 +288,10 @@ onMounted(load)
 .info { display: flex; flex-direction: column; gap: 12px; flex: 1; }
 .title-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .info h1 { font-size: 32px; font-weight: 700; color: #111827; margin: 0; flex: 1; }
+.admin-actions { display: flex; gap: 12px; }
 .edit-btn { padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.delete-btn { padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.delete-btn:hover { background: #dc2626; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .edit-btn:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .meta { color: #6b7280; font-size: 14px; }
 .stats { color: #6b7280; font-size: 14px; margin-top: 4px; }
@@ -246,6 +316,141 @@ onMounted(load)
 .save-error { position: fixed; top: 80px; right: 24px; background: #ef4444; color: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; z-index: 2000; max-width: 400px; }
 .close-error-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.2s; }
 .close-error-btn:hover { background: rgba(255,255,255,0.2); }
+
+/* 自定义确认对话框样式 */
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  backdrop-filter: blur(2px);
+}
+
+.confirm-dialog {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: dialogSlideIn 0.3s ease-out;
+}
+
+.confirm-dialog-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.confirm-dialog-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.confirm-dialog-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.confirm-dialog-icon {
+  display: flex;
+  justify-content: center;
+  font-size: 48px;
+  color: #f59e0b;
+}
+
+.confirm-dialog-content p {
+  margin: 0;
+  text-align: center;
+  color: #374151;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.confirm-dialog-footer {
+  padding: 16px 24px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.confirm-dialog-cancel,
+.confirm-dialog-confirm {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-dialog-cancel {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.confirm-dialog-cancel:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.confirm-dialog-confirm {
+  background: #ef4444;
+  color: white;
+}
+
+.confirm-dialog-confirm:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 对话框动画 */
+@keyframes dialogSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .confirm-dialog {
+    margin: 20px;
+    width: auto;
+    max-width: none;
+  }
+  
+  .confirm-dialog-header,
+  .confirm-dialog-content,
+  .confirm-dialog-footer {
+    padding: 16px 20px;
+  }
+  
+  .confirm-dialog-footer {
+    flex-direction: column;
+  }
+  
+  .confirm-dialog-cancel,
+  .confirm-dialog-confirm {
+    width: 100%;
+  }
+}
 </style>
 
 

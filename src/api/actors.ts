@@ -137,5 +137,18 @@ export async function saveActor(actorData: ActorSaveData, signal?: AbortSignal):
   return res.data
 }
 
+/**
+ * 删除演员
+ * @param id 演员ID
+ * @param signal 可选的中止信号
+ */
+export async function deleteActor(id: number | string, signal?: AbortSignal): Promise<void> {
+  // 后端接口: POST /api/awards/{id}/delete
+  await http<{ code: number }>(`/actor/${id}/delete`, {
+    method: 'POST',
+    signal
+  })
+}
+
 
 

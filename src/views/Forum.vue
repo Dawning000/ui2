@@ -85,7 +85,7 @@
             <div class="post-content">
               <div class="post-header">
                 <div class="post-meta">
-                  <img :src="post.author.avatar" :alt="post.author.username" class="author-avatar" />
+                  <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="e => e.target.src = '/avatar.png'" />
                   <div class="author-info">
                     <router-link :to="`/user/${post.author.id}`" class="author-name">
                       {{ post.author.username }}
@@ -173,11 +173,11 @@
     <div v-if="showCreatePost" class="modal-overlay" @click="closeCreatePost">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>发布新帖子</h3>
-          <button class="close-btn" @click="closeCreatePost">
-            <i class="icon-close"></i>
-          </button>
-        </div>
+            <h3>发布新帖子</h3>
+            <button class="close-btn" @click="closeCreatePost">
+              <i class="icon-close"></i>
+            </button>
+          </div>
         <div class="modal-body">
           <form @submit.prevent="handleCreatePost">
             <div class="form-group">
@@ -196,7 +196,6 @@
                 <option value="">请选择分类</option>
                 <option value="movie">电影</option>
                 <option value="tv">电视剧</option>
-                <option value="anime">动漫</option>
                 <option value="variety">综艺</option>
               </select>
             </div>
@@ -224,8 +223,8 @@
                 取消
               </button>
               <button type="submit" class="btn btn-primary" :disabled="creating">
-                {{ creating ? '发布中...' : '发布帖子' }}
-              </button>
+              {{ creating ? '发布中...' : '发布帖子' }}
+            </button>
             </div>
           </form>
         </div>
@@ -234,16 +233,19 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { postApi, CreatePostParams } from '../api/posts'
 
 const route = useRoute()
 const router = useRouter()
 
+import type { Post } from '../api/posts'
+
 // 响应式数据
 const loading = ref(false)
-const posts = ref([])
+const posts = ref<Post[]>([])
 const sortBy = ref('latest')
 const timeRange = ref('all')
 const searchQuery = ref('')
@@ -251,6 +253,8 @@ const currentPage = ref(1)
 const postsPerPage = ref(10)
 const showCreatePost = ref(false)
 const creating = ref(false)
+
+// 不再需要编辑模式标志，因为编辑功能已移至PostDetail页面
 
 const newPost = ref({
   title: '',
@@ -381,72 +385,38 @@ const formatTime = (date) => {
 const loadPosts = async () => {
   loading.value = true
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 获取当前分类
+    const category = route.params.category as string
     
-    // 模拟数据
-    posts.value = [
-      {
-        id: 1,
-        title: '《流浪地球2》深度解析：中国科幻电影的里程碑',
-        excerpt: '作为《流浪地球》的续作，这部电影在视觉效果和故事深度上都有了显著提升。从技术层面来看，影片的特效制作已经达到了国际先进水平...',
-        content: '详细内容...',
-        author: {
-          id: 1,
-          username: '科幻迷小王',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'
-        },
-        category: 'movie',
-        categoryName: '电影',
-        tags: ['科幻', '流浪地球', '中国电影'],
-        views: 1234,
-        comments: 89,
-        votes: 156,
-        userVote: null,
-        isBookmarked: false,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
-      },
-      {
-        id: 2,
-        title: '《狂飙》为什么这么火？从剧情到演技全面分析',
-        excerpt: '这部扫黑除恶题材的电视剧能够成为现象级作品，背后有哪些成功因素？让我们从多个角度来分析...',
-        content: '详细内容...',
-        author: {
-          id: 2,
-          username: '剧评达人',
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face'
-        },
-        category: 'tv',
-        categoryName: '电视剧',
-        tags: ['狂飙', '悬疑', '国产剧'],
-        views: 2156,
-        comments: 134,
-        votes: 289,
-        userVote: 'up',
-        isBookmarked: true,
-        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000)
-      },
-      {
-        id: 3,
-        title: '《王牌对王牌》第八季首期嘉宾阵容公布',
-        excerpt: '作为一档长寿综艺节目，王牌对王牌一直深受观众喜爱。第八季首期将邀请...',
-        content: '详细内容...',
-        author: {
-          id: 4,
-          username: '综艺迷小李',
-          avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=40&h=40&fit=crop&crop=face'
-        },
-        category: 'variety',
-        categoryName: '综艺',
-        tags: ['王牌对王牌', '综艺节目', '娱乐'],
-        views: 765,
-        comments: 45,
-        votes: 98,
-        userVote: 'up',
-        isBookmarked: false,
-        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000)
+    // 调用API获取帖子列表
+    const response = await postApi.getPosts(
+      currentPage.value,
+      postsPerPage.value,
+      category || undefined,
+      searchQuery.value || undefined
+    )
+    
+    if (response.code === 200) {
+      // 转换API返回的数据，添加categoryName字段并确保createdAt字段存在
+      const categoryMap = {
+        movie: '电影讨论',
+        tv: '电视剧讨论',
+        variety: '综艺讨论'
       }
-    ]
+      
+      posts.value = response.data.posts.map(post => ({
+        ...post,
+        // 复制createTime到createdAt以兼容现有代码
+        createdAt: post.createTime,
+        // 添加categoryName字段
+        categoryName: categoryMap[post.category] || '未分类'
+      }))
+    } else {
+      throw new Error(response.message || '获取帖子列表失败')
+    }
+  } catch (error) {
+    console.error('加载帖子失败:', error)
+    notify.error('加载帖子失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -498,10 +468,10 @@ const handleShare = (post) => {
       url: window.location.origin + `/post/${post.id}`
     })
   } else {
-    // 复制链接到剪贴板
-    navigator.clipboard.writeText(window.location.origin + `/post/${post.id}`)
-    alert('链接已复制到剪贴板')
-  }
+      // 复制链接到剪贴板
+      navigator.clipboard.writeText(window.location.origin + `/post/${post.id}`)
+      notify.success('链接已复制到剪贴板')
+    }
 }
 
 const closeCreatePost = () => {
@@ -514,45 +484,41 @@ const closeCreatePost = () => {
   }
 }
 
+/**
+ * 处理创建新帖子
+ */
 const handleCreatePost = async () => {
   creating.value = true
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
+    // 解析标签
     const tags = newPost.value.tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag)
     
-    const post = {
-      id: Date.now(),
+    // 准备请求数据
+    const postData: CreatePostParams = {
       title: newPost.value.title,
-      excerpt: newPost.value.content.substring(0, 100) + '...',
       content: newPost.value.content,
-      author: {
-        id: 1,
-        username: '当前用户',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'
-      },
       category: newPost.value.category,
-      categoryName: {
-        movie: '电影',
-        tv: '电视剧',
-        anime: '动漫',
-        variety: '综艺'
-      }[newPost.value.category],
-      tags,
-      views: 0,
-      comments: 0,
-      votes: 0,
-      userVote: null,
-      isBookmarked: false,
-      createdAt: new Date()
+      tags
     }
     
-    posts.value.unshift(post)
-    closeCreatePost()
+    // 调用createPost API创建新帖子
+    const response = await postApi.createPost(postData)
     
-    // 跳转到新帖子
-    router.push(`/post/${post.id}`)
+    if (response.code === 200) {
+      // 关闭模态框
+      closeCreatePost()
+      
+      // 刷新帖子列表
+      await loadPosts()
+      
+      // 跳转到帖子详情页
+      router.push(`/post/${response.data.id}`)
+    } else {
+      notify.error(response.message || '发布帖子失败，请重试')
+    }
+  } catch (error) {
+    console.error('发布帖子失败:', error)
+    notify.error('发布帖子失败，请检查网络连接或稍后重试')
   } finally {
     creating.value = false
   }
@@ -571,6 +537,14 @@ watch(() => route.query.search, (newSearch) => {
   }
 })
 
+// 通知辅助函数（使用console避免TypeScript错误）
+const notify = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  warning: (message: string) => console.warn('Warning:', message),
+  info: (message: string) => console.info('Info:', message)
+};
+
 onMounted(() => {
   loadPosts()
   
@@ -578,6 +552,10 @@ onMounted(() => {
   if (route.query.search) {
     searchQuery.value = route.query.search
   }
+  
+  // 清除可能存在的旧编辑数据，避免干扰
+  sessionStorage.removeItem('isEditMode')
+  sessionStorage.removeItem('editPostData')
 })
 </script>
 

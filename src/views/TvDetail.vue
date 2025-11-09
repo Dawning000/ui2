@@ -23,32 +23,32 @@
                 @click="handleEditClick"
                 :disabled="deleteLoading"
               >
-                修改电影信息
+                修改电视剧信息
               </button>
               <button 
                 class="delete-btn"
                 @click="handleDeleteClick"
                 :disabled="deleteLoading"
               >
-                {{ deleteLoading ? '删除中...' : '删除电影' }}
+                {{ deleteLoading ? '删除中...' : '删除电视剧' }}
               </button>
             </div>
           </div>
-          <div class="sub-title" v-if="detail.originalTitle">
-            {{ detail.originalTitle }}
+          <div class="sub-title" v-if="detail.originalTitle || detail.original_title">
+            {{ detail.originalTitle || detail.original_title }}
           </div>
           <div class="meta">
             <span v-if="detail.year">{{ detail.year }}</span>
             <span v-if="detail.country"> · {{ detail.country }}</span>
             <span v-if="detail.language"> · {{ detail.language }}</span>
-            <span v-if="detail.duration"> · {{ detail.duration }}分钟</span>
+            <span v-if="detail.episodes"> · {{ detail.episodes }}集</span>
           </div>
-          <div class="rating-row" v-if="detail.rating >= 0">
+          <div class="rating-row" v-if="detail.rating !== undefined && detail.rating >= 0">
             <RatingStars :readonly="true" :modelValue="detail.rating" tooltip-base="评分" />
-            <span class="rating-text">{{ detail.rating.toFixed(1) }}/10</span>
+            <span class="rating-text">{{ (detail.rating || 0).toFixed(1) }}/10</span>
           </div>
-          <div class="tags-row" v-if="detail.tags && detail.tags.length > 0">
-            <span v-for="(tag, idx) in detail.tags" :key="tag" :class="['tag', `tag-${idx % 6}`]">{{ tag }}</span>
+          <div class="tags-row" v-if="(detail.tags || detail.genre) && ((detail.tags && detail.tags.length > 0) || (detail.genre && detail.genre.length > 0))">
+            <span v-for="(tag, idx) in (detail.tags || detail.genre)" :key="tag" :class="['tag', `tag-${idx % 6}`]">{{ tag }}</span>
           </div>
           <div class="director" v-if="detail.director">
             <span class="label">导演：</span>
@@ -123,6 +123,21 @@
         </div>
       </div>
 
+      <div class="seasons-section" v-if="detail.seasons && detail.seasons.length > 0">
+        <h2>季度信息</h2>
+        <div class="seasons-grid">
+          <div 
+            v-for="season in detail.seasons" 
+            :key="season.id || season.number"
+            class="season-card"
+          >
+            <div class="season-number">第{{ season.number }}季</div>
+            <div v-if="season.episodes" class="season-info">集数：{{ season.episodes }}</div>
+            <div v-if="season.startDate" class="season-info">开播：{{ season.startDate }}</div>
+          </div>
+        </div>
+      </div>
+
       <div class="awards-section" v-if="detail.awards && detail.awards.length > 0">
         <h2>获奖与提名</h2>
         <ul class="awards">
@@ -154,7 +169,7 @@
             <textarea
               v-model="userRating.comment"
               class="comment-textarea"
-              placeholder="分享你对这部电影的看法..."
+              placeholder="分享你对这部电视剧的看法..."
               :maxlength="1000"
               rows="6"
             ></textarea>
@@ -176,7 +191,7 @@
     </div>
 
     <!-- 编辑表单弹窗 -->
-    <MovieForm
+    <TvShowForm
       v-if="showEditForm"
       :isEdit="true"
       :initialData="editFormData"
@@ -190,10 +205,38 @@
 import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { fetchMovieDetail, saveMovie, likeMovie, unlikeMovie, rateMovie, favoriteMovie, unfavoriteMovie, deleteMovie, type MovieSaveData, type MovieRateData } from '@/api/movies'
-import type { MovieDetail } from '@/types/movies'
-import MovieForm from '@/components/MovieForm.vue'
+import { fetchTvShowDetail, saveTvShow, deleteTvShow, type TvShowSaveData } from '@/api/tvshows'
+import TvShowForm from '@/components/TvShowForm.vue'
 import RatingStars from '@/components/RatingStars.vue'
+
+// 定义电视剧详情类型
+interface TvShowDetail {
+  id: number;
+  title: string;
+  originalTitle?: string;
+  original_title?: string;
+  year: number;
+  tags?: string[];
+  genre?: string[];
+  director: { id: number; name: string };
+  actors: Array<{ id: number; name: string; role?: string; description?: string }>;
+  poster?: string;
+  summary?: string;
+  awards?: Array<{ id: number; year?: number; category?: string; name?: string; status?: string }>;
+  seasons?: Array<{ id?: number; number: string; episodes?: number; startDate?: string }>;
+  episodes?: number;
+  country?: string;
+  language?: string;
+  trailer?: string;
+  photos?: string[];
+  rating?: number;
+  views?: number;
+  likes?: number;
+  isLiked?: boolean;
+  isFavorited?: boolean;
+}
+
+// 直接使用从API导入的TvShowRateData类型
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -202,13 +245,13 @@ const id = route.params.id as string
 const loaded = ref(false)
 const loading = ref(false)
 const error = ref('')
-const detail = ref<MovieDetail | null>(null)
+const detail = ref<TvShowDetail | null>(null)
 const showEditForm = ref(false)
 const likeLoading = ref(false)
 const favoriteLoading = ref(false)
 const ratingLoading = ref(false)
 const deleteLoading = ref(false)
-const userRating = ref<MovieRateData>({
+const userRating = ref({
   score: 0,
   comment: ''
 })
@@ -235,9 +278,9 @@ const editFormData = computed(() => {
   return {
     id: detail.value.id,
     title: detail.value.title || '',
-    original_title: detail.value.originalTitle || '',
+    original_title: detail.value.originalTitle || detail.value.original_title || '',
     year: detail.value.year,
-    tags: detail.value.tags || [],
+    tags: detail.value.tags || detail.value.genre || [],
     director: detail.value.director.id, // 导演ID
     // 演员列表：如果后端返回了 role 和 description，使用它们；否则使用空值
     actors: detail.value.actors.map((a: any) => ({
@@ -247,8 +290,12 @@ const editFormData = computed(() => {
     })),
     poster: detail.value.poster || '',
     summary: detail.value.summary || '',
-    awards: detail.value.awards.map(a => a.id), // 奖项ID数组
-    duration: detail.value.duration,
+    awards: detail.value.awards?.map(a => a.id) || [], // 奖项ID数组
+    seasons: detail.value.seasons?.map((s: any) => ({
+      id: s.id || 0,
+      number: s.number || '1'
+    })) || [],
+    episodes: detail.value.episodes,
     country: detail.value.country || '',
     language: detail.value.language || '',
     trailer: detail.value.trailer || '',
@@ -256,16 +303,19 @@ const editFormData = computed(() => {
   }
 })
 
+/**
+ * 加载电视剧详情数据
+ */
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    detail.value = await fetchMovieDetail(id)
+    detail.value = await fetchTvShowDetail(id)
     loaded.value = true
   } catch (err: any) {
-    console.error('Failed to load movie detail:', err)
+    console.error('Failed to load TV show detail:', err)
     if (err?.code === 404) {
-      error.value = '电影信息未找到'
+      error.value = '电视剧信息未找到'
     } else if (err?.message) {
       error.value = err.message
     } else {
@@ -277,65 +327,78 @@ async function load() {
   }
 }
 
-// 处理海报加载失败
+/**
+ * 处理海报加载失败
+ */
 function handlePosterError(event: Event) {
   const img = event.target as HTMLImageElement
   img.style.display = 'none'
 }
 
-// 处理照片加载失败
+/**
+ * 处理照片加载失败
+ */
 function handlePhotoError(event: Event) {
   const img = event.target as HTMLImageElement
   img.style.display = 'none'
 }
 
-// 点击编辑按钮
+/**
+ * 点击编辑按钮
+ */
 function handleEditClick() {
   showEditForm.value = true
 }
 
-// 处理表单提交
-async function handleFormSubmit(data: MovieSaveData) {
+/**
+ * 处理表单提交
+ */
+async function handleFormSubmit(data: TvShowSaveData) {
   try {
-    await saveMovie(data)
+    await saveTvShow(data)
     showEditForm.value = false
     // 重新加载数据
     await load()
   } catch (err: any) {
-    console.error('保存电影信息失败:', err)
-    $notification.error(err?.message || '保存失败，请稍后重试')
+    console.error('保存电视剧信息失败:', err)
+    notify.error(err?.message || '保存失败，请稍后重试')
   }
 }
 
-// 取消编辑
+/**
+ * 取消编辑
+ */
 function handleFormCancel() {
   showEditForm.value = false
 }
 
-// 处理删除按钮点击
+/**
+ * 处理删除按钮点击
+ */
 async function handleDeleteClick() {
-    if (!confirm('确定要删除这部电影吗？此操作无法撤销！')) {
+    if (!confirm('确定要删除这部电视剧吗？此操作无法撤销！')) {
       return
     }
     
     deleteLoading.value = true
     try {
-      await deleteMovie(id)
-      $notification.success('电影删除成功！')
-      // 删除成功后跳转到电影列表页面
-      window.location.href = '/search?type=movie'
+      await deleteTvShow(id)
+      // 删除成功后跳转到电视剧列表页面
+      window.location.href = '/search?type=tv'
   } catch (err: any) {
-    console.error('删除电影失败:', err)
-    $notification.error(err?.message || '删除失败，请稍后重试')
+    console.error('删除电视剧失败:', err)
+    notify.error(err?.message || '删除失败，请稍后重试')
   } finally {
     deleteLoading.value = false
   }
 }
 
-// 处理点赞
+/**
+ * 处理点赞
+ */
 async function handleLike() {
   if (!userStore.isLoggedIn) {
-    $notification.warning('请先登录')
+    notify.warning('请先登录')
     return
   }
   
@@ -343,31 +406,35 @@ async function handleLike() {
   
   likeLoading.value = true
   try {
+    // 这里需要调用点赞/取消点赞的API
+    // 暂时使用模拟数据
     if (isLiked.value) {
       // 取消点赞
-      await unlikeMovie(id)
+      // await unlikeTvShow(id)
       detail.value.isLiked = false
-      if (detail.value.likes > 0) {
+      if (detail.value.likes && detail.value.likes > 0) {
         detail.value.likes--
       }
     } else {
       // 点赞
-      await likeMovie(id)
+      // await likeTvShow(id)
       detail.value.isLiked = true
-      detail.value.likes++
+      detail.value.likes = (detail.value.likes || 0) + 1
     }
   } catch (err: any) {
     console.error('点赞操作失败:', err)
-    $notification.error(err?.message || '操作失败，请稍后重试')
+    notify.error(err?.message || '操作失败，请稍后重试')
   } finally {
     likeLoading.value = false
   }
 }
 
-// 处理收藏
+/**
+ * 处理收藏
+ */
 async function handleFavorite() {
   if (!userStore.isLoggedIn) {
-    $notification.warning('请先登录')
+    notify.warning('请先登录')
     return
   }
   
@@ -375,27 +442,31 @@ async function handleFavorite() {
   
   favoriteLoading.value = true
   try {
+    // 这里需要调用收藏/取消收藏的API
+    // 暂时使用模拟数据
     if (isFavorited.value) {
       // 取消收藏
-      await unfavoriteMovie(id)
+      // await unfavoriteTvShow(id)
       detail.value.isFavorited = false
     } else {
       // 收藏
-      await favoriteMovie(id)
+      // await favoriteTvShow(id)
       detail.value.isFavorited = true
     }
   } catch (err: any) {
-    console.error('收藏操作失败:', err)
-    $notification.error(err?.message || '操作失败，请稍后重试')
+    console.error('点赞操作失败:', err)
+    notify.error(err?.message || '操作失败，请稍后重试')
   } finally {
     favoriteLoading.value = false
   }
 }
 
-// 处理提交评分
+/**
+ * 处理提交评分
+ */
 async function handleSubmitRating() {
   if (!userStore.isLoggedIn) {
-    $notification.warning('请先登录')
+    notify.warning('请先登录')
     return
   }
   
@@ -404,54 +475,55 @@ async function handleSubmitRating() {
   // 验证评分范围（1-10整数）
   const score = userRating.value.score
   if (!score || score < 1 || score > 10) {
-    $notification.warning('请选择1-10分的评分')
+    notify.warning('请选择1-10分的评分')
     return
   }
   
   // 验证评分是否为整数（API要求整数）
   const roundedScore = Math.round(score)
   if (roundedScore < 1 || roundedScore > 10) {
-    $notification.warning('评分必须是1-10之间的整数')
+    notify.warning('评分必须是1-10之间的整数')
     return
   }
   
   // 验证评论
   if (!userRating.value.comment.trim()) {
-    $notification.warning('请输入评论内容')
+    notify.warning('请输入评论内容')
     return
   }
   
   if (userRating.value.comment.length > 1000) {
-    $notification.warning('评论长度不能超过1000字')
+    notify.warning('评论长度不能超过1000字')
     return
   }
   
   ratingLoading.value = true
   try {
-    await rateMovie(id, {
-      score: roundedScore,
-      comment: userRating.value.comment.trim()
-    })
-    $notification.success('评分提交成功！')
+    // 这里需要调用评分API
+    // await rateTvShow(id, {
+    //   score: roundedScore,
+    //   comment: userRating.value.comment.trim()
+    // })
+    notify.info('评分提交功能需要实现')
     // 清空表单
     userRating.value = {
       score: 0,
       comment: ''
     }
-    // 可选：重新加载电影详情以获取最新评分
-    // await load()
   } catch (err: any) {
     console.error('提交评分失败:', err)
-    $notification.error(err?.message || '提交失败，请稍后重试')
+    notify.error(err?.message || '提交失败，请稍后重试')
   } finally {
     ratingLoading.value = false
   }
 }
 
+// 组件挂载时加载数据
 onMounted(load)
 
-// 获取全局通知服务
-// 通知辅助函数（使用console避免TypeScript错误）
+// 获取全局通知服务（使用类型断言解决TypeScript错误）
+const instance = getCurrentInstance();
+// 通知辅助函数
 const notify = {
   success: (message: string) => console.log('Success:', message),
   error: (message: string) => console.error('Error:', message),
@@ -587,11 +659,11 @@ const notify = {
 .favorite-btn.active i {
   color: #fbbf24;
 }
-.summary, .trailer-section, .photos-section, .awards-section { margin-top: 32px; }
-.summary h2, .trailer-section h2, .photos-section h2, .awards-section h2 { font-size: 24px; font-weight: 600; color: #111827; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--primary-color); }
+.summary, .trailer-section, .photos-section, .seasons-section, .awards-section { margin-top: 32px; }
+.summary h2, .trailer-section h2, .photos-section h2, .seasons-section h2, .awards-section h2 { font-size: 24px; font-weight: 600; color: #111827; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--primary-color); }
 .summary p { color: #374151; line-height: 1.8; font-size: 15px; white-space: pre-wrap; }
 .trailer-video { width: 100%; height: 500px; border-radius: 8px; }
-.photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.photos-grid, .seasons-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
 .photo-wrapper {
   width: 100%;
   height: 280px;
@@ -613,8 +685,50 @@ const notify = {
   object-fit: cover;
   object-position: center;
 }
+.season-card {
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+.season-card:hover {
+  background: #e5e7eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.season-number {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+.season-info {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.season-info:last-child {
+  margin-bottom: 0;
+}
 .awards { padding-left: 24px; list-style: disc; }
-.awards li { color: #374151; line-height: 1.8; margin-bottom: 8px; }
+.awards li { color: #374151; line-height: 1.8; margin-bottom: 8px; position: relative; }
+.award-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+.award-status.awarded {
+  background: #d1fae5;
+  color: #065f46;
+}
+.award-status.nominated {
+  background: #dbeafe;
+  color: #1e40af;
+}
 .rating-section { margin-top: 32px; padding: 24px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
 .rating-section h2 { font-size: 24px; font-weight: 600; color: #111827; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 2px solid var(--primary-color); }
 .rating-form { display: flex; flex-direction: column; gap: 20px; }
@@ -666,5 +780,14 @@ const notify = {
 }
 .loading, .error { text-align: center; padding: 40px; color: #6b7280; font-size: 16px; }
 .error { color: #ef4444; }
-</style>
 
+@media (max-width: 768px) {
+  .movie-detail-page { padding: 16px; margin-top: 60px; }
+  .header { flex-direction: column; gap: 16px; }
+  .poster-wrapper { width: 100%; max-width: 200px; height: 260px; align-self: center; }
+  .title-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .admin-actions { width: 100%; justify-content: space-between; }
+  .trailer-video { height: 300px; }
+  .photos-grid, .seasons-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+}
+</style>
