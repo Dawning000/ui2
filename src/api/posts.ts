@@ -49,11 +49,15 @@ export interface CreatePostParams {
 // 帖子列表响应类型
 export interface PostListResponse {
   code: number;
+  message: string;
   data: {
     posts: Post[];
-    total: number;
-    page: number;
-    size: number;
+    pagination: {
+      total: number;
+      page: number;
+      size: number;
+      has_next: boolean;
+    };
   };
 }
 

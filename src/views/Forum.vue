@@ -72,15 +72,6 @@
         
         <div v-else class="posts-list">
           <div v-for="post in paginatedPosts" :key="post.id" class="post-item">
-            <div class="post-votes">
-              <button class="vote-btn upvote" :class="{ active: post.userVote === 'up' }" @click="handleVote(post, 'up')">
-                <i class="icon-arrow-up"></i>
-              </button>
-              <span class="vote-count">{{ post.votes }}</span>
-              <button class="vote-btn downvote" :class="{ active: post.userVote === 'down' }" @click="handleVote(post, 'down')">
-                <i class="icon-arrow-down"></i>
-              </button>
-            </div>
             
             <div class="post-content">
               <div class="post-header">
@@ -298,11 +289,11 @@ const filteredPosts = computed(() => {
   filtered.sort((a, b) => {
     switch (sortBy.value) {
       case 'hot':
-        return (b.votes + b.comments * 2) - (a.votes + a.comments * 2)
+        return b.commentsCount * 2 - a.commentsCount * 2
       case 'views':
         return b.views - a.views
       case 'comments':
-        return b.comments - a.comments
+        return b.commentsCount - a.commentsCount
       case 'latest':
       default:
         return new Date(b.createdAt) - new Date(a.createdAt)
@@ -416,7 +407,6 @@ const loadPosts = async () => {
     }
   } catch (error) {
     console.error('加载帖子失败:', error)
-    notify.error('加载帖子失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -441,19 +431,7 @@ const goToPage = (page) => {
   }
 }
 
-const handleVote = (post, type) => {
-  if (post.userVote === type) {
-    post.userVote = null
-    post.votes -= type === 'up' ? 1 : -1
-  } else {
-    const oldVote = post.userVote
-    post.userVote = type
-    post.votes += type === 'up' ? 1 : -1
-    if (oldVote) {
-      post.votes += oldVote === 'up' ? -1 : 1
-    }
-  }
-}
+
 
 const handleBookmark = (post) => {
   post.isBookmarked = !post.isBookmarked

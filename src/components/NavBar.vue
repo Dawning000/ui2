@@ -137,7 +137,7 @@
                 </div>
               </div>
               <div class="user-menu-list">
-                <router-link to="/user/profile" class="menu-item">
+                <router-link :to="`/user/${user.id}`" class="menu-item">
                   <i class="menu-icon icon-user"></i>
                   <span>个人中心</span>
                 </router-link>
@@ -145,10 +145,7 @@
                   <i class="menu-icon icon-edit"></i>
                   <span>我的帖子</span>
                 </router-link>
-                <router-link to="/user/bookmarks" class="menu-item">
-                  <i class="menu-icon icon-bookmark"></i>
-                  <span>我的收藏</span>
-                </router-link>
+
                 <router-link to="/user/settings" class="menu-item">
                   <i class="menu-icon icon-settings"></i>
                   <span>账户设置</span>

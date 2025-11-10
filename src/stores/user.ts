@@ -41,6 +41,7 @@ function clearCredentials(): void {
 export const useUserStore = defineStore('user', () => {
   // 状态
   const user = ref<User | null>(null)
+  const userId = ref<number | null>(null)
 
   // 计算属性
   const isLoggedIn = computed(() => !!user.value)
@@ -60,6 +61,14 @@ export const useUserStore = defineStore('user', () => {
       // 兼容后端返回: { code: 200, data: {...}, message: 'success' }
       if ((res && (res.code === 200 || res.code === '200')) && res.data) {
         user.value = res.data as unknown as User
+        // 保存用户id
+        userId.value = res.data.id
+        // 同时保存到本地存储，以便刷新页面后仍能使用
+        try {
+          localStorage.setItem('current_user_id', res.data.id.toString())
+        } catch (error) {
+          console.error('保存用户id失败:', error)
+        }
         
         // 如果勾选了"记住我"且登录成功，保存账号密码
         if (credentials.remember) {
@@ -102,6 +111,7 @@ export const useUserStore = defineStore('user', () => {
   const logout = async (): Promise<void> => {
     try { await http('/user/logout', { method: 'POST' }) } catch {}
     user.value = null
+    userId.value = null
     
     // 完全清空浏览器本地存储中的所有登录相关数据
     try {
@@ -110,6 +120,7 @@ export const useUserStore = defineStore('user', () => {
       localStorage.removeItem('autoLogin')
       localStorage.removeItem('user_token')
       localStorage.removeItem('user_info')
+      localStorage.removeItem('current_user_id')
       
       // 清除会话存储中的用户相关项
       sessionStorage.removeItem('user_token')
@@ -148,14 +159,27 @@ export const useUserStore = defineStore('user', () => {
 
   const loadUserFromStorage = async (): Promise<void> => {
     try {
-      // 后端返回格式: { code: 200, data: {...}, message: 'success' }
-      const res = await http<any>('/auth/me')
-      if (res && res.code === 200 && res.data) {
-        user.value = res.data as unknown as User
+      // 首先尝试从本地存储获取用户id
+      const storedUserId = localStorage.getItem('current_user_id')
+      if (storedUserId) {
+        userId.value = parseInt(storedUserId)
+        
+        // 使用用户id获取用户信息，不再使用/user/me接口
+        const response = await http<any>(`/user/${userId.value}/info`)
+        if (response && response.code === 200 && response.data) {
+          user.value = response.data as unknown as User
+        } else {
+          user.value = null
+          userId.value = null
+          localStorage.removeItem('current_user_id')
+        }
       } else {
         user.value = null
       }
-    } catch { user.value = null }
+    } catch {
+      user.value = null
+      userId.value = null
+    }
   }
 
   const updateProfile = async (profileData: ProfileUpdateData): Promise<ApiResponse> => {
@@ -178,6 +202,7 @@ export const useUserStore = defineStore('user', () => {
 
   return {
     user,
+    userId,
     isLoggedIn,
     login,
     register,

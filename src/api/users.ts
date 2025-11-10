@@ -46,6 +46,7 @@ export const userApi = {
    */
   getUserInfo: async (userId: number): Promise<UserInfoResponse> => {
     try {
+      // 只使用用户ID获取信息的接口，不再使用/user/me接口
       const response = await http<UserInfoResponse>(`/user/${userId}/info`);
       return response;
     } catch (error) {
@@ -56,11 +57,17 @@ export const userApi = {
 
   /**
    * 获取当前登录用户信息
+   * @param userId 当前用户ID
    * @returns 当前用户信息
+   * @throws 如果未提供userId则抛出错误
    */
-  getCurrentUser: async (): Promise<UserInfoResponse> => {
+  getCurrentUser: async (userId: number): Promise<UserInfoResponse> => {
     try {
-      const response = await http<UserInfoResponse>('/user/info');
+      if (!userId) {
+        throw new Error('获取当前用户信息失败：未提供用户ID');
+      }
+      // 使用用户ID获取信息，不再使用/user/me接口
+      const response = await http<UserInfoResponse>(`/user/${userId}/info`);
       return response;
     } catch (error) {
       console.error('获取当前用户信息失败:', error);

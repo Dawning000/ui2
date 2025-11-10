@@ -91,6 +91,10 @@
         <div class="tab-content">
           <!-- 帖子列表 -->
           <div v-if="activeTab === 'posts'" class="posts-section">
+            <div v-if="activeTab === 'posts' && userPosts.length === 0 && totalPosts > 0" class="loading">
+              <div class="loading-spinner"></div>
+              <p>加载中...</p>
+            </div>
             <div v-if="userPosts.length === 0" class="empty-state">
               <i class="icon-empty"></i>
               <h3>暂无帖子</h3>
@@ -100,14 +104,13 @@
               <div v-for="post in userPosts" :key="post.id" class="post-item">
                 <div class="post-header">
                   <div class="post-meta">
-                    <span class="post-category">{{ post.categoryName }}</span>
-                    <span class="post-time">{{ formatTime(post.createdAt) }}</span>
+                    <span class="post-time">{{ formatTime(post.createTime) }}</span>
                   </div>
                 </div>
                 <h3 class="post-title">
                   <router-link :to="`/post/${post.id}`">{{ post.title }}</router-link>
                 </h3>
-                <p class="post-excerpt">{{ post.excerpt }}</p>
+                <p class="post-excerpt">{{ post.content.length > 100 ? post.content.substring(0, 100) + '...' : post.content }}</p>
                 <div class="post-stats">
                   <span class="stat">
                     <i class="icon-eye"></i>
@@ -115,7 +118,7 @@
                   </span>
                   <span class="stat">
                     <i class="icon-comment"></i>
-                    {{ post.comments }}
+                    {{ post.commentsCount }}
                   </span>
                   <span class="stat">
                     <i class="icon-like"></i>
@@ -123,31 +126,209 @@
                   </span>
                 </div>
               </div>
+              
+              <!-- 分页组件 -->
+              <div v-if="userPosts.length > 0" class="pagination-container">
+                <div class="pagination-info">
+                  <span>共 {{ totalPosts }} 条帖子</span>
+                  <span class="divider">|</span>
+                  <span>每页显示</span>
+                  <select v-model="pageSize" @change="handleSizeChange" class="page-size-select">
+                    <option :value="10">10</option>
+                    <option :value="20">20</option>
+                    <option :value="50">50</option>
+                  </select>
+                  <span>条</span>
+                </div>
+                <div class="pagination" v-if="totalPages > 0">
+                  <button 
+                    class="pagination-btn pagination-nav-btn"
+                    :class="{ disabled: currentPage <= 1 || totalPages <= 1 }"
+                    :disabled="currentPage <= 1 || totalPages <= 1" 
+                    @click.stop="changePage(1)"
+                    title="首页"
+                  >
+                    <i class="icon-home"></i>
+                    <span>首页</span>
+                  </button>
+                  <button 
+                    class="pagination-btn pagination-nav-btn"
+                    :class="{ disabled: currentPage <= 1 || totalPages <= 1 }"
+                    :disabled="currentPage <= 1 || totalPages <= 1" 
+                    @click.stop="changePage(currentPage - 1)"
+                    title="上一页"
+                  >
+                    <i class="icon-chevron-left"></i>
+                    <span>上一页</span>
+                  </button>
+                  
+                  <div class="page-numbers">
+                    <template v-for="(p, index) in visiblePages" :key="`page-${index}-${p}`">
+                      <button
+                        v-if="typeof p === 'number'"
+                        class="pagination-btn page-number"
+                        :class="{ active: p === currentPage }"
+                        @click.stop="changePage(p)"
+                      >
+                        {{ p }}
+                      </button>
+                      <span v-else class="page-ellipsis">{{ p }}</span>
+                    </template>
+                  </div>
+                  
+                  <button 
+                    class="pagination-btn pagination-nav-btn"
+                    :class="{ disabled: currentPage >= totalPages || totalPages <= 1 }"
+                    :disabled="currentPage >= totalPages || totalPages <= 1" 
+                    @click.stop="changePage(currentPage + 1)"
+                    title="下一页"
+                  >
+                    <span>下一页</span>
+                    <i class="icon-chevron-right"></i>
+                  </button>
+                  <button 
+                    class="pagination-btn pagination-nav-btn"
+                    :class="{ disabled: currentPage >= totalPages || totalPages <= 1 }"
+                    :disabled="currentPage >= totalPages || totalPages <= 1" 
+                    @click.stop="changePage(totalPages)"
+                    title="末页"
+                  >
+                    <span>末页</span>
+                    <i class="icon-end"></i>
+                  </button>
+                  <div class="page-jump">
+                    <span>跳至</span>
+                    <input 
+                      type="number" 
+                      v-model.number="jumpPage" 
+                      :min="1" 
+                      :max="totalPages"
+                      @keyup.enter="handleJump"
+                      class="jump-input"
+                    />
+                    <span>页</span>
+                    <button @click.stop="handleJump" class="jump-btn">确定</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- 收藏列表 -->
-          <div v-if="activeTab === 'bookmarks'" class="bookmarks-section">
-            <div v-if="bookmarks.length === 0" class="empty-state">
-              <i class="icon-bookmark"></i>
-              <h3>暂无收藏</h3>
-              <p>该用户还没有收藏任何帖子</p>
+
+          <!-- 收藏列表（电影、电视剧、综艺） -->
+          <div v-if="activeTab === 'favorites'" class="favorites-section">
+            <!-- 分类标签 -->
+            <div class="favorites-tabs">
+              <button 
+                v-for="type in ['movies', 'tvshows', 'varieties']" 
+                :key="type"
+                :class="['favorite-tab-btn', { active: activeFavoritesType === type }]"
+                @click="handleFavoritesTypeChange(type)"
+              >
+                {{ type === 'movies' ? '电影' : type === 'tvshows' ? '电视剧' : '综艺' }}
+              </button>
             </div>
-            <div v-else class="bookmarks-list">
-              <div v-for="bookmark in bookmarks" :key="bookmark.id" class="bookmark-item">
-                <div class="bookmark-header">
-                  <div class="bookmark-meta">
-                    <img :src="bookmark.post.author.avatar" :alt="bookmark.post.author.username" class="author-avatar" @error="e => e.target.src = '/avatar.png'" />
-                    <div class="author-info">
-                      <span class="author-name">{{ bookmark.post.author.username }}</span>
-                      <span class="bookmark-time">{{ formatTime(bookmark.createdAt) }}</span>
+            
+            <!-- 加载状态 -->
+            <div v-if="loadingFavorites" class="loading-state">
+              <div class="loading-spinner"></div>
+              <p>加载中...</p>
+            </div>
+            
+            <!-- 空状态 -->
+            <div v-else-if="favorites[activeFavoritesType].length === 0" class="empty-state">
+              <i class="icon-star"></i>
+              <h3>暂无收藏</h3>
+              <p>该用户还没有收藏任何{{ activeFavoritesType === 'movies' ? '电影' : activeFavoritesType === 'tvshows' ? '电视剧' : '综艺' }}</p>
+            </div>
+            
+            <!-- 收藏列表 -->
+              <div v-else class="favorites-list">
+                <div v-for="item in favorites[activeFavoritesType]" :key="item.id" class="favorite-item">
+                  <router-link :to="`/${activeFavoritesType === 'movies' ? 'movie' : activeFavoritesType === 'tvshows' ? 'tv' : 'variety'}/${item.id}`" class="favorite-card">
+                    <div class="favorite-poster">
+                      <img :src="item.poster" :alt="item.title" @error="handlePosterError" />
                     </div>
-                  </div>
+                    <div class="favorite-info">
+                      <h3 class="favorite-title">{{ item.title }}</h3>
+                      <div class="favorite-meta">
+                        <span class="favorite-year">{{ item.year }}</span>
+                        <span class="favorite-rating">
+                          <i class="icon-star"></i> {{ item.rating }}
+                        </span>
+                      </div>
+                      <div class="favorite-stats">
+                        <span class="favorite-likes">
+                          <i class="icon-heart"></i> {{ item.likes }} 赞
+                        </span>
+                      </div>
+                    </div>
+                  </router-link>
                 </div>
-                <h3 class="bookmark-title">
-                  <router-link :to="`/post/${bookmark.post.id}`">{{ bookmark.post.title }}</router-link>
-                </h3>
-                <p class="bookmark-excerpt">{{ bookmark.post.excerpt }}</p>
+              </div>
+              
+              <!-- 分页组件 -->
+            <div v-if="totalFavoritesPages > 1" class="pagination-container">
+              <div class="pagination-info">
+                <span>共 {{ favoritesPagination[activeFavoritesType].total }} 条</span>
+                <span>每页显示：</span>
+                <select v-model.number="favoritesPageSize" @change="handleFavoritesPageSizeChange(favoritesPageSize)" class="page-size-select">
+                  <option :value="10">10</option>
+                  <option :value="20">20</option>
+                  <option :value="50">50</option>
+                </select>
+              </div>
+              <div class="pagination-controls">
+                <button 
+                  class="page-btn" 
+                  :disabled="favoritesPagination[activeFavoritesType].page === 1"
+                  @click="handleFavoritesPageChange(1)"
+                >
+                  首页
+                </button>
+                <button 
+                  class="page-btn" 
+                  :disabled="favoritesPagination[activeFavoritesType].page === 1"
+                  @click="handleFavoritesPageChange(favoritesPagination[activeFavoritesType].page - 1)"
+                >
+                  上一页
+                </button>
+                <button 
+                  v-for="page in visibleFavoritesPages" 
+                  :key="page"
+                  :class="['page-btn', 'page-number', { active: page === favoritesPagination[activeFavoritesType].page }]"
+                  @click="page !== '...' && handleFavoritesPageChange(page)"
+                  :disabled="page === '...'"
+                >
+                  {{ page }}
+                </button>
+                <button 
+                  class="page-btn" 
+                  :disabled="!favoritesPagination[activeFavoritesType].has_next"
+                  @click="handleFavoritesPageChange(favoritesPagination[activeFavoritesType].page + 1)"
+                >
+                  下一页
+                </button>
+                <button 
+                  class="page-btn" 
+                  :disabled="!favoritesPagination[activeFavoritesType].has_next"
+                  @click="handleFavoritesPageChange(totalFavoritesPages)"
+                >
+                  末页
+                </button>
+                <div class="page-jump">
+                  <span>跳至</span>
+                  <input 
+                    type="number" 
+                    v-model.number="favoritesJumpPage" 
+                    :min="1" 
+                    :max="totalFavoritesPages"
+                    @keyup.enter="handleFavoritesJump"
+                    class="jump-input"
+                  />
+                  <span>页</span>
+                  <button @click.stop="handleFavoritesJump" class="jump-btn">确定</button>
+                </div>
               </div>
             </div>
           </div>
@@ -264,6 +445,15 @@
                 class="form-input"
               >
             </div>
+            <div class="form-group">
+              <label>角色</label>
+              <input 
+                type="text" 
+                v-model="editForm.role"
+                placeholder="请输入角色"
+                class="form-input"
+              >
+            </div>
             <div class="form-actions">
               <button type="button" class="btn btn-outline" @click="closeEditModal">
                 取消
@@ -308,11 +498,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, getCurrentInstance } from 'vue'
+import { ref, reactive, onMounted, computed, getCurrentInstance, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLibraryStore } from '@/stores/library'
+import { useUserStore } from '@/stores/user'
 import ImageUploader from '@/components/ImageUploader.vue'
 import { userApi } from '@/api/users'
+import { postApi } from '@/api/posts'
 import { http, jsonBody } from '@/api/http'
 
 const route = useRoute()
@@ -322,13 +514,59 @@ const library = useLibraryStore()
 const loading = ref(true)
 const user = ref(null)
 const userPosts = ref([])
-const bookmarks = ref([])
 const following = ref([])
 const activeTab = ref('posts')
 const showEditModal = ref(false)
 const showAvatarModal = ref(false)
 const updating = ref(false)
 const isFollowing = ref(false)
+// 分页相关状态
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalPosts = ref(0)
+const jumpPage = ref(1)
+// 收藏相关状态
+const loadingFavorites = ref(false);
+const favorites = ref({
+  movies: [],
+  tvshows: [],
+  varieties: []
+});
+
+// 处理海报加载失败，设置纯色背景
+function handlePosterError(event) {
+  const target = event.target;
+  // 设置图片不可见
+  target.style.display = 'none';
+  // 给父元素添加纯色背景
+  const parent = target.parentElement;
+  if (parent) {
+    // 生成随机的深色系背景色
+    const hue = Math.floor(Math.random() * 360);
+    const saturation = 30 + Math.floor(Math.random() * 20); // 30-50%
+    const lightness = 25 + Math.floor(Math.random() * 15); // 25-40%
+    parent.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    
+    // 添加电影标题文本作为替代显示
+    const title = target.alt || '未知标题';
+    // 检查是否已有文本元素
+    if (!parent.querySelector('.poster-placeholder-text')) {
+      const textElement = document.createElement('div');
+      textElement.className = 'poster-placeholder-text';
+      textElement.textContent = title;
+      parent.appendChild(textElement);
+    }
+  }
+}
+const favoritesPagination = ref({
+  movies: { total: 0, page: 1, size: 10, has_next: false },
+  tvshows: { total: 0, page: 1, size: 10, has_next: false },
+  varieties: { total: 0, page: 1, size: 10, has_next: false }
+})
+const currentFavoritesPage = ref(1)
+const favoritesJumpPage = ref(1)
+const favoritesPageSize = ref(10)
+const activeFavoritesType = ref('movies')
 
 const editForm = reactive({
   avatar: '',
@@ -342,7 +580,7 @@ const avatarUrl = ref('')
 
 const tabs = [
   { id: 'posts', label: '帖子', icon: 'icon-edit' },
-  { id: 'bookmarks', label: '收藏', icon: 'icon-bookmark' },
+  { id: 'favorites', label: '收藏影片', icon: 'icon-star' },
   { id: 'following', label: '关注', icon: 'icon-users' },
   { id: 'lists', label: '片单', icon: 'icon-list' }
 ]
@@ -355,6 +593,14 @@ const formatDate = (date) => {
     day: 'numeric'
   })
 }
+
+// 监听activeTab变化
+watch(activeTab, (newTab) => {
+  if (newTab === 'favorites') {
+    // 切换到收藏影片标签时，加载电影分类的收藏数据
+    loadUserFavorites(activeFavoritesType.value, 1, favoritesPageSize.value)
+  }
+})
 
 const formatTime = (date) => {
   const now = new Date()
@@ -369,12 +615,52 @@ const formatTime = (date) => {
   return '刚刚'
 }
 
+// 加载用户收藏列表
+const loadUserFavorites = async (type = 'movies', page = 1, size = 10) => {
+  loadingFavorites.value = true
+  try {
+    const userId = parseInt(route.params.id)
+    // 构建查询参数
+    const queryParams = new URLSearchParams({
+      type,
+      page: page.toString(),
+      size: size.toString()
+    })
+    // 调用API获取用户收藏列表 - 使用正确的http函数调用方式
+    const response = await http(`/user/${userId}/favorites?${queryParams}`)
+    
+    if (response && response.code === 200 && response.data) {
+      // 更新收藏数据
+      favorites.value[type] = response.data[type] || []
+      
+      // 更新分页信息
+      favoritesPagination.value[type] = {
+        total: response.data.pagination?.[type]?.total || 0,
+        page: response.data.pagination?.[type]?.page || 1,
+        size: response.data.pagination?.[type]?.size || 10,
+        has_next: response.data.pagination?.[type]?.has_next || false
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load user favorites:', error)
+  } finally {
+    loadingFavorites.value = false
+  }
+}
+
 const loadUserProfile = async () => {
   loading.value = true
   try {
-    // 使用真实API获取用户信息
-    const userId = parseInt(route.params.id)
-    const response = await userApi.getUserInfo(userId)
+      // 使用真实API获取用户信息
+      const userId = parseInt(route.params.id)
+      
+      // 获取用户store实例
+      const userStore = useUserStore();
+      const currentUser = userStore.user;
+      let response;
+      
+      // 无论是访问自己还是他人的资料，都使用getUserInfo接口并传入userId
+      response = await userApi.getUserInfo(userId);
     
     if (response && response.code === 200 && response.data) {
       // 将API返回的snake_case格式数据转换为camelCase
@@ -406,9 +692,13 @@ const loadUserProfile = async () => {
       avatarUrl.value = user.value.avatar || ''
       
       // 其他数据暂时保留模拟数据，后续可根据实际API扩展
-      userPosts.value = []
-      bookmarks.value = []
+      
       following.value = []
+      
+      // 加载用户帖子
+      currentPage.value = 1
+      jumpPage.value = 1
+      await loadUserPosts(userId, currentPage.value, pageSize.value)
     } else {
       console.error('获取用户信息失败:', response?.message || '未知错误')
     }
@@ -433,6 +723,188 @@ const handleUnfollow = (followedUser) => {
   if (index > -1) {
     following.value.splice(index, 1)
     user.value.followingCount--
+  }
+}
+
+/**
+ * 加载用户帖子列表
+ * @param userId 用户ID
+ * @param page 页码
+ * @param size 每页数量
+ */
+const loadUserPosts = async (userId, page, size) => {
+  const loadingPosts = ref(true)
+  try {
+    const response = await postApi.getUserPosts(userId, page, size)
+    if (response && response.code === 200 && response.data) {
+      // 更新帖子列表
+      userPosts.value = response.data.posts || []
+      
+      // 更新分页信息
+      totalPosts.value = response.data.pagination.total || 0
+      currentPage.value = page
+      // 滚动到顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      console.error('获取用户帖子失败:', response?.message || '未知错误')
+    }
+  } catch (error) {
+    console.error('获取用户帖子出错:', error)
+  } finally {
+    loadingPosts.value = false
+  }
+}
+
+/**
+   * 总页数计算
+   */
+  const totalPages = computed(() => Math.max(1, Math.ceil(totalPosts.value / pageSize.value)))
+  
+  /**
+   * 计算可见的页码
+   */
+  const visiblePages = computed(() => {
+    const pages = []
+    const current = currentPage.value
+    const total = totalPages.value
+    
+    if (total <= 7) {
+      // 总页数少于等于7页，显示所有页码
+      for (let i = 1; i <= total; i++) {
+        pages.push(i)
+      }
+    } else {
+      // 总页数大于7页，显示部分页码
+      if (current <= 4) {
+        // 当前页在前4页，显示前5页和最后一页
+        for (let i = 1; i <= 5; i++) {
+          pages.push(i)
+        }
+        pages.push('...')
+        pages.push(total)
+      } else if (current >= total - 3) {
+        // 当前页在后4页，显示第一页和最后5页
+        pages.push(1)
+        pages.push('...')
+        for (let i = total - 4; i <= total; i++) {
+          pages.push(i)
+        }
+      } else {
+        // 当前页在中间，显示第一页、当前页前后各2页和最后一页
+        pages.push(1)
+        pages.push('...')
+        for (let i = current - 2; i <= current + 2; i++) {
+          pages.push(i)
+        }
+        pages.push('...')
+        pages.push(total)
+      }
+    }
+    
+    return pages
+  })
+  
+  // 收藏列表相关计算属性
+  const totalFavoritesPages = computed(() => {
+    const pagination = favoritesPagination.value[activeFavoritesType.value]
+    return Math.ceil(pagination.total / pagination.size)
+  })
+  
+  const visibleFavoritesPages = computed(() => {
+    const pages = []
+    const total = totalFavoritesPages.value
+    const current = favoritesPagination.value[activeFavoritesType.value].page
+    
+    // 生成可见页码
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i)
+      }
+    } else if (current <= 4) {
+      for (let i = 1; i <= 5; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(total)
+    } else if (current >= total - 3) {
+      pages.push(1)
+      pages.push('...')
+      for (let i = total - 4; i <= total; i++) {
+        pages.push(i)
+      }
+    } else {
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 1; i <= current + 1; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(total)
+    }
+    
+    return pages
+  })
+  
+  // 收藏分页控制函数
+  const handleFavoritesPageChange = (page) => {
+    currentFavoritesPage.value = page
+    favoritesJumpPage.value = page
+    loadUserFavorites(activeFavoritesType.value, page, favoritesPageSize.value)
+  }
+  
+  const handleFavoritesPageSizeChange = (size) => {
+    favoritesPageSize.value = size
+    currentFavoritesPage.value = 1
+    favoritesJumpPage.value = 1
+    loadUserFavorites(activeFavoritesType.value, 1, size)
+  }
+  
+  const handleFavoritesJump = () => {
+    let page = favoritesJumpPage.value
+    const maxPage = totalFavoritesPages.value
+    
+    if (page < 1) page = 1
+    if (page > maxPage) page = maxPage
+    
+    handleFavoritesPageChange(page)
+  }
+  
+  const handleFavoritesTypeChange = (type) => {
+    activeFavoritesType.value = type
+    // 切换类型时重新加载数据
+    loadUserFavorites(type, 1, favoritesPageSize.value)
+  }
+  
+  /**
+   * 切换页码
+   * @param p 目标页码
+   */
+  const changePage = (p) => {
+    const targetPage = Math.max(1, Math.min(p, totalPages.value))
+    if (targetPage === currentPage.value || !user.value) return // 如果目标页就是当前页或用户不存在，不重复加载
+    currentPage.value = targetPage
+    jumpPage.value = targetPage
+    loadUserPosts(user.value.id, targetPage, pageSize.value)
+  }
+
+/**
+ * 处理每页显示数量变化
+ */
+const handleSizeChange = () => {
+  currentPage.value = 1
+  jumpPage.value = 1
+  if (user.value) {
+    loadUserPosts(user.value.id, 1, pageSize.value)
+  }
+}
+
+/**
+ * 处理页码跳转
+ */
+const handleJump = () => {
+  const targetPage = Math.max(1, Math.min(jumpPage.value, totalPages.value))
+  if (targetPage !== currentPage.value && user.value) {
+    changePage(targetPage)
   }
 }
 
@@ -583,6 +1055,255 @@ async function copyListLink(id){
   display: flex;
   flex-direction: column;
   gap: 30px;
+}
+
+// 分页组件样式
+.pagination-container {
+  margin-top: 40px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  color: #6b7280;
+  font-size: 14px;
+  
+  .divider {
+    color: #e5e7eb;
+  }
+  
+  .page-size-select {
+    padding: 6px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.pagination-nav-btn {
+  gap: 6px;
+  padding: 8px 16px;
+  
+  &.disabled {
+    opacity: 0.4;
+  }
+  
+  i {
+    font-size: 12px;
+  }
+}
+
+.page-number {
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
+  font-weight: 600;
+  
+  &.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  }
+  
+  &:hover:not(.active):not(:disabled) {
+    background: #f9fafb;
+    border-color: #3b82f6;
+    color: #3b82f6;
+  }
+}
+
+.page-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  color: #9ca3af;
+  font-size: 16px;
+  font-weight: 500;
+  user-select: none;
+}
+
+.page-jump {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+  color: #6b7280;
+  font-size: 14px;
+  
+  .jump-input {
+    width: 70px;
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: white;
+    font-size: 14px;
+    text-align: center;
+    
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    & {
+      -moz-appearance: textfield;
+    }
+  }
+  
+  .jump-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #3b82f6;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .pagination-container {
+    padding: 15px;
+    margin-top: 30px;
+  }
+  
+  .pagination-info {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .pagination {
+    gap: 6px;
+  }
+  
+  .pagination-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .pagination-nav-btn {
+    padding: 6px 12px;
+    
+    span {
+      display: none;
+    }
+    
+    gap: 0;
+  }
+  
+  .page-number {
+    min-width: 36px;
+    height: 36px;
+  }
+  
+  .page-jump {
+    margin-left: 10px;
+    
+    .jump-input {
+      width: 60px;
+      padding: 6px 8px;
+    }
+    
+    .jump-btn {
+      padding: 6px 12px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .page-numbers {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  
+  .page-jump {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 // 用户信息卡片
