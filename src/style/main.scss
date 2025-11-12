@@ -958,3 +958,21 @@ table {
 .dark-mode .loading-spinner {
   border-color: #374151;
 }
+
+// 密码设置页面的占位元素样式
+.password-placeholder {
+  visibility: hidden; // 隐藏但保持空间
+}
+
+.avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: transparent;
+}
+
+.form-placeholder {
+  height: 40px; // 与普通输入框高度一致
+  width: 100%;
+  background-color: transparent;
+}

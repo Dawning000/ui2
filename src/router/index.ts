@@ -5,11 +5,11 @@ import Home from '../views/Home.vue'
 import Forum from '../views/Forum.vue'
 import PostDetail from '../views/PostDetail.vue'
 import UserProfile from '../views/UserProfile.vue'
+import UserSettings from '../views/UserSettings.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Test from '../views/Test.vue'
 import Search from '../views/Search.vue'
-import ListShare from '../views/ListShare.vue'
 import Actors from '../views/Actors.vue'
 import ActorDetail from '../views/ActorDetail.vue'
 import MovieDetail from '../views/MovieDetail.vue'
@@ -21,12 +21,6 @@ const routes: AppRouteRecord[] = [
     path: '/',
     name: 'Home',
     component: Home
-  },
-  {
-    path: '/list/:id',
-    name: 'ListShare',
-    component: ListShare,
-    props: true
   },
   {
     path: '/search',
@@ -84,6 +78,11 @@ const routes: AppRouteRecord[] = [
     name: 'UserProfile',
     component: UserProfile,
     props: true
+  },
+  {
+    path: '/user/settings',
+    name: 'UserSettings',
+    component: UserSettings
   },
   {
     path: '/login',

@@ -12,18 +12,11 @@
           <div class="profile-header">
             <div class="avatar-section">
               <img :src="user.avatar || '/avatar.png'" :alt="user.username" class="user-avatar" />
-              <button class="edit-avatar-btn" @click="showAvatarModal = true">
-                <i class="icon-camera"></i>
-              </button>
             </div>
             <div class="user-info">
               <h1 class="username">{{ user.username }}</h1>
               <p class="user-nickname" v-if="user.nickname">{{ user.nickname }}</p>
               <div class="user-stats">
-                <div class="stat-item">
-                  <span class="stat-number">{{ user.postsCount }}</span>
-                  <span class="stat-label">帖子</span>
-                </div>
                 <div class="stat-item">
                   <span class="stat-number">{{ user.followersCount }}</span>
                   <span class="stat-label">粉丝</span>
@@ -35,10 +28,6 @@
               </div>
             </div>
             <div class="profile-actions">
-              <button class="btn btn-outline" @click="showEditModal = true">
-                <i class="icon-edit"></i>
-                编辑资料
-              </button>
               <button class="btn btn-primary" @click="handleFollow">
                 {{ isFollowing ? '取消关注' : '关注' }}
               </button>
@@ -243,78 +232,91 @@
             </div>
             
             <!-- 收藏列表 -->
-              <div v-else class="favorites-list">
-                <div v-for="item in favorites[activeFavoritesType]" :key="item.id" class="favorite-item">
-                  <router-link :to="`/${activeFavoritesType === 'movies' ? 'movie' : activeFavoritesType === 'tvshows' ? 'tv' : 'variety'}/${item.id}`" class="favorite-card">
-                    <div class="favorite-poster">
-                      <img :src="item.poster" :alt="item.title" @error="handlePosterError" />
-                    </div>
-                    <div class="favorite-info">
-                      <h3 class="favorite-title">{{ item.title }}</h3>
-                      <div class="favorite-meta">
-                        <span class="favorite-year">{{ item.year }}</span>
-                        <span class="favorite-rating">
-                          <i class="icon-star"></i> {{ item.rating }}
-                        </span>
+              <div v-else class="bookmarks-list">
+                <div v-for="item in favorites[activeFavoritesType]" :key="item.id" class="bookmark-item">
+                  <router-link :to="`/${activeFavoritesType === 'movies' ? 'movie' : activeFavoritesType === 'tvshows' ? 'tv' : 'variety'}/${item.id}`">
+                      <div class="bookmark-header">
+                        <h3 class="bookmark-title">{{ item.title }}</h3>
+                        <div class="bookmark-meta">
+                          <span class="bookmark-year">{{ item.year }}</span>
+                          <span class="bookmark-rating">
+                            <i class="icon-star"></i> {{ item.rating }}
+                          </span>
+                          <span class="bookmark-likes">
+                            <i class="icon-heart"></i> {{ item.likes }} 赞
+                          </span>
+                        </div>
                       </div>
-                      <div class="favorite-stats">
-                        <span class="favorite-likes">
-                          <i class="icon-heart"></i> {{ item.likes }} 赞
-                        </span>
-                      </div>
-                    </div>
-                  </router-link>
+                    </router-link>
                 </div>
               </div>
               
               <!-- 分页组件 -->
-            <div v-if="totalFavoritesPages > 1" class="pagination-container">
+            <div v-if="favoritesPagination[activeFavoritesType].total > 0" class="pagination-container">
               <div class="pagination-info">
-                <span>共 {{ favoritesPagination[activeFavoritesType].total }} 条</span>
-                <span>每页显示：</span>
+                <span>共 {{ favoritesPagination[activeFavoritesType].total }} 条收藏</span>
+                <span class="divider">|</span>
+                <span>每页显示</span>
                 <select v-model.number="favoritesPageSize" @change="handleFavoritesPageSizeChange(favoritesPageSize)" class="page-size-select">
                   <option :value="10">10</option>
                   <option :value="20">20</option>
                   <option :value="50">50</option>
                 </select>
+                <span>条</span>
               </div>
-              <div class="pagination-controls">
+              <div class="pagination">
                 <button 
-                  class="page-btn" 
-                  :disabled="favoritesPagination[activeFavoritesType].page === 1"
-                  @click="handleFavoritesPageChange(1)"
+                  class="pagination-btn pagination-nav-btn"
+                  :class="{ disabled: favoritesPagination[activeFavoritesType].page === 1 }"
+                  :disabled="favoritesPagination[activeFavoritesType].page === 1" 
+                  @click.stop="handleFavoritesPageChange(1)"
+                  title="首页"
                 >
-                  首页
+                  <i class="icon-home"></i>
+                  <span>首页</span>
                 </button>
                 <button 
-                  class="page-btn" 
-                  :disabled="favoritesPagination[activeFavoritesType].page === 1"
-                  @click="handleFavoritesPageChange(favoritesPagination[activeFavoritesType].page - 1)"
+                  class="pagination-btn pagination-nav-btn"
+                  :class="{ disabled: favoritesPagination[activeFavoritesType].page === 1 }"
+                  :disabled="favoritesPagination[activeFavoritesType].page === 1" 
+                  @click.stop="handleFavoritesPageChange(favoritesPagination[activeFavoritesType].page - 1)"
+                  title="上一页"
                 >
-                  上一页
+                  <i class="icon-chevron-left"></i>
+                  <span>上一页</span>
+                </button>
+                <div class="page-numbers">
+                  <template v-for="(page, index) in visibleFavoritesPages" :key="`fav-page-${index}-${page}`">
+                    <button
+                      v-if="typeof page === 'number'"
+                      class="pagination-btn page-number"
+                      :class="{ active: page === favoritesPagination[activeFavoritesType].page }"
+                      @click.stop="handleFavoritesPageChange(page)"
+                    >
+                      {{ page }}
+                    </button>
+                    <span v-else class="page-ellipsis">{{ page }}</span>
+                  </template>
+                </div>
+                <button 
+                  class="pagination-btn pagination-nav-btn"
+                  :class="{ disabled: !favoritesPagination[activeFavoritesType].has_next }"
+                  :disabled="!favoritesPagination[activeFavoritesType].has_next" 
+                  @click.stop="handleFavoritesPageChange(favoritesPagination[activeFavoritesType].page + 1)"
+                  title="下一页"
+                >
+                  <span>下一页</span>
+                  <i class="icon-chevron-right"></i>
                 </button>
                 <button 
-                  v-for="page in visibleFavoritesPages" 
-                  :key="page"
-                  :class="['page-btn', 'page-number', { active: page === favoritesPagination[activeFavoritesType].page }]"
-                  @click="page !== '...' && handleFavoritesPageChange(page)"
-                  :disabled="page === '...'"
+                  class="pagination-btn pagination-nav-btn"
+                  :class="{ disabled: !favoritesPagination[activeFavoritesType].has_next }"
+                  :disabled="!favoritesPagination[activeFavoritesType].has_next" 
+                  @click.stop="handleFavoritesPageChange(totalFavoritesPages)"
+                  title="末页"
                 >
-                  {{ page }}
-                </button>
-                <button 
-                  class="page-btn" 
-                  :disabled="!favoritesPagination[activeFavoritesType].has_next"
-                  @click="handleFavoritesPageChange(favoritesPagination[activeFavoritesType].page + 1)"
-                >
-                  下一页
-                </button>
-                <button 
-                  class="page-btn" 
-                  :disabled="!favoritesPagination[activeFavoritesType].has_next"
-                  @click="handleFavoritesPageChange(totalFavoritesPages)"
-                >
-                  末页
+                  <span>末页</span>
+                  <i class="icon-end"></i>
                 </button>
                 <div class="page-jump">
                   <span>跳至</span>
@@ -360,139 +362,11 @@
             </div>
           </div>
 
-          <!-- 片单 -->
-          <div v-if="activeTab === 'lists'" class="lists-section">
-            <div class="list-actions">
-              <button class="btn btn-primary" @click="createList">新建片单</button>
-            </div>
-            <div v-if="Object.keys(library.lists).length === 0" class="empty-state">
-              <i class="icon-list"></i>
-              <h3>暂无片单</h3>
-              <p>创建你的第一个片单，整理想看与看过的影片</p>
-            </div>
-            <div v-else class="lists-grid">
-              <div class="list-card" v-for="ls in Object.values(library.lists)" :key="ls.id">
-                <div class="list-cover"></div>
-                <div class="list-meta">
-                  <h3>{{ ls.title }}</h3>
-                  <p class="sub">{{ ls.itemIds.length }} 部作品 · {{ ls.isPublic ? '公开' : '私密' }}</p>
-                </div>
-                <div class="list-actions-row">
-                  <router-link class="btn btn-outline btn-sm" :to="{name:'ListShare', params:{id: ls.id}}">查看/分享</router-link>
-                  <button class="btn btn-outline btn-sm" @click="togglePrivacy(ls.id)">{{ ls.isPublic ? '设为私密' : '设为公开' }}</button>
-                <button class="btn btn-outline btn-sm" @click="copyListLink(ls.id)">复制链接</button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <!-- 片单部分已删除 -->
+          <!-- 功能已迁移到账号设置页面 -->
         </div>
       </div>
-    </div>
-
-    <!-- 编辑资料模态框 -->
-    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>编辑资料</h3>
-          <button class="close-btn" @click="closeEditModal">
-            <i class="icon-close"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="handleUpdateProfile">
-            <div class="form-group">
-              <label>头像URL</label>
-              <ImageUploader
-                v-model="editForm.avatar"
-                placeholder="请输入头像图片URL或点击上传"
-                upload-type="avatar"
-                button-text="上传头像"
-              />
-            </div>
-            <div class="form-group">
-              <label>昵称</label>
-              <input 
-                type="text" 
-                v-model="editForm.nickname"
-                placeholder="请输入昵称"
-                class="form-input"
-              >
-            </div>
-            <div class="form-group">
-              <label>个人简介</label>
-              <textarea 
-                v-model="editForm.bio"
-                placeholder="介绍一下自己..."
-                rows="4"
-                class="form-textarea"
-              ></textarea>
-            </div>
-            <div class="form-group">
-              <label>所在地</label>
-              <input 
-                type="text" 
-                v-model="editForm.location"
-                placeholder="请输入所在地"
-                class="form-input"
-              >
-            </div>
-            <div class="form-group">
-              <label>个人网站</label>
-              <input 
-                type="url" 
-                v-model="editForm.website"
-                placeholder="请输入个人网站"
-                class="form-input"
-              >
-            </div>
-            <div class="form-group">
-              <label>角色</label>
-              <input 
-                type="text" 
-                v-model="editForm.role"
-                placeholder="请输入角色"
-                class="form-input"
-              >
-            </div>
-            <div class="form-actions">
-              <button type="button" class="btn btn-outline" @click="closeEditModal">
-                取消
-              </button>
-              <button type="submit" class="btn btn-primary" :disabled="updating">
-                {{ updating ? '保存中...' : '保存' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- 头像上传模态框 -->
-    <div v-if="showAvatarModal" class="modal-overlay" @click="closeAvatarModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>更换头像</h3>
-          <button class="close-btn" @click="closeAvatarModal">
-            <i class="icon-close"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <ImageUploader
-            v-model="avatarUrl"
-            placeholder="请输入头像图片URL或点击上传"
-            upload-type="avatar"
-            button-text="上传头像"
-          />
-          <div class="form-actions" style="margin-top: 20px;">
-            <button type="button" class="btn btn-outline" @click="closeAvatarModal">
-              取消
-            </button>
-            <button type="button" class="btn btn-primary" @click="handleUpdateAvatar" :disabled="updating">
-              {{ updating ? '保存中...' : '保存' }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- 编辑资料和头像上传功能已迁移到账号设置页面 -->
     </div>
   </div>
 </template>
@@ -500,7 +374,6 @@
 <script setup>
 import { ref, reactive, onMounted, computed, getCurrentInstance, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useLibraryStore } from '@/stores/library'
 import { useUserStore } from '@/stores/user'
 import ImageUploader from '@/components/ImageUploader.vue'
 import { userApi } from '@/api/users'
@@ -508,7 +381,6 @@ import { postApi } from '@/api/posts'
 import { http, jsonBody } from '@/api/http'
 
 const route = useRoute()
-const library = useLibraryStore()
 
 // 响应式数据
 const loading = ref(true)
@@ -516,9 +388,6 @@ const user = ref(null)
 const userPosts = ref([])
 const following = ref([])
 const activeTab = ref('posts')
-const showEditModal = ref(false)
-const showAvatarModal = ref(false)
-const updating = ref(false)
 const isFollowing = ref(false)
 // 分页相关状态
 const currentPage = ref(1)
@@ -568,22 +437,13 @@ const favoritesJumpPage = ref(1)
 const favoritesPageSize = ref(10)
 const activeFavoritesType = ref('movies')
 
-const editForm = reactive({
-  avatar: '',
-  nickname: '',
-  bio: '',
-  location: '',
-  website: ''
-})
-
-const avatarUrl = ref('')
-
 const tabs = [
   { id: 'posts', label: '帖子', icon: 'icon-edit' },
-  { id: 'favorites', label: '收藏影片', icon: 'icon-star' },
-  { id: 'following', label: '关注', icon: 'icon-users' },
-  { id: 'lists', label: '片单', icon: 'icon-list' }
+  { id: 'favorites', label: '收藏', icon: 'icon-star' },
+  { id: 'following', label: '关注', icon: 'icon-users' }
 ]
+
+// 修改密码功能已迁移到账号设置页面
 
 // 方法
 const formatDate = (date) => {
@@ -636,9 +496,14 @@ const loadUserFavorites = async (type = 'movies', page = 1, size = 10) => {
       // 更新分页信息
       favoritesPagination.value[type] = {
         total: response.data.pagination?.[type]?.total || 0,
-        page: response.data.pagination?.[type]?.page || 1,
-        size: response.data.pagination?.[type]?.size || 10,
+        page: response.data.pagination?.[type]?.page || page,
+        size: response.data.pagination?.[type]?.size || size,
         has_next: response.data.pagination?.[type]?.has_next || false
+      }
+      
+      // 确保收藏数据在页面加载时正确初始化
+      if (favorites.value[type].length === 0 && favoritesPagination.value[type].total > 0) {
+        console.log('No favorites data returned for type:', type)
       }
     }
   } catch (error) {
@@ -683,13 +548,7 @@ const loadUserProfile = async () => {
         website: ''
       }
       
-      // 初始化编辑表单
-      editForm.avatar = user.value.avatar || ''
-      editForm.nickname = user.value.nickname
-      editForm.bio = user.value.bio || ''
-      editForm.location = user.value.location || ''
-      editForm.website = user.value.website || ''
-      avatarUrl.value = user.value.avatar || ''
+      // 用户信息已加载完成
       
       // 其他数据暂时保留模拟数据，后续可根据实际API扩展
       
@@ -908,86 +767,7 @@ const handleJump = () => {
   }
 }
 
-const closeEditModal = () => {
-  showEditModal.value = false
-}
-
-const closeAvatarModal = () => {
-  showAvatarModal.value = false
-  avatarUrl.value = user.value?.avatar || ''
-}
-
-const handleUpdateProfile = async () => {
-  updating.value = true
-  try {
-    // 构建更新数据，只包含已修改的字段
-    const updateData = {
-      nickname: editForm.nickname,
-      email: user.value.email, // 保留原邮箱，除非有专门的邮箱更新字段
-      avatar: editForm.avatar || user.value.avatar
-      // 注意：根据API文档，bio、location、website可能不在更新接口中，如有需要可添加
-    }
-    
-    // 调用更新用户信息的API
-    // 这里假设使用PUT /api/users/{id}接口，具体根据实际API调整
-    const userId = user.value.id
-    const response = await http(`/users/${userId}`, {
-      method: 'PUT',
-      body: jsonBody(updateData)
-    })
-    
-    if (response && response.code === 200) {
-      // 更新本地用户信息
-      if (editForm.avatar) {
-        user.value.avatar = editForm.avatar
-      }
-      user.value.nickname = editForm.nickname
-      user.value.bio = editForm.bio
-      user.value.location = editForm.location
-      user.value.website = editForm.website
-      
-      closeEditModal()
-    } else {
-      console.error('更新用户信息失败:', response?.message || '未知错误')
-    }
-  } catch (error) {
-    console.error('更新用户信息出错:', error)
-  } finally {
-    updating.value = false
-  }
-}
-
-const handleUpdateAvatar = async () => {
-  updating.value = true
-  try {
-    if (avatarUrl.value && user.value) {
-      // 构建更新数据
-      const updateData = {
-        avatar: avatarUrl.value
-      }
-      
-      // 调用更新用户信息的API，只更新头像
-      const userId = user.value.id
-      const response = await http(`/users/${userId}`, {
-        method: 'PUT',
-        body: jsonBody(updateData)
-      })
-      
-      if (response && response.code === 200) {
-        // 更新本地用户信息
-        user.value.avatar = avatarUrl.value
-        editForm.avatar = avatarUrl.value
-        closeAvatarModal()
-      } else {
-        console.error('更新头像失败:', response?.message || '未知错误')
-      }
-    }
-  } catch (error) {
-    console.error('更新头像出错:', error)
-  } finally {
-    updating.value = false
-  }
-}
+// 编辑资料和头像上传功能已迁移到账号设置页面
 
 // 获取全局通知服务
 const instance = getCurrentInstance();
@@ -995,26 +775,13 @@ const $notification = instance && instance.proxy && instance.proxy.$notification
 
 onMounted(() => {
   loadUserProfile()
+  // 初始化加载收藏数据（如果当前显示的是收藏标签页）
+  if (activeTab.value === 'favorites') {
+    loadUserFavorites(activeFavoritesType.value, 1, favoritesPageSize.value)
+  }
 })
 
-function createList(){
-  const id = 'list-' + Date.now()
-  library.ensureList(id, '我的片单')
-}
-
-function togglePrivacy(id){
-  const ls = library.lists[id]
-  if (!ls) return
-  ls.isPublic = !ls.isPublic
-}
-
-async function copyListLink(id){
-  try{
-    const url = library.exportShareUrl(id)
-    await navigator.clipboard.writeText(url)
-    $notification.success('片单链接已复制')
-  }catch{}
-}
+// 片单相关函数已删除
 </script>
 
 <style lang="scss" scoped>
@@ -1584,6 +1351,27 @@ async function copyListLink(id){
   display: flex;
   align-items: center;
   gap: 12px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.bookmark-year,
+.bookmark-rating,
+.bookmark-likes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bookmark-title a {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  text-decoration: none;
+  
+  &:hover {
+    color: #3b82f6;
+  }
 }
 
 .author-avatar {
@@ -1778,6 +1566,139 @@ async function copyListLink(id){
 
 .form-group {
   margin-bottom: 20px;
+  
+  label {
+  }
+}
+
+/* 修改密码相关样式 */
+.password-section {
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.password-form-container h3 {
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 1.5em;
+}
+
+.form-description {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.password-form {
+  max-width: 500px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #409eff;
+}
+
+.form-input.error {
+  border-color: #f56c6c;
+}
+
+.error-message {
+  display: block;
+  color: #f56c6c;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.password-hint {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.form-actions {
+  margin-top: 30px;
+}
+
+.btn-primary {
+  background: #409eff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+  background: #66b1ff;
+}
+
+.btn-primary:disabled {
+  background: #c0c4cc;
+  cursor: not-allowed;
+}
+
+.loading-spinner.small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.access-denied {
+  text-align: center;
+  padding: 40px 20px;
+  color: #606266;
+}
+
+.icon-lock-large {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #909399;
+}
+
+.access-denied h3 {
+  margin-bottom: 8px;
+  color: #303133;
+}
+
+.access-denied p {
+  color: #606266;
+  font-size: 14px;
+}
+
+.form-group {
   
   label {
     display: block;

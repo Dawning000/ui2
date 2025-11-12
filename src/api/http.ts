@@ -41,4 +41,18 @@ export function jsonBody(data: unknown): BodyInit {
   return JSON.stringify(data)
 }
 
+export async function updatePhoto(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('strategy_id', '2')
+  
+  const res = await fetch('https://pic.billadom.top/api/v1/upload', {
+    method: 'POST',
+    body: formData
+  })
+  const json = await res.json() as any
+  return json.data
+  console.log(res)
+}
+
 

@@ -1,4 +1,4 @@
-import { http } from './http';
+import { http, jsonBody } from './http';
 
 /**
  * 用户经验值接口
@@ -24,6 +24,24 @@ export interface UserInfo {
   followers_count: number;
   following_count: number;
   role: string;
+}
+
+/**
+ * 更新用户资料请求接口
+ */
+export interface UpdateUserProfileRequest {
+  nickname: string;
+  avatar: string;
+  email: string;
+}
+
+/**
+ * 修改密码请求接口
+ */
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 /**
@@ -71,6 +89,44 @@ export const userApi = {
       return response;
     } catch (error) {
       console.error('获取当前用户信息失败:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 更新用户资料
+   * @param userId 用户ID
+   * @param data 更新的用户资料
+   * @returns 更新结果
+   */
+  async updateUserProfile(userId: number, data: UpdateUserProfileRequest): Promise<UserInfoResponse> {
+    try {
+      const response = await http<UserInfoResponse>(`/user/${userId}/update`, {
+        method: 'POST',
+        body: jsonBody(data)
+      });
+      return response;
+    } catch (error) {
+      console.error('更新用户资料失败:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 修改用户密码
+   * @param userId 用户ID
+   * @param data 修改密码的数据
+   * @returns 修改结果
+   */
+  changePassword: async (userId: number, data: ChangePasswordRequest): Promise<UserInfoResponse> => {
+    try {
+      const response = await http<UserInfoResponse>(`/user/${userId}/password`, {
+        method: 'POST',
+        body: jsonBody(data)
+      });
+      return response;
+    } catch (error) {
+      console.error('修改密码失败:', error);
       throw error;
     }
   },

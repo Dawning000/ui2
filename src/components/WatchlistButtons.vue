@@ -7,7 +7,8 @@
 </template>
 
 <script setup lang="ts">
-import type { WatchStatus } from '@/types/library'
+// 定义本地WatchStatus类型，替代从library导入
+type WatchStatus = 'watched' | 'watching' | 'want'
 const props = defineProps<{ modelValue?: WatchStatus }>()
 const emit = defineEmits<{ (e:'update:modelValue', v:WatchStatus|undefined):void }>()
 

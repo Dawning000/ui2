@@ -141,11 +141,6 @@
                   <i class="menu-icon icon-user"></i>
                   <span>个人中心</span>
                 </router-link>
-                <router-link to="/user/posts" class="menu-item">
-                  <i class="menu-icon icon-edit"></i>
-                  <span>我的帖子</span>
-                </router-link>
-
                 <router-link to="/user/settings" class="menu-item">
                   <i class="menu-icon icon-settings"></i>
                   <span>账户设置</span>
