@@ -27,7 +27,7 @@
                 </div>
               </div>
             </div>
-            <div class="profile-actions">
+            <div class="profile-actions" v-if="!isCurrentUser">
               <button class="btn btn-primary" @click="handleFollow">
                 {{ isFollowing ? '取消关注' : '关注' }}
               </button>
@@ -337,27 +337,131 @@
 
           <!-- 关注列表 -->
           <div v-if="activeTab === 'following'" class="following-section">
-            <div v-if="following.length === 0" class="empty-state">
-              <i class="icon-users"></i>
-              <h3>暂无关注</h3>
-              <p>该用户还没有关注任何人</p>
-            </div>
-            <div v-else class="following-list">
-              <div v-for="followedUser in following" :key="followedUser.id" class="following-item">
-                <img :src="followedUser.avatar" :alt="followedUser.username" class="following-avatar" @error="e => e.target.src = '/avatar.png'" />
-                <div class="following-info">
-                  <h4 class="following-name">
-                    <router-link :to="`/user/${followedUser.id}`">{{ followedUser.username }}</router-link>
-                  </h4>
-                  <p class="following-bio" v-if="followedUser.bio">{{ followedUser.bio }}</p>
-                  <div class="following-stats">
-                    <span>{{ followedUser.postsCount }} 帖子</span>
-                    <span>{{ followedUser.followersCount }} 粉丝</span>
+            <div v-loading="followingLoading" class="following-list-wrapper">
+              <div v-if="followingList.length === 0 && !followingLoading" class="empty-state">
+                <i class="icon-users"></i>
+                <h3>暂无关注</h3>
+                <p>该用户还没有关注任何人</p>
+              </div>
+              
+              <div v-else class="following-list">
+                <div 
+                  v-for="followingUser in followingList" 
+                  :key="followingUser.id"
+                  class="following-item"
+                >
+                  <img 
+                    :src="followingUser.avatar || '/avatar.png'" 
+                    :alt="followingUser.nickname || followingUser.username"
+                    class="following-avatar"
+                    @error="handleAvatarError"
+                  />
+                  <div class="following-info">
+                    <h4 class="following-name">
+                      <router-link :to="`/user/${followingUser.id}`">
+                        {{ followingUser.nickname || followingUser.username }}
+                      </router-link>
+                    </h4>
+                    <div class="following-stats">
+                      <span>粉丝: {{ followingUser.followers_count }}</span>
+                    </div>
+                  </div>
+                  <button 
+                    v-if="isCurrentUser"
+                    class="btn btn-outline btn-sm unfollow-btn"
+                    @click="handleUnfollow(followingUser.id)"
+                    :disabled="unfollowingId === followingUser.id"
+                  >
+                    {{ unfollowingId === followingUser.id ? '取消中...' : '取消关注' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- 分页组件 -->
+              <div v-if="followingList.length > 0" class="pagination-container">
+                <div class="pagination-info">
+                  <span>共 {{ followingPagination.total }} 条记录</span>
+                  <span class="divider" v-if="followingPagination.total > 0">|</span>
+                  <template v-if="followingPagination.total > 0">
+                    <span>每页显示</span>
+                    <select v-model="followingPageSize" @change="handleFollowingSizeChange" class="page-size-select">
+                      <option :value="10">10</option>
+                      <option :value="20">20</option>
+                      <option :value="50">50</option>
+                    </select>
+                    <span>条</span>
+                  </template>
+                </div>
+                <div class="pagination" v-if="followingPagination.total > 0 && totalFollowingPages > 0">
+                  <button 
+                    class="pagination-btn pagination-nav-btn"
+                    :class="{ disabled: followingPage <= 1 || totalFollowingPages <= 1 }"
+                    :disabled="followingPage <= 1 || totalFollowingPages <= 1" 
+                    @click.stop="changeFollowingPage(1)"
+                    title="首页"
+                  >
+                    <i class="icon-home"></i>
+                    <span>首页</span>
+                  </button>
+                  <button 
+                    class="pagination-btn pagination-nav-btn"
+                    :class="{ disabled: followingPage <= 1 || totalFollowingPages <= 1 }"
+                    :disabled="followingPage <= 1 || totalFollowingPages <= 1" 
+                    @click.stop="changeFollowingPage(followingPage - 1)"
+                    title="上一页"
+                  >
+                    <i class="icon-chevron-left"></i>
+                    <span>上一页</span>
+                  </button>
+                  
+                  <div class="page-numbers">
+                    <template v-for="(p, index) in visibleFollowingPages" :key="`page-${index}-${p}`">
+                      <button
+                        v-if="typeof p === 'number'"
+                        class="pagination-btn page-number"
+                        :class="{ active: p === followingPage }"
+                        @click.stop="changeFollowingPage(p)"
+                      >
+                        {{ p }}
+                      </button>
+                      <span v-else class="page-ellipsis">{{ p }}</span>
+                    </template>
+                  </div>
+                  
+                  <button 
+                    class="pagination-btn pagination-nav-btn"
+                    :class="{ disabled: !followingPagination.has_next || totalFollowingPages <= 1 }"
+                    :disabled="!followingPagination.has_next || totalFollowingPages <= 1" 
+                    @click.stop="changeFollowingPage(followingPage + 1)"
+                    title="下一页"
+                  >
+                    <span>下一页</span>
+                    <i class="icon-chevron-right"></i>
+                  </button>
+                  <button 
+                    class="pagination-btn pagination-nav-btn"
+                    :class="{ disabled: !followingPagination.has_next || totalFollowingPages <= 1 }"
+                    :disabled="!followingPagination.has_next || totalFollowingPages <= 1" 
+                    @click.stop="changeFollowingPage(totalFollowingPages)"
+                    title="末页"
+                  >
+                    <span>末页</span>
+                    <i class="icon-end"></i>
+                  </button>
+                  <div class="page-jump">
+                    <span>跳至</span>
+                    <input 
+                      type="number" 
+                      v-model.number="followingJumpPage" 
+                      :min="1" 
+                      :max="totalFollowingPages"
+                      @keyup.enter="handleFollowingJump"
+                      class="jump-input"
+                    />
+                    <span>页</span>
+                    <button @click.stop="handleFollowingJump" class="jump-btn">确定</button>
                   </div>
                 </div>
-                <button class="btn btn-outline btn-sm" @click="handleUnfollow(followedUser)">
-                  取消关注
-                </button>
               </div>
             </div>
           </div>
@@ -371,7 +475,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, onMounted, computed, getCurrentInstance, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -379,6 +483,10 @@ import ImageUploader from '@/components/ImageUploader.vue'
 import { userApi } from '@/api/users'
 import { postApi } from '@/api/posts'
 import { http, jsonBody } from '@/api/http'
+import type { FollowingUser, Pagination } from '@/types/user'
+import notificationService from '@/utils/notification'
+
+const notify = notificationService
 
 const route = useRoute()
 
@@ -386,9 +494,22 @@ const route = useRoute()
 const loading = ref(true)
 const user = ref(null)
 const userPosts = ref([])
-const following = ref([])
 const activeTab = ref('posts')
 const isFollowing = ref(false)
+
+// 关注列表相关数据
+const followingList = ref<FollowingUser[]>([])
+const followingPagination = ref<Pagination>({
+  total: 0,
+  page: 1,
+  size: 10,
+  has_next: false
+})
+const followingPage = ref(1)
+const followingPageSize = ref(10)
+const followingJumpPage = ref(1)
+const followingLoading = ref(false)
+const unfollowingId = ref<number | null>(null)
 // 分页相关状态
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -459,8 +580,46 @@ watch(activeTab, (newTab) => {
   if (newTab === 'favorites') {
     // 切换到收藏影片标签时，加载电影分类的收藏数据
     loadUserFavorites(activeFavoritesType.value, 1, favoritesPageSize.value)
+  } else if (newTab === 'following') {
+    // 切换到关注标签时，加载关注列表
+    loadFollowingList()
   }
 })
+
+// 监听路由参数变化，当用户ID变化时重新加载数据
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    // 重置状态
+    activeTab.value = 'posts'
+    followingPage.value = 1
+    followingPageSize.value = 10
+    followingJumpPage.value = 1
+    followingList.value = []
+    followingPagination.value = {
+      total: 0,
+      page: 1,
+      size: 10,
+      has_next: false
+    }
+    currentPage.value = 1
+    pageSize.value = 10
+    jumpPage.value = 1
+    userPosts.value = []
+    totalPosts.value = 0
+    favorites.value = {
+      movies: [],
+      tvshows: [],
+      varieties: []
+    }
+    favoritesPagination.value = {
+      movies: { total: 0, page: 1, size: 10, has_next: false },
+      tvshows: { total: 0, page: 1, size: 10, has_next: false },
+      varieties: { total: 0, page: 1, size: 10, has_next: false }
+    }
+    // 重新加载用户数据
+    loadUserProfile()
+  }
+}, { immediate: false })
 
 const formatTime = (date) => {
   const now = new Date()
@@ -548,16 +707,22 @@ const loadUserProfile = async () => {
         website: ''
       }
       
+      // 从API响应中获取关注状态
+      if (response.data.isFollowing !== undefined) {
+        isFollowing.value = response.data.isFollowing
+      }
+      
       // 用户信息已加载完成
-      
-      // 其他数据暂时保留模拟数据，后续可根据实际API扩展
-      
-      following.value = []
       
       // 加载用户帖子
       currentPage.value = 1
       jumpPage.value = 1
       await loadUserPosts(userId, currentPage.value, pageSize.value)
+      
+      // 如果当前标签是关注，加载关注列表
+      if (activeTab.value === 'following') {
+        loadFollowingList()
+      }
     } else {
       console.error('获取用户信息失败:', response?.message || '未知错误')
     }
@@ -568,21 +733,191 @@ const loadUserProfile = async () => {
   }
 }
 
-const handleFollow = () => {
-  isFollowing.value = !isFollowing.value
-  if (isFollowing.value) {
-    user.value.followersCount++
-  } else {
-    user.value.followersCount--
+const handleFollow = async () => {
+  try {
+    const userId = parseInt(route.params.id)
+    let response
+    
+    // 根据当前关注状态调用不同的接口
+    if (isFollowing.value) {
+      // 当前已关注，执行取消关注
+      response = await userApi.unfollowUser(userId)
+    } else {
+      // 当前未关注，执行关注
+      response = await userApi.followUser(userId)
+    }
+    
+    if (response && response.code === 200) {
+      // 切换关注状态
+      isFollowing.value = !isFollowing.value
+      
+      // 更新粉丝数
+      if (isFollowing.value) {
+        user.value.followersCount++
+      } else {
+        user.value.followersCount--
+      }
+    } else {
+      console.error('关注操作失败:', response?.message || '未知错误')
+      // 可以在这里添加错误提示
+    }
+  } catch (error) {
+    console.error('关注用户出错:', error)
+    // 可以在这里添加错误提示
   }
 }
 
-const handleUnfollow = (followedUser) => {
-  const index = following.value.findIndex(u => u.id === followedUser.id)
-  if (index > -1) {
-    following.value.splice(index, 1)
-    user.value.followingCount--
+/**
+ * 加载用户关注列表
+ */
+const loadFollowingList = async () => {
+  if (!user.value?.id) return
+  
+  try {
+    followingLoading.value = true
+    const userId = parseInt(route.params.id)
+    const response = await userApi.getFollowingList(userId, followingPage.value, followingPageSize.value)
+    
+    if (response && response.code === 200 && response.data) {
+      followingList.value = response.data.list || []
+      followingPagination.value = response.data.pagination || {
+        total: 0,
+        page: 1,
+        size: followingPageSize.value,
+        has_next: false
+      }
+      followingPage.value = followingPagination.value.page
+      followingJumpPage.value = followingPage.value
+    } else {
+      console.error('获取关注列表失败:', response?.message || '未知错误')
+      notify.error('获取关注列表失败，请稍后重试')
+    }
+  } catch (error) {
+    console.error('获取关注列表出错:', error)
+    notify.error('获取关注列表失败，请稍后重试')
+  } finally {
+    followingLoading.value = false
   }
+}
+
+/**
+ * 取消关注用户
+ */
+const handleUnfollow = async (userId: number) => {
+  try {
+    unfollowingId.value = userId
+    const response = await userApi.unfollowUser(userId)
+    
+    if (response && response.code === 200) {
+      notify.success('取消关注成功')
+      // 重新加载关注列表
+      await loadFollowingList()
+      // 更新用户信息中的关注数
+      if (user.value) {
+        user.value.followingCount = Math.max(0, (user.value.followingCount || 0) - 1)
+      }
+    } else {
+      notify.error(response?.message || '取消关注失败，请稍后重试')
+    }
+  } catch (error) {
+    console.error('取消关注出错:', error)
+    notify.error('取消关注失败，请稍后重试')
+  } finally {
+    unfollowingId.value = null
+  }
+}
+
+/**
+ * 处理头像加载错误
+ */
+const handleAvatarError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  target.src = '/avatar.png'
+}
+
+/**
+ * 总页数计算
+ */
+const totalFollowingPages = computed(() => {
+  return Math.max(1, Math.ceil(followingPagination.value.total / followingPagination.value.size))
+})
+
+/**
+ * 计算可见的页码
+ */
+const visibleFollowingPages = computed(() => {
+  const pages: (number | string)[] = []
+  const current = followingPage.value
+  const total = totalFollowingPages.value
+  
+  if (total <= 7) {
+    // 总页数少于等于7页，显示所有页码
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+  } else {
+    // 总页数大于7页，显示部分页码
+    if (current <= 4) {
+      // 当前页在前4页，显示前5页和最后一页
+      for (let i = 1; i <= 5; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(total)
+    } else if (current >= total - 3) {
+      // 当前页在后4页，显示第一页和最后5页
+      pages.push(1)
+      pages.push('...')
+      for (let i = total - 4; i <= total; i++) {
+        pages.push(i)
+      }
+    } else {
+      // 当前页在中间，显示第一页、当前页前后各2页和最后一页
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 2; i <= current + 2; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(total)
+    }
+  }
+  
+  return pages
+})
+
+/**
+ * 切换关注列表页码
+ */
+const changeFollowingPage = (page: number) => {
+  const targetPage = Math.max(1, Math.min(page, totalFollowingPages.value))
+  if (targetPage === followingPage.value) return
+  
+  followingPage.value = targetPage
+  followingJumpPage.value = targetPage
+  loadFollowingList()
+}
+
+/**
+ * 处理每页数量变化
+ */
+const handleFollowingSizeChange = () => {
+  followingPage.value = 1
+  followingJumpPage.value = 1
+  loadFollowingList()
+}
+
+/**
+ * 处理跳转页码
+ */
+const handleFollowingJump = () => {
+  let page = followingJumpPage.value
+  const maxPage = totalFollowingPages.value
+  
+  if (page < 1) page = 1
+  if (page > maxPage) page = maxPage
+  
+  changeFollowingPage(page)
 }
 
 /**
@@ -613,6 +948,15 @@ const loadUserPosts = async (userId, page, size) => {
     loadingPosts.value = false
   }
 }
+
+/**
+   * 判断是否是当前登录用户
+   */
+  const isCurrentUser = computed(() => {
+    const userStore = useUserStore()
+    const currentUser = userStore.user
+    return currentUser && user.value && currentUser.id === user.value.id
+  })
 
 /**
    * 总页数计算
@@ -1422,6 +1766,10 @@ onMounted(() => {
 }
 
 // 关注列表
+.following-list-wrapper {
+  min-height: 200px;
+}
+
 .following-list {
   display: flex;
   flex-direction: column;

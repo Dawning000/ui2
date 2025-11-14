@@ -116,6 +116,14 @@
               <span v-if="unreadCount > 0" class="notification-badge">{{ unreadCount }}</span>
             </button>
           </div>
+
+          <!-- 通知面板 -->
+          <NotificationPanel
+            :visible="showNotificationPanel"
+            :unread-count="unreadCount"
+            @close="showNotificationPanel = false"
+            @update-unread="handleUpdateUnread"
+          />
           
           <!-- 用户菜单 -->
           <div class="user-menu" @mouseenter="showUserMenu = true" @mouseleave="showUserMenu = false">
@@ -163,10 +171,12 @@
   </nav>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { notificationApi } from '../api/notifications'
+import NotificationPanel from './NotificationPanel.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -175,7 +185,8 @@ const userStore = useUserStore()
 const searchQuery = ref('')
 const showDropdown = ref(false)
 const showUserMenu = ref(false)
-const unreadCount = ref(3)
+const unreadCount = ref(0)
+const showNotificationPanel = ref(false)
 
 // 计算属性
 const isLoggedIn = computed(() => userStore.isLoggedIn)
@@ -194,16 +205,65 @@ const handleSearch = () => {
 }
 
 
+/**
+ * 获取通知数量
+ */
+const fetchNotificationCount = async () => {
+  if (!isLoggedIn.value) {
+    unreadCount.value = 0
+    return
+  }
+  
+  try {
+    const response = await notificationApi.getNotificationCount()
+    if (response && response.code === 200) {
+      unreadCount.value = response.data?.unread || 0
+    }
+  } catch (error) {
+    console.error('获取通知数量失败:', error)
+    // 发生错误时保持当前值或设为0
+    unreadCount.value = 0
+  }
+}
+
 const toggleNotifications = () => {
-  console.log('切换通知面板')
-  unreadCount.value = 0
+  showNotificationPanel.value = !showNotificationPanel.value
+  // 如果关闭面板，刷新通知数量
+  if (!showNotificationPanel.value) {
+    fetchNotificationCount()
+  }
+}
+
+/**
+ * 处理未读数量更新
+ */
+const handleUpdateUnread = (count: number) => {
+  unreadCount.value = count
 }
 
 const handleLogout = () => {
   userStore.logout()
   router.push('/')
   showUserMenu.value = false
+  // 登出后清空通知数量
+  unreadCount.value = 0
 }
+
+// 监听登录状态变化，登录后获取通知数量
+watch(isLoggedIn, (newValue) => {
+  if (newValue) {
+    fetchNotificationCount()
+  } else {
+    unreadCount.value = 0
+  }
+})
+
+// 组件挂载时，如果已登录则获取通知数量
+onMounted(() => {
+  if (isLoggedIn.value) {
+    fetchNotificationCount()
+  }
+})
 </script>
 
 <style lang="scss" scoped>

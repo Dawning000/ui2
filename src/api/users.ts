@@ -1,4 +1,5 @@
 import { http, jsonBody } from './http';
+import type { FollowingListResponse } from '@/types/user';
 
 /**
  * 用户经验值接口
@@ -24,6 +25,7 @@ export interface UserInfo {
   followers_count: number;
   following_count: number;
   role: string;
+  isFollowing?: boolean;
 }
 
 /**
@@ -51,6 +53,18 @@ export interface UserInfoResponse {
   code: number;
   message: string;
   data: UserInfo;
+}
+
+/**
+ * 更新用户资料响应接口
+ */
+export interface UpdateUserProfileResponse {
+  code: number;
+  message: string;
+  data: {
+    updated: boolean;
+    id: number;
+  };
 }
 
 /**
@@ -99,9 +113,9 @@ export const userApi = {
    * @param data 更新的用户资料
    * @returns 更新结果
    */
-  async updateUserProfile(userId: number, data: UpdateUserProfileRequest): Promise<UserInfoResponse> {
+  async updateUserProfile(userId: number, data: UpdateUserProfileRequest): Promise<UpdateUserProfileResponse> {
     try {
-      const response = await http<UserInfoResponse>(`/user/${userId}/update`, {
+      const response = await http<UpdateUserProfileResponse>(`/user/${userId}/update`, {
         method: 'POST',
         body: jsonBody(data)
       });
@@ -127,6 +141,64 @@ export const userApi = {
       return response;
     } catch (error) {
       console.error('修改密码失败:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 关注用户
+   * @param userId 要关注的用户ID
+   * @returns 操作结果
+   */
+  followUser: async (userId: number): Promise<{ code: number; message: string; data?: any }> => {
+    try {
+      const response = await http<{ code: number; message: string; data?: any }>(`/user/${userId}/follow`, {
+        method: 'POST'
+      });
+      return response;
+    } catch (error) {
+      console.error('关注用户失败:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 取消关注用户
+   * @param userId 要取消关注的用户ID
+   * @returns 操作结果
+   */
+  unfollowUser: async (userId: number): Promise<{ code: number; message: string; data?: any }> => {
+    try {
+      const response = await http<{ code: number; message: string; data?: any }>(`/user/${userId}/unfollow`, {
+        method: 'POST'
+      });
+      return response;
+    } catch (error) {
+      console.error('取消关注用户失败:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 获取用户关注列表
+   * @param userId 用户ID
+   * @param page 页码，默认为1
+   * @param size 每页数量，默认为10
+   * @returns 关注列表响应
+   */
+  getFollowingList: async (userId: number, page: number = 1, size: number = 10): Promise<FollowingListResponse> => {
+    try {
+      const params = new URLSearchParams();
+      if (page) params.append('page', page.toString());
+      if (size) params.append('size', size.toString());
+      
+      const queryString = params.toString();
+      const url = `/user/${userId}/following${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await http<FollowingListResponse>(url);
+      return response;
+    } catch (error) {
+      console.error('获取用户关注列表失败:', error);
       throw error;
     }
   },

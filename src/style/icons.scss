@@ -57,6 +57,11 @@
 .icon-trash::before { content: "🗑️"; }
 .icon-orange::before { content: "🍊"; }
 .icon-tangerine::before { content: "🍊"; }
+.icon-broom::before { 
+  content: "🧹"; 
+  font-family: inherit !important; // emoji 使用系统字体
+}
+.icon-check::before { content: "✓"; }
 
 // 图标大小变体
 .icon-xs {

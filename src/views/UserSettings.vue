@@ -29,13 +29,21 @@
               <div class="form-group avatar-group">
                 <div class="avatar-label">头像</div>
                 <div class="avatar-container">
+                  <input
+                    type="file"
+                    ref="avatarFileInput"
+                    accept="image/jpeg,image/png,image/gif"
+                    @change="handleAvatarFileSelect"
+                    class="avatar-file-input"
+                    style="display: none;"
+                  >
                   <img 
                     :src="user?.avatar || '/avatar.png'" 
                     :alt="user?.nickname || 'User Avatar'"
                     class="user-avatar"
-                    @click="showAvatarModal = true"
+                    @click="triggerAvatarFileSelect"
                   >
-                  <div class="avatar-upload-hint" @click="showAvatarModal = true">点击修改头像</div>
+                  <div class="avatar-upload-hint" @click="triggerAvatarFileSelect">点击修改头像</div>
                 </div>
               </div>
 
@@ -99,11 +107,8 @@
                 >
                 <div class="uploader-container">
                   <ImageUploader 
-                    v-model:value="avatarUrl" 
-                    :preview="true"
-                    :limit="1"
-                    :accept="['image/jpeg', 'image/png', 'image/gif']"
-                    @change="avatarUrl = $event[0]?.url || ''"
+                    v-model="avatarUrl" 
+                    upload-type="avatar"
                   ></ImageUploader>
                 </div>
               </div>
@@ -219,10 +224,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, getCurrentInstance } from 'vue'
 import { useUserStore } from '@/stores/user'
+import type { User } from '@/types/user'
 import ImageUploader from '@/components/ImageUploader.vue'
 import { http, jsonBody, updatePhoto } from '@/api/http'
 import { userApi } from '@/api/users'
 import notificationService from '@/utils/notification'
+import { uploadAvatar } from '@/api/upload'
 
 // 使用项目中的通知服务
 const notify = notificationService
@@ -238,7 +245,7 @@ const activeTab = ref('profile')
 
 // 用户数据相关
 const userStore = useUserStore()
-const user = ref(null)
+const user = ref<User | null>(null)
 const loading = ref(true)
 const updating = ref(false)
 
@@ -249,9 +256,13 @@ const editForm = reactive({
   email: ''
 })
 
+// 存储新上传的头像文件对象
+const newAvatarFile = ref<File | null>(null)
+
 // 头像上传相关
 const showAvatarModal = ref(false)
 const avatarUrl = ref('')
+const avatarFileInput = ref<HTMLInputElement | null>(null)
 
 /**
  * 加载用户资料
@@ -276,6 +287,49 @@ const loadUserProfile = async () => {
 }
 
 /**
+ * 触发头像文件选择
+ */
+const triggerAvatarFileSelect = () => {
+  avatarFileInput.value?.click()
+}
+
+/**
+ * 处理头像文件选择
+ */
+const handleAvatarFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    notify.error('请选择图片文件')
+    return
+  }
+
+  // 验证文件大小（限制为10MB）
+  const maxSize = 10 * 1024 * 1024
+  if (file.size > maxSize) {
+    notify.error('图片大小不能超过10MB')
+    return
+  }
+
+  // 存储文件对象，在保存时上传
+  newAvatarFile.value = file
+  
+  // 创建预览URL
+  const previewUrl = URL.createObjectURL(file)
+  if (user.value) {
+    user.value.avatar = previewUrl
+  }
+  
+  // 清空input，允许重复选择同一文件
+  if (target) {
+    target.value = ''
+  }
+}
+
+/**
  * 关闭头像上传模态框
  */
 const closeAvatarModal = () => {
@@ -289,15 +343,31 @@ const closeAvatarModal = () => {
 const handleUpdateProfile = async () => {
   updating.value = true
   try {
+    let avatarUrl = editForm.avatar || (user.value && user.value.avatar) || ''
+    
+    // 如果用户上传了新的图片文件，先调用上传接口获取URL
+    if (newAvatarFile.value) {
+      try {
+        avatarUrl = await uploadAvatar(newAvatarFile.value)
+        editForm.avatar = avatarUrl
+        // 上传成功后清空文件对象
+        newAvatarFile.value = null
+      } catch (error: any) {
+        console.error('上传头像失败:', error)
+        notify.error(error.message || '上传头像失败，请稍后重试')
+        return
+      }
+    }
+    
     // 构建更新数据，仅包含后端要求的字段，空值字段不添加
-    const updateData = {
+    const updateData: any = {
       nickname: editForm.nickname,
       email: editForm.email
     }
     
     // 只有当avatar有值时才添加该字段
-    if (editForm.avatar || (user.value && user.value.avatar)) {
-      updateData.avatar = editForm.avatar || user.value.avatar
+    if (avatarUrl) {
+      updateData.avatar = avatarUrl
     }
     
     // 检查用户数据是否存在
@@ -314,25 +384,27 @@ const handleUpdateProfile = async () => {
     if (response && response.code === 200) {
       // 更新本地用户信息
       if (user.value) {
-        if (editForm.avatar) {
-          user.value.avatar = editForm.avatar
+        if (avatarUrl) {
+          user.value.avatar = avatarUrl
         }
         user.value.nickname = editForm.nickname
         user.value.email = editForm.email
       }
       
-      // 不需要调用store的updateProfile方法（接口不存在）
-      // 直接使用本地更新的数据即可
+        // 更新用户store
+        if (user.value) {
+          userStore.$patch({ user: { ...user.value } })
+        }
       
       // 显示成功提示
-        notify.success('个人资料更新成功！')
+      notify.success('个人资料更新成功！')
     } else {
       console.error('更新用户信息失败:', response?.message || '未知错误')
-        notify.error('更新失败，请稍后重试')
+      notify.error('更新失败，请稍后重试')
     }
   } catch (error) {
     console.error('更新用户信息出错:', error)
-      notify.error('更新失败，请稍后重试')
+    notify.error('更新失败，请稍后重试')
   } finally {
     updating.value = false
   }
@@ -345,61 +417,47 @@ const handleUpdateAvatar = async () => {
   updating.value = true
   try {
     if (avatarUrl.value && user.value) {
-      // 假设avatarUrl.value包含文件对象信息，需要从中提取文件
-      // 这里处理ImageUploader返回的数据格式
-      const fileInfo = avatarUrl.value
-      let file = null
+      // avatarUrl.value 应该是已经上传后的URL字符串
+      // 如果ImageUploader已经上传了文件，avatarUrl.value就是URL
+      // 如果还没有上传，需要先上传
+      let uploadedAvatarUrl = avatarUrl.value
       
-      // 根据ImageUploader的返回格式获取文件对象
-      if (typeof fileInfo === 'object' && fileInfo.file) {
-        file = fileInfo.file
-      } else {
-        // 如果avatarUrl已经是URL字符串，则直接使用
-        file = new Blob([''], { type: 'image/jpeg' })
-        // 设置文件名以便上传
-        Object.defineProperty(file, 'name', {
-          value: 'avatar.jpg',
-          writable: false
-        })
+      // 如果avatarUrl是blob URL（本地预览），说明还没有上传，需要先上传
+      if (avatarUrl.value.startsWith('blob:')) {
+        // 这种情况不应该发生，因为ImageUploader会自动上传
+        // 但为了安全，我们检查一下
+        notify.error('请先上传图片')
+        return
       }
       
-      // 使用updatePhoto函数上传头像文件
-      console.log('开始上传头像文件...')
-      const uploadResult = await updatePhoto(file, 2) // strategy_id设为1
+      // 构建更新数据
+      const updateData = {
+        nickname: user.value.nickname,
+        avatar: uploadedAvatarUrl,
+        email: user.value.email
+      }
       
-      if (uploadResult && uploadResult.data) {
-        const uploadedAvatarUrl = uploadResult.data
+      // 调用更新用户信息的API
+      const userId = user.value.id
+      const response = await userApi.updateUserProfile(userId, updateData)
+      
+      if (response && response.code === 200) {
+        // 更新本地用户信息
+        user.value.avatar = uploadedAvatarUrl
+        editForm.avatar = uploadedAvatarUrl
         
-        // 构建更新数据
-        const updateData = {
-          nickname: user.value.nickname,
-          avatar: uploadedAvatarUrl,
-          email: user.value.email
+        // 更新用户store
+        if (user.value) {
+          userStore.$patch({ user: { ...user.value } })
         }
         
-        // 调用更新用户信息的API，使用新的update接口
-        const userId = user.value.id
-        const response = await userApi.updateUserProfile(userId, updateData)
+        // 显示成功提示
+        notify.success('头像更新成功！')
         
-        if (response && response.code === 200) {
-          // 更新本地用户信息
-          user.value.avatar = uploadedAvatarUrl
-          editForm.avatar = uploadedAvatarUrl
-          
-          // 更新用户store
-          userStore.updateUser(user.value)
-          
-          // 显示成功提示
-          notify.success('头像更新成功！')
-          
-          closeAvatarModal()
-        } else {
-          console.error('更新头像失败:', response?.message || '未知错误')
-          notify.error('更新失败，请稍后重试')
-        }
+        closeAvatarModal()
       } else {
-        console.error('上传头像文件失败:', uploadResult?.message || '未知错误')
-        notify.error('上传失败，请稍后重试')
+        console.error('更新头像失败:', response?.message || '未知错误')
+        notify.error('更新失败，请稍后重试')
       }
     }
   } catch (error) {
@@ -435,7 +493,7 @@ const passwordLoading = ref(false)
  * @param {string} password - 要验证的密码
  * @returns {string} 错误信息，为空表示验证通过
  */
-const validatePassword = (password) => {
+const validatePassword = (password: string): string => {
   // 至少8位，包含字母和数字
   const hasLetter = /[a-zA-Z]/.test(password)
   const hasNumber = /[0-9]/.test(password)
@@ -482,7 +540,7 @@ const handleChangePassword = async () => {
     const changePasswordData = {
       oldPassword: passwordForm.oldPassword,
       newPassword: passwordForm.newPassword,
-
+      confirmPassword: passwordForm.confirmPassword
     }
     
     // 调用修改密码API，使用/user/{id}/password接口

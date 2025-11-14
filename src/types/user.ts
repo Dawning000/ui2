@@ -40,3 +40,37 @@ export interface ProfileUpdateData {
   avatar?: string;
   [key: string]: any;
 }
+
+/**
+ * 关注用户信息接口
+ */
+export interface FollowingUser {
+  id: number;
+  username: string;
+  nickname: string;
+  avatar: string;
+  followers_count: number;
+  is_following: boolean;
+}
+
+/**
+ * 分页信息接口
+ */
+export interface Pagination {
+  total: number;
+  page: number;
+  size: number;
+  has_next: boolean;
+}
+
+/**
+ * 用户关注列表响应接口
+ */
+export interface FollowingListResponse {
+  code: number;
+  message: string;
+  data: {
+    list: FollowingUser[];
+    pagination: Pagination;
+  };
+}
