@@ -33,10 +33,6 @@
               <i class="icon-trash"></i>
               删除
             </button>
-            <button class="action-btn" @click="handleBookmark">
-              <i class="icon-bookmark" :class="{ active: post.isBookmarked }"></i>
-              收藏
-            </button>
             <button class="action-btn" @click="handleShare">
               <i class="icon-share"></i>
               分享
@@ -172,7 +168,13 @@
 
         <!-- 评论列表 -->
         <div class="comments-list">
-          <div v-for="comment in comments" :key="comment.id" class="comment-item">
+          <div 
+            v-for="comment in comments" 
+            :key="comment.id" 
+            :id="`comment-${comment.id}`"
+            class="comment-item"
+            :class="{ 'comment-highlight': route.query.commentId === comment.id.toString() }"
+          >
             <div class="comment-header">
               <img :src="comment.author.avatar || '/avatar.png'" :alt="comment.author.username" class="comment-avatar" @error="e => e.target.src = '/avatar.png'" />
               <div class="comment-meta">
@@ -247,7 +249,13 @@
             
             <!-- 显示回复列表 -->
             <div v-if="comment.replies && comment.replies.length > 0" class="replies-list">
-              <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
+              <div 
+                v-for="reply in comment.replies" 
+                :key="reply.id" 
+                :id="`comment-${reply.id}`"
+                class="reply-item"
+                :class="{ 'comment-highlight': route.query.commentId === reply.id.toString() }"
+              >
                 <div class="comment-header">
                   <img :src="reply.author.avatar || '/avatar.png'" :alt="reply.author.username" class="comment-avatar" @error="e => e.target.src = '/avatar.png'" />
                   <div class="comment-meta">
@@ -405,6 +413,10 @@ const handleDeleteComment = async (comment: Comment) => {
       // 更新评论计数
       if (found) {
         commentsCount.value = Math.max(0, commentsCount.value - 1)
+        // 同时更新帖子对象中的评论数
+        if (post.value) {
+          post.value.commentsCount = commentsCount.value
+        }
         console.log('更新后的评论计数:', commentsCount.value)
       }
     } else {
@@ -467,11 +479,20 @@ const loadComments = async (postId) => {
     console.log('评论API响应:', response);
     
     if (response.code === 200) {
-      // 评论数据实际在response.data.comments中
-      const commentsData = response.data && response.data.comments ? response.data.comments : [];
-      comments.value = Array.isArray(commentsData) ? commentsData : [];
-      // 更新评论数
-      commentsCount.value = comments.value.length;
+      // response.data 直接就是 Comment[] 数组
+      const commentsData = Array.isArray(response.data) ? response.data : [];
+      comments.value = commentsData;
+      // 评论数应该使用帖子详情中的 commentsCount，而不是计算列表长度
+      // 因为评论列表可能只包含顶级评论，而 commentsCount 包含所有评论（包括回复）
+      if (post.value && post.value.commentsCount !== undefined) {
+        commentsCount.value = post.value.commentsCount;
+      } else {
+        // 如果没有帖子详情中的评论数，则计算列表中的评论数（包括回复）
+        const totalComments = commentsData.reduce((count, comment) => {
+          return count + 1 + (comment.replies ? comment.replies.length : 0);
+        }, 0);
+        commentsCount.value = totalComments;
+      }
       console.log('加载后的评论列表:', comments.value);
       console.log('评论数:', commentsCount.value);
     } else {
@@ -480,7 +501,12 @@ const loadComments = async (postId) => {
   } catch (error) {
     console.error('加载评论失败:', error);
     comments.value = [];
-    commentsCount.value = 0;
+    // 如果加载失败，使用帖子详情中的评论数
+    if (post.value && post.value.commentsCount !== undefined) {
+      commentsCount.value = post.value.commentsCount;
+    } else {
+      commentsCount.value = 0;
+    }
   }
 }
 
@@ -587,10 +613,22 @@ const loadPost = async () => {
         createdAt: response.data.createTime
       }
       post.value = postData
+      // 初始化评论数（使用帖子详情中的评论数）
+      if (postData.commentsCount !== undefined) {
+        commentsCount.value = postData.commentsCount;
+      }
       // 不再需要userVote变量，直接使用post.value.isLiked
       
       // 获取评论列表
       await loadComments(postId)
+      
+      // 如果 URL 中有 commentId 参数，定位到该评论
+      const commentId = route.query.commentId
+      if (commentId) {
+        setTimeout(() => {
+          scrollToComment(commentId.toString())
+        }, 300) // 延迟一下确保 DOM 已渲染
+      }
     } else {
       throw new Error((response as any).message || '获取帖子详情失败')
     }
@@ -635,12 +673,6 @@ const handleVote = async (type: 'up' | 'down') => {
   } finally {
     submitting.value = false
   }
-}
-
-const handleBookmark = () => {
-  // 使用any类型断言避免类型错误
-  const postValue = post.value as any;
-  postValue.isBookmarked = !postValue.isBookmarked
 }
 
 /**
@@ -823,8 +855,12 @@ const handleSubmitComment = async () => {
       comments.value.unshift(newCommentData)
       console.log('评论已添加到列表，当前评论数:', comments.value.length)
       
-      // 更新评论数
-      commentsCount.value = comments.value.length
+      // 更新评论数（加1）
+      commentsCount.value = (commentsCount.value || 0) + 1
+      // 同时更新帖子对象中的评论数
+      if (post.value) {
+        post.value.commentsCount = commentsCount.value
+      }
       console.log('评论数已更新:', commentsCount.value)
       
       notificationService.success('评论发布成功')
@@ -916,7 +952,13 @@ const handleSubmitReply = async () => {
       } else {
         replyingTo.value.replies = [newReplyData]
       }
-      console.log('回复已添加到评论中')
+      // 更新评论数（回复也算作评论）
+      commentsCount.value = (commentsCount.value || 0) + 1
+      // 同时更新帖子对象中的评论数
+      if (post.value) {
+        post.value.commentsCount = commentsCount.value
+      }
+      console.log('回复已添加到评论中，评论数已更新:', commentsCount.value)
       
       // 重置表单
       replyContent.value = ''
@@ -950,6 +992,47 @@ const handleSubmitReply = async () => {
 // 已移除评论投票相关函数
 
 
+
+/**
+ * 滚动到指定评论
+ */
+const scrollToComment = (commentId: string) => {
+  // 先尝试在顶级评论中查找
+  const commentElement = document.getElementById(`comment-${commentId}`)
+  if (commentElement) {
+    commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // 高亮显示
+    commentElement.classList.add('comment-highlight')
+    // 3秒后移除高亮
+    setTimeout(() => {
+      commentElement.classList.remove('comment-highlight')
+    }, 3000)
+    return
+  }
+  
+  // 如果在顶级评论中没找到，可能在回复中
+  // 需要展开父评论的回复列表
+  const parentCommentId = route.query.parentCommentId
+  if (parentCommentId) {
+    // 查找父评论并展开回复
+    const parentElement = document.getElementById(`comment-${parentCommentId}`)
+    if (parentElement) {
+      // 滚动到父评论
+      parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // 等待一下再查找子评论
+      setTimeout(() => {
+        const replyElement = document.getElementById(`comment-${commentId}`)
+        if (replyElement) {
+          replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          replyElement.classList.add('comment-highlight')
+          setTimeout(() => {
+            replyElement.classList.remove('comment-highlight')
+          }, 3000)
+        }
+      }, 500)
+    }
+  }
+}
 
 // 组件初始化
 onMounted(() => {
@@ -1368,6 +1451,26 @@ onMounted(() => {
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+
+    &.comment-highlight {
+      background: #fef3c7;
+      border: 2px solid #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+      animation: highlightPulse 0.5s ease-out;
+    }
+  }
+}
+
+@keyframes highlightPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
   }
 }
 
@@ -1393,6 +1496,14 @@ onMounted(() => {
   border-radius: 6px;
   padding: 15px;
   margin-bottom: 15px;
+  transition: all 0.3s ease;
+
+  &.comment-highlight {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+    animation: highlightPulse 0.5s ease-out;
+  }
 }
 
 .reply-item .comment-avatar {

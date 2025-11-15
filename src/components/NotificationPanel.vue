@@ -68,7 +68,18 @@
                     {{ notification.title }}
                     <span v-if="!notification.isRead" class="unread-badge">新</span>
                   </div>
-                  <div class="notification-text">{{ notification.content }}</div>
+                  <div class="notification-text">
+                    <span v-if="notification.fromUser" class="notification-content">
+                      <span 
+                        class="user-name-link" 
+                        @click.stop="handleUserClick(notification.fromUser.id)"
+                      >
+                        {{ notification.fromUser.nickname || notification.fromUser.username }}
+                      </span>
+                      <span class="notification-content-text">{{ getNotificationContentText(notification) }}</span>
+                    </span>
+                    <span v-else>{{ notification.content }}</span>
+                  </div>
                   <div class="notification-time" :class="{ 'unread-time': !notification.isRead }">
                     <i class="icon-clock time-icon"></i>
                     {{ formatTime(notification.createdAt) }}
@@ -86,7 +97,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { notificationApi, type NotificationItem } from '../api/notifications'
+
+const router = useRouter()
 
 interface Props {
   visible: boolean
@@ -159,11 +173,19 @@ const fetchNotifications = async () => {
     if (response && response.code === 200) {
       let notificationsData = response.data?.notifications || []
       
-      // 适配后端返回的字段名（如果返回的是 read 而不是 isRead）
+      // 适配后端返回的字段名
       notificationsData = notificationsData.map((notification: any) => {
         // 如果后端返回的是 read 字段，将其转换为 isRead
         if (notification.read !== undefined && notification.isRead === undefined) {
           notification.isRead = notification.read
+        }
+        // 如果后端返回的是 createTime 字段，将其转换为 createdAt
+        if (notification.createTime !== undefined && notification.createdAt === undefined) {
+          notification.createdAt = notification.createTime
+        }
+        // 如果没有 title 字段，根据类型生成简短的 title
+        if (!notification.title) {
+          notification.title = getNotificationTitle(notification.type)
         }
         return notification
       })
@@ -197,49 +219,75 @@ const fetchNotifications = async () => {
 }
 
 /**
+ * 根据通知类型生成标题
+ */
+const getNotificationTitle = (type: string | undefined): string => {
+  if (!type) return '通知'
+  
+  const typeUpper = type.toUpperCase()
+  switch (typeUpper) {
+    case 'FOLLOW':
+      return '新关注'
+    case 'REPLY_POST':
+      return '新回复'
+    case 'REPLY_COMMENT':
+      return '新回复'
+    case 'LIKE_POST':
+      return '新点赞'
+    case 'LIKE_COMMENT':
+      return '新点赞'
+    default:
+      return '通知'
+  }
+}
+
+/**
  * 获取通知图标类名
  */
 const getNotificationIcon = (notification: NotificationItem): string => {
   // 根据通知类型返回不同的图标
   if (notification.type) {
-    switch (notification.type.toLowerCase()) {
-      case 'like':
-        return 'icon-heart'
-      case 'comment':
-        return 'icon-comment'
-      case 'follow':
+    const typeUpper = notification.type.toUpperCase()
+    switch (typeUpper) {
+      case 'FOLLOW':
         return 'icon-users'
-      case 'system':
-        return 'icon-info-circle'
-      case 'update':
-        return 'icon-update'
+      case 'REPLY_POST':
+      case 'REPLY_COMMENT':
+        return 'icon-comment'
+      case 'LIKE_POST':
+      case 'LIKE_COMMENT':
+        return 'icon-like'
       default:
         return 'icon-bell'
     }
   }
   
-  // 根据标题内容判断类型
-  if (notification.title.includes('点赞') || notification.title.includes('赞')) {
-    return 'icon-heart'
-  } else if (notification.title.includes('评论') || notification.title.includes('回复')) {
-    return 'icon-comment'
-  } else if (notification.title.includes('关注')) {
-    return 'icon-users'
-  } else if (notification.title.includes('更新') || notification.title.includes('升级')) {
-    return 'icon-update'
-  }
-  
   // 未读通知使用更醒目的图标
-  return !notification.isRead ? 'icon-bell' : 'icon-bell-o'
+  return 'icon-bell'
 }
 
 /**
  * 格式化时间
  */
-const formatTime = (timeStr: string): string => {
+const formatTime = (timeStr: string | undefined): string => {
+  if (!timeStr) {
+    return '刚刚'
+  }
+  
   const date = new Date(timeStr)
+  // 检查日期是否有效
+  if (isNaN(date.getTime())) {
+    return '刚刚'
+  }
+  
   const now = new Date()
   const diff = now.getTime() - date.getTime()
+  
+  // 如果时间差为负数（未来时间），返回"刚刚"
+  if (diff < 0) {
+    return '刚刚'
+  }
+  
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor(diff / (1000 * 60 * 60))
   const minutes = Math.floor(diff / (1000 * 60))
@@ -256,33 +304,92 @@ const formatTime = (timeStr: string): string => {
 }
 
 /**
+ * 获取通知内容文本（去除用户名后的部分）
+ */
+const getNotificationContentText = (notification: NotificationItem): string => {
+  if (!notification.fromUser || !notification.content) {
+    return notification.content || ''
+  }
+  
+  const userName = notification.fromUser.nickname || notification.fromUser.username
+  // 从 content 中移除用户名，返回剩余部分
+  if (notification.content.startsWith(userName)) {
+    return notification.content.substring(userName.length).trim()
+  }
+  
+  return notification.content
+}
+
+/**
+ * 处理用户点击
+ */
+const handleUserClick = (userId: number) => {
+  // 关闭通知面板
+  emit('close')
+  // 跳转到用户详情页
+  router.push(`/user/${userId}`)
+}
+
+/**
  * 处理通知点击
  */
 const handleNotificationClick = async (notification: NotificationItem) => {
-  // 如果已经已读，直接返回
-  if (notification.isRead) {
-    return
+  // 标记为已读（如果还未读）
+  if (!notification.isRead) {
+    try {
+      // 调用 API 标记为已读
+      const response = await notificationApi.markAsRead(notification.id)
+      
+      if (response && response.code === 200) {
+        // 更新本地状态
+        const index = notifications.value.findIndex(n => n.id === notification.id)
+        if (index !== -1) {
+          notifications.value[index].isRead = true
+          notifications.value[index].read = true
+        }
+        
+        // 更新未读数量
+        const newUnreadCount = Math.max(0, props.unreadCount - 1)
+        emit('updateUnread', newUnreadCount)
+      }
+    } catch (error) {
+      console.error('标记通知已读失败:', error)
+    }
   }
 
-  try {
-    // 调用 API 标记为已读
-    const response = await notificationApi.markAsRead(notification.id)
+  // 根据通知类型和关联信息进行跳转
+  handleNotificationNavigation(notification)
+}
+
+/**
+ * 处理通知导航跳转
+ */
+const handleNotificationNavigation = (notification: NotificationItem) => {
+  // 关闭通知面板
+  emit('close')
+
+  // 如果有 postId，跳转到帖子详情页
+  if (notification.postId) {
+    const postId = notification.postId
+    const query: Record<string, string> = {}
     
-    if (response && response.code === 200) {
-      // 更新本地状态
-      const index = notifications.value.findIndex(n => n.id === notification.id)
-      if (index !== -1) {
-        notifications.value[index].isRead = true
-        notifications.value[index].read = true
-      }
-      
-      // 更新未读数量
-      const newUnreadCount = Math.max(0, props.unreadCount - 1)
-      emit('updateUnread', newUnreadCount)
+    // 如果有 commentId，通过 query 参数传递，让页面定位到该评论
+    if (notification.commentId) {
+      query.commentId = notification.commentId.toString()
     }
-  } catch (error) {
-    console.error('标记通知已读失败:', error)
-    // 可以在这里显示错误提示
+    
+    // 如果有 parentCommentId，也传递过去
+    if (notification.parentCommentId) {
+      query.parentCommentId = notification.parentCommentId.toString()
+    }
+    
+    router.push({
+      path: `/post/${postId}`,
+      query: query
+    })
+  } else if (notification.fromUser) {
+    // 如果没有 postId 但有 fromUser，跳转到用户详情页
+    handleUserClick(notification.fromUser.id)
   }
 }
 
@@ -685,6 +792,31 @@ watch(() => props.visible, (newVal) => {
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+
+      .notification-content {
+        display: inline;
+      }
+
+      .user-name-link {
+        color: var(--primary-color, #f97316);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+
+        &:hover {
+          color: #fb923c;
+          text-decoration: underline;
+        }
+
+        &:active {
+          color: #ea580c;
+        }
+      }
+
+      .notification-content-text {
+        color: #9ca3af;
+      }
     }
 
     .notification-time {

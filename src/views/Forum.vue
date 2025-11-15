@@ -20,37 +20,33 @@
         </div>
       </div>
 
-      <!-- 筛选和排序 -->
+      <!-- 筛选和搜索 -->
       <div class="forum-filters">
-        <div class="filter-group">
-          <label>排序方式：</label>
-          <select v-model="sortBy" @change="handleSortChange" class="filter-select">
-            <option value="latest">最新发布</option>
-            <option value="hot">最热门</option>
-            <option value="views">最多浏览</option>
-            <option value="comments">最多评论</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label>时间范围：</label>
-          <select v-model="timeRange" @change="handleTimeRangeChange" class="filter-select">
-            <option value="all">全部时间</option>
-            <option value="today">今天</option>
-            <option value="week">本周</option>
-            <option value="month">本月</option>
-          </select>
-        </div>
         <div class="search-box">
+          <div class="search-icon-wrapper">
+            <i class="icon-search"></i>
+          </div>
           <input 
             type="text" 
-            placeholder="搜索帖子..."
+            placeholder="搜索帖子标题、内容或标签..."
             v-model="searchQuery"
             @keyup.enter="handleSearch"
             class="search-input"
           >
           <button @click="handleSearch" class="search-btn">
-            <i class="icon-search"></i>
+            <span>搜索</span>
           </button>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">
+            <i class="icon-filter"></i>
+          </div>
+          <select v-model="selectedCategory" @change="handleCategoryChange" class="filter-select">
+            <option value="">全部分类</option>
+            <option value="movie">🎬 电影</option>
+            <option value="tv">📺 电视剧</option>
+            <option value="variety">🎭 综艺</option>
+          </select>
         </div>
       </div>
 
@@ -61,7 +57,7 @@
           <p>加载中...</p>
         </div>
         
-        <div v-else-if="filteredPosts.length === 0" class="empty-state">
+        <div v-else-if="!posts || posts.length === 0" class="empty-state">
           <i class="icon-empty"></i>
           <h3>暂无帖子</h3>
           <p>还没有人在这里发布帖子，快来成为第一个吧！</p>
@@ -71,7 +67,7 @@
         </div>
         
         <div v-else class="posts-list">
-          <div v-for="post in paginatedPosts" :key="post.id" class="post-item">
+          <div v-for="post in sortedPosts" :key="post.id" class="post-item">
             
             <div class="post-content">
               <div class="post-header">
@@ -107,17 +103,10 @@
                   </span>
                   <span class="stat">
                     <i class="icon-comment"></i>
-                    {{ post.comments }}
-                  </span>
-                  <span class="stat">
-                    <i class="icon-share"></i>
-                    分享
+                    {{ post.commentsCount || 0 }}
                   </span>
                 </div>
                 <div class="post-actions">
-                  <button class="action-btn" @click="handleBookmark(post)">
-                    <i class="icon-bookmark" :class="{ active: post.isBookmarked }"></i>
-                  </button>
                   <button class="action-btn" @click="handleShare(post)">
                     <i class="icon-share"></i>
                   </button>
@@ -128,34 +117,40 @@
         </div>
 
         <!-- 分页 -->
-        <div v-if="totalPages > 1" class="pagination">
-          <button 
-            class="page-btn" 
-            :disabled="currentPage === 1"
-            @click="goToPage(currentPage - 1)"
-          >
-            上一页
-          </button>
-          
-          <div class="page-numbers">
+        <div v-if="pagination.total > 0 && totalPages > 1" class="pagination">
+          <div class="pagination-info">
+            <span>共 {{ pagination.total }} 条，第 {{ currentPage }} / {{ totalPages }} 页</span>
+          </div>
+          <div class="pagination-controls">
             <button 
-              v-for="page in visiblePages" 
-              :key="page"
-              class="page-btn"
-              :class="{ active: page === currentPage }"
-              @click="goToPage(page)"
+              class="page-btn" 
+              :disabled="currentPage === 1"
+              @click="goToPage(currentPage - 1)"
             >
-              {{ page }}
+              上一页
+            </button>
+            
+            <div class="page-numbers">
+              <button 
+                v-for="page in visiblePages" 
+                :key="page"
+                class="page-btn"
+                :class="{ active: page === currentPage, disabled: page === '...' }"
+                :disabled="page === '...'"
+                @click="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+            </div>
+            
+            <button 
+              class="page-btn" 
+              :disabled="currentPage === totalPages"
+              @click="goToPage(currentPage + 1)"
+            >
+              下一页
             </button>
           </div>
-          
-          <button 
-            class="page-btn" 
-            :disabled="currentPage === totalPages"
-            @click="goToPage(currentPage + 1)"
-          >
-            下一页
-          </button>
         </div>
       </div>
     </div>
@@ -237,13 +232,20 @@ import type { Post } from '../api/posts'
 // 响应式数据
 const loading = ref(false)
 const posts = ref<Post[]>([])
-const sortBy = ref('latest')
-const timeRange = ref('all')
+const sortBy = ref('latest') // 固定为最新发布
 const searchQuery = ref('')
+const selectedCategory = ref('')
 const currentPage = ref(1)
 const postsPerPage = ref(10)
 const showCreatePost = ref(false)
 const creating = ref(false)
+// 分页信息
+const pagination = ref({
+  total: 0,
+  page: 1,
+  size: 10,
+  has_next: false
+})
 
 // 不再需要编辑模式标志，因为编辑功能已移至PostDetail页面
 
@@ -254,61 +256,42 @@ const newPost = ref({
   content: ''
 })
 
-// 计算属性
-const filteredPosts = computed(() => {
-  let filtered = [...posts.value]
-  
-  // 按分类筛选
-  if (route.params.category) {
-    filtered = filtered.filter(post => post.category === route.params.category)
+// 计算属性 - 使用后端返回的数据，只做前端排序（如果需要）
+const sortedPosts = computed(() => {
+  // 安全检查：确保 posts.value 存在且是数组
+  if (!posts.value || !Array.isArray(posts.value)) {
+    return []
   }
   
-  // 按搜索关键词筛选
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(post => 
-      post.title.toLowerCase().includes(query) ||
-      post.excerpt.toLowerCase().includes(query) ||
-      post.tags.some(tag => tag.toLowerCase().includes(query))
-    )
-  }
+  // 如果后端已经排序，可以直接返回 posts.value
+  // 如果需要前端排序，可以在这里排序
+  let sorted = [...posts.value]
   
-  // 按时间范围筛选
-  if (timeRange.value !== 'all') {
-    const now = new Date()
-    const timeMap = {
-      today: 24 * 60 * 60 * 1000,
-      week: 7 * 24 * 60 * 60 * 1000,
-      month: 30 * 24 * 60 * 60 * 1000
-    }
-    const timeLimit = now.getTime() - timeMap[timeRange.value]
-    filtered = filtered.filter(post => new Date(post.createdAt).getTime() > timeLimit)
-  }
-  
-  // 排序
-  filtered.sort((a, b) => {
+  // 前端排序（如果后端不支持排序参数）
+  sorted.sort((a, b) => {
     switch (sortBy.value) {
       case 'hot':
-        return b.commentsCount * 2 - a.commentsCount * 2
+        return (b.commentsCount || 0) * 2 - (a.commentsCount || 0) * 2
       case 'views':
-        return b.views - a.views
+        return (b.views || 0) - (a.views || 0)
       case 'comments':
-        return b.commentsCount - a.commentsCount
+        return (b.commentsCount || 0) - (a.commentsCount || 0)
       case 'latest':
       default:
-        return new Date(b.createdAt) - new Date(a.createdAt)
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return timeB - timeA
     }
   })
   
-  return filtered
+  return sorted
 })
 
-const totalPages = computed(() => Math.ceil(filteredPosts.value.length / postsPerPage.value))
-
-const paginatedPosts = computed(() => {
-  const start = (currentPage.value - 1) * postsPerPage.value
-  const end = start + postsPerPage.value
-  return filteredPosts.value.slice(start, end)
+const totalPages = computed(() => {
+  if (!pagination.value || !pagination.value.size || pagination.value.size === 0) {
+    return 1
+  }
+  return Math.ceil(pagination.value.total / pagination.value.size)
 })
 
 const visiblePages = computed(() => {
@@ -376,10 +359,10 @@ const formatTime = (date) => {
 const loadPosts = async () => {
   loading.value = true
   try {
-    // 获取当前分类
-    const category = route.params.category as string
+    // 优先使用选中的分类，如果没有则使用路由参数中的分类
+    const category = selectedCategory.value || (route.params.category as string) || ''
     
-    // 调用API获取帖子列表
+    // 调用API获取帖子列表，传递分页参数和搜索参数
     const response = await postApi.getPosts(
       currentPage.value,
       postsPerPage.value,
@@ -402,39 +385,66 @@ const loadPosts = async () => {
         // 添加categoryName字段
         categoryName: categoryMap[post.category] || '未分类'
       }))
+      
+      // 更新分页信息
+      if (response.data.pagination) {
+        pagination.value = {
+          total: response.data.pagination.total || 0,
+          page: response.data.pagination.page || currentPage.value,
+          size: response.data.pagination.size || postsPerPage.value,
+          has_next: response.data.pagination.has_next || false
+        }
+        // 同步当前页码
+        currentPage.value = pagination.value.page
+      }
     } else {
       throw new Error(response.message || '获取帖子列表失败')
     }
   } catch (error) {
     console.error('加载帖子失败:', error)
+    posts.value = []
+    pagination.value = {
+      total: 0,
+      page: 1,
+      size: postsPerPage.value,
+      has_next: false
+    }
   } finally {
     loading.value = false
   }
 }
 
-const handleSortChange = () => {
+const handleCategoryChange = () => {
   currentPage.value = 1
-}
-
-const handleTimeRangeChange = () => {
-  currentPage.value = 1
+  // 更新路由（可选，如果需要URL反映分类）
+  if (selectedCategory.value) {
+    router.push(`/forum/${selectedCategory.value}`)
+  } else {
+    router.push('/forum')
+  }
+  loadPosts() // 重新加载数据
 }
 
 const handleSearch = () => {
   currentPage.value = 1
+  loadPosts() // 重新加载数据，传递搜索关键词
 }
 
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
+const goToPage = (page: number | string) => {
+  // 如果是省略号，不执行任何操作
+  if (page === '...') {
+    return
+  }
+  
+  // 确保 page 是数字
+  const pageNum = typeof page === 'string' ? parseInt(page, 10) : page
+  
+  // 验证页码范围
+  if (pageNum >= 1 && pageNum <= totalPages.value && pageNum !== currentPage.value) {
+    currentPage.value = pageNum
+    loadPosts() // 重新加载对应页的数据
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-}
-
-
-
-const handleBookmark = (post) => {
-  post.isBookmarked = !post.isBookmarked
 }
 
 const handleShare = (post) => {
@@ -502,8 +512,13 @@ const handleCreatePost = async () => {
   }
 }
 
-// 监听路由变化
-watch(() => route.params.category, () => {
+// 监听路由变化，更新分类选择
+watch(() => route.params.category, (newCategory) => {
+  if (newCategory) {
+    selectedCategory.value = newCategory as string
+  } else {
+    selectedCategory.value = ''
+  }
   currentPage.value = 1
   loadPosts()
 })
@@ -524,12 +539,17 @@ const notify = {
 };
 
 onMounted(() => {
-  loadPosts()
+  // 初始化分类选择（从路由参数获取）
+  if (route.params.category) {
+    selectedCategory.value = route.params.category as string
+  }
   
   // 如果有搜索参数，设置搜索框
   if (route.query.search) {
     searchQuery.value = route.query.search
   }
+  
+  loadPosts()
   
   // 清除可能存在的旧编辑数据，避免干扰
   sessionStorage.removeItem('isEditMode')
@@ -590,73 +610,154 @@ onMounted(() => {
   }
 }
 
-// 筛选器
+// 筛选和搜索区域
 .forum-filters {
   display: flex;
-  gap: 30px;
+  gap: 20px;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 30px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 .filter-group {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+  margin-left: auto;
   
-  label {
-    font-weight: 500;
-    color: #374151;
-    white-space: nowrap;
+  .filter-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    
+    i {
+      font-size: 14px;
+      color: #3b82f6;
+    }
   }
-}
-
-.filter-select {
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: white;
-  font-size: 14px;
-  min-width: 120px;
   
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  .filter-select {
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    
+    &:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+    
+    option {
+      padding: 8px;
+      font-weight: 500;
+    }
   }
 }
 
 .search-box {
   display: flex;
   align-items: center;
-  margin-left: auto;
+  flex: 1;
+  max-width: 700px;
+  background: white;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+  &:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .search-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    color: #94a3b8;
+    background: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+    
+    i {
+      font-size: 18px;
+    }
+  }
   
   .search-input {
-    padding: 8px 15px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px 0 0 6px;
-    font-size: 14px;
-    min-width: 200px;
+    flex: 1;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    color: #1e293b;
+    
+    
+    &::placeholder {
+      color: #94a3b8;
+    }
     
     &:focus {
       outline: none;
-      border-color: #3b82f6;
     }
   }
   
   .search-btn {
-    padding: 8px 15px;
-    background: #3b82f6;
-    border: 1px solid #3b82f6;
-    border-radius: 0 6px 6px 0;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border: none;
     color: white;
+    font-weight: 600;
+    font-size: 14px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    white-space: nowrap;
     
     &:hover {
-      background: #2563eb;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+    
+    span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
   }
 }
@@ -1123,22 +1224,34 @@ onMounted(() => {
   
   .forum-filters {
     flex-direction: column;
-    align-items: stretch;
-    gap: 15px;
+    gap: 16px;
+    padding: 20px;
   }
   
   .filter-group {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
+    width: 100%;
+    min-width: auto;
+    
+    .filter-select {
+      width: 100%;
+    }
   }
   
   .search-box {
-    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+    flex-direction: row;
+    
+    .search-icon-wrapper {
+      display: flex;
+    }
     
     .search-input {
-      min-width: auto;
-      flex: 1;
+      padding: 12px 16px;
+    }
+    
+    .search-btn {
+      padding: 12px 20px;
     }
   }
   

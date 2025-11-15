@@ -62,6 +62,11 @@
   font-family: inherit !important; // emoji 使用系统字体
 }
 .icon-check::before { content: "✓"; }
+.icon-clock::before { content: "🕐"; }
+.icon-error-circle::before { content: "❌"; }
+.icon-info-circle::before { content: "ℹ️"; }
+.icon-warning-circle::before { content: "⚠️"; }
+.icon-heart::before { content: "❤️"; }
 
 // 图标大小变体
 .icon-xs {

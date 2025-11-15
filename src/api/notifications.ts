@@ -12,6 +12,16 @@ export interface NotificationCountResponse {
 }
 
 /**
+ * 通知用户信息接口
+ */
+export interface NotificationFromUser {
+  id: number;
+  nickname: string;
+  username: string;
+  avatar: string | null;
+}
+
+/**
  * 通知项接口
  */
 export interface NotificationItem {
@@ -22,6 +32,10 @@ export interface NotificationItem {
   isRead: boolean;
   read?: boolean;  // 后端可能返回的是 read 字段
   createdAt: string;
+  fromUser?: NotificationFromUser;  // 发送通知的用户信息
+  postId?: number | null;  // 关联的帖子ID
+  commentId?: number | null;  // 关联的评论ID
+  parentCommentId?: number | null;  // 父评论ID
   [key: string]: any;
 }
 
