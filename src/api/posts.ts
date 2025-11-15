@@ -14,6 +14,9 @@ export interface Comment {
   votes: number;
   userVote?: string | null;
   replies?: Comment[];
+  canEdit?: boolean; // 是否可以编辑（根据作者ID判断）
+  canDelete?: boolean; // 是否可以删除（根据作者ID判断）
+  createdAt?: string; // 转换后的时间字段
 }
 
 // 帖子类型定义
@@ -91,6 +94,16 @@ export interface CreateCommentResponse {
   code: number;
   message: string;
   data: Comment;
+}
+
+// 帖子权限响应类型
+export interface PostPermissionResponse {
+  code: number;
+  message: string;
+  data: {
+    canEdit: boolean;
+    canDelete: boolean;
+  };
 }
 
 /**
@@ -191,9 +204,23 @@ export const postApi = {
   getComments: async (id: number): Promise<{ 
     code: number; 
     message: string; 
-    data: Comment[] 
+    data: {
+      comments: Comment[];
+      total: number;
+      page: number;
+      size: number;
+    }
   }> => {
-    return await http<{ code: number; message: string; data: Comment[] }>(`/posts/${id}/comments`);
+    return await http<{ 
+      code: number; 
+      message: string; 
+      data: {
+        comments: Comment[];
+        total: number;
+        page: number;
+        size: number;
+      }
+    }>(`/posts/${id}/comments`);
   },
 
   /**
@@ -254,5 +281,14 @@ export const postApi = {
     searchParams.append('size', size.toString());
     
     return await http<PostListResponse>(`/user/${userId}/posts?${searchParams.toString()}`);
+  },
+
+  /**
+   * 获取帖子权限
+   * @param id 帖子ID
+   * @returns 帖子权限信息（是否能编辑、删除）
+   */
+  getPostPermission: async (id: number): Promise<PostPermissionResponse> => {
+    return await http<PostPermissionResponse>(`/posts/${id}/permission`);
   }
 };

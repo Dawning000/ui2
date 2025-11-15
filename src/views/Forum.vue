@@ -72,16 +72,16 @@
             <div class="post-content">
               <div class="post-header">
                 <div class="post-meta">
-                  <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="e => e.target.src = '/avatar.png'" />
+                  <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="(e: Event) => { const target = e.target as HTMLImageElement; if (target) target.src = '/avatar.png' }" />
                   <div class="author-info">
                     <router-link :to="`/user/${post.author.id}`" class="author-name">
                       {{ post.author.username }}
                     </router-link>
-                    <span class="post-time">{{ formatTime(post.createdAt) }}</span>
+                    <span class="post-time">{{ formatTime(post.createdAt || post.createTime) }}</span>
                   </div>
                 </div>
                 <div class="post-category">
-                  <span :class="`category-tag category-${post.category}`">{{ post.categoryName }}</span>
+                  <span :class="`category-tag category-${post.category}`">{{ post.categoryName || '未分类' }}</span>
                 </div>
               </div>
               
@@ -117,39 +117,82 @@
         </div>
 
         <!-- 分页 -->
-        <div v-if="pagination.total > 0 && totalPages > 1" class="pagination">
+        <div v-if="pagination.total > 0" class="pagination-container">
           <div class="pagination-info">
-            <span>共 {{ pagination.total }} 条，第 {{ currentPage }} / {{ totalPages }} 页</span>
+            <span>共 {{ pagination.total }} 条记录</span>
+            <span class="divider" v-if="pagination.total > 0">|</span>
+            <template v-if="pagination.total > 0">
+              <span>每页显示</span>
+              <select v-model="postsPerPage" @change="handleSizeChange" class="page-size-select">
+                <option :value="10">10</option>
+                <option :value="20">20</option>
+                <option :value="50">50</option>
+                <option :value="100">100</option>
+              </select>
+              <span>条</span>
+            </template>
           </div>
-          <div class="pagination-controls">
+          <div class="pagination" v-if="totalPages >= 1">
             <button 
-              class="page-btn" 
+              class="pagination-btn" 
+              :disabled="currentPage <= 1"
+              @click="goToPage(1)"
+              title="首页"
+            >
+              首页
+            </button>
+            <button 
+              class="pagination-btn" 
               :disabled="currentPage === 1"
               @click="goToPage(currentPage - 1)"
+              title="上一页"
             >
               上一页
             </button>
             
-            <div class="page-numbers">
-              <button 
-                v-for="page in visiblePages" 
-                :key="page"
-                class="page-btn"
-                :class="{ active: page === currentPage, disabled: page === '...' }"
-                :disabled="page === '...'"
-                @click="goToPage(page)"
-              >
-                {{ page }}
-              </button>
+            <div class="page-numbers" v-if="totalPages > 1">
+              <template v-for="page in visiblePages" :key="page">
+                <button 
+                  v-if="typeof page === 'number'"
+                  class="pagination-btn page-number"
+                  :class="{ active: page === currentPage }"
+                  @click="goToPage(page)"
+                >
+                  {{ page }}
+                </button>
+                <span v-else class="page-ellipsis">{{ page }}</span>
+              </template>
             </div>
             
             <button 
-              class="page-btn" 
-              :disabled="currentPage === totalPages"
+              class="pagination-btn" 
+              :disabled="currentPage >= totalPages"
               @click="goToPage(currentPage + 1)"
+              title="下一页"
             >
               下一页
             </button>
+            <button 
+              class="pagination-btn" 
+              :disabled="currentPage >= totalPages"
+              @click="goToPage(totalPages)"
+              title="末页"
+            >
+              末页
+            </button>
+            <div class="page-jump" v-if="totalPages > 1">
+              <span>跳至</span>
+              <input 
+                type="number" 
+                v-model.number="jumpPage"
+                :min="1"
+                :max="totalPages"
+                @keyup.enter="handleJump"
+                class="jump-input"
+              />
+              <span>页</span>
+              <button @click="handleJump" class="jump-btn">确定</button>
+            </div>
           </div>
         </div>
       </div>
@@ -223,15 +266,22 @@
 import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { postApi, CreatePostParams } from '../api/posts'
+import { notificationService as notify } from '../utils/notification'
 
 const route = useRoute()
 const router = useRouter()
 
 import type { Post } from '../api/posts'
 
+// 扩展 Post 类型以包含前端添加的字段
+interface ExtendedPost extends Post {
+  createdAt?: string
+  categoryName?: string
+}
+
 // 响应式数据
 const loading = ref(false)
-const posts = ref<Post[]>([])
+const posts = ref<ExtendedPost[]>([])
 const sortBy = ref('latest') // 固定为最新发布
 const searchQuery = ref('')
 const selectedCategory = ref('')
@@ -239,6 +289,7 @@ const currentPage = ref(1)
 const postsPerPage = ref(10)
 const showCreatePost = ref(false)
 const creating = ref(false)
+const jumpPage = ref(1)
 // 分页信息
 const pagination = ref({
   total: 0,
@@ -278,8 +329,8 @@ const sortedPosts = computed(() => {
         return (b.commentsCount || 0) - (a.commentsCount || 0)
       case 'latest':
       default:
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        const timeA = (a.createdAt || a.createTime) ? new Date(a.createdAt || a.createTime).getTime() : 0
+        const timeB = (b.createdAt || b.createTime) ? new Date(b.createdAt || b.createTime).getTime() : 0
         return timeB - timeA
     }
   })
@@ -288,10 +339,16 @@ const sortedPosts = computed(() => {
 })
 
 const totalPages = computed(() => {
-  if (!pagination.value || !pagination.value.size || pagination.value.size === 0) {
-    return 1
+  if (!pagination.value) {
+    return 0
   }
-  return Math.ceil(pagination.value.total / pagination.value.size)
+  const total = pagination.value.total || 0
+  if (total === 0) {
+    return 0
+  }
+  const pageSize = postsPerPage.value || pagination.value.size || 10
+  const pages = Math.ceil(total / pageSize)
+  return pages > 0 ? pages : 1
 })
 
 const visiblePages = computed(() => {
@@ -315,7 +372,7 @@ const visiblePages = computed(() => {
     } else {
       pages.push(1)
       pages.push('...')
-      for (let i = current - 1; i <= current + 1; i++) pages.push(i)
+      for (let i = current - 2; i <= current + 2; i++) pages.push(i)
       pages.push('...')
       pages.push(total)
     }
@@ -326,26 +383,30 @@ const visiblePages = computed(() => {
 
 // 方法
 const getCategoryTitle = () => {
-  const categoryMap = {
+  const categoryMap: Record<string, string> = {
     movie: '电影讨论',
     tv: '电视剧讨论',
     variety: '综艺讨论'
   }
-  return categoryMap[route.params.category] || '影视论坛'
+  const category = Array.isArray(route.params.category) ? route.params.category[0] : route.params.category
+  return categoryMap[category as string] || '影视论坛'
 }
 
 const getCategoryDescription = () => {
-  const descMap = {
+  const descMap: Record<string, string> = {
     movie: '分享最新电影评论，讨论经典影片',
     tv: '热播剧集深度解析，追剧心得分享',
     variety: '娱乐综艺节目观后感分享'
   }
-  return descMap[route.params.category] || '与千万影迷一起讨论精彩内容'
+  const category = Array.isArray(route.params.category) ? route.params.category[0] : route.params.category
+  return descMap[category as string] || '与千万影迷一起讨论精彩内容'
 }
 
-const formatTime = (date) => {
+const formatTime = (date: string | undefined) => {
+  if (!date) return '刚刚'
   const now = new Date()
-  const diff = now - new Date(date)
+  const dateObj = new Date(date)
+  const diff = now.getTime() - dateObj.getTime()
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor(diff / (1000 * 60 * 60))
   const minutes = Math.floor(diff / (1000 * 60))
@@ -372,7 +433,7 @@ const loadPosts = async () => {
     
     if (response.code === 200) {
       // 转换API返回的数据，添加categoryName字段并确保createdAt字段存在
-      const categoryMap = {
+      const categoryMap: Record<string, string> = {
         movie: '电影讨论',
         tv: '电视剧讨论',
         variety: '综艺讨论'
@@ -396,6 +457,20 @@ const loadPosts = async () => {
         }
         // 同步当前页码
         currentPage.value = pagination.value.page
+        // 同步跳转页码
+        jumpPage.value = pagination.value.page
+      } else {
+        // 如果API没有返回分页信息，根据返回的帖子数量估算
+        // 如果返回的帖子数量等于每页数量，说明可能还有更多页
+        const estimatedTotal = response.data.posts.length === postsPerPage.value 
+          ? (currentPage.value * postsPerPage.value) + 1 
+          : (currentPage.value - 1) * postsPerPage.value + response.data.posts.length
+        pagination.value = {
+          total: estimatedTotal,
+          page: currentPage.value,
+          size: postsPerPage.value,
+          has_next: response.data.posts.length === postsPerPage.value
+        }
       }
     } else {
       throw new Error(response.message || '获取帖子列表失败')
@@ -416,6 +491,7 @@ const loadPosts = async () => {
 
 const handleCategoryChange = () => {
   currentPage.value = 1
+  jumpPage.value = 1
   // 更新路由（可选，如果需要URL反映分类）
   if (selectedCategory.value) {
     router.push(`/forum/${selectedCategory.value}`)
@@ -427,6 +503,7 @@ const handleCategoryChange = () => {
 
 const handleSearch = () => {
   currentPage.value = 1
+  jumpPage.value = 1
   loadPosts() // 重新加载数据，传递搜索关键词
 }
 
@@ -442,17 +519,36 @@ const goToPage = (page: number | string) => {
   // 验证页码范围
   if (pageNum >= 1 && pageNum <= totalPages.value && pageNum !== currentPage.value) {
     currentPage.value = pageNum
+    jumpPage.value = pageNum
     loadPosts() // 重新加载对应页的数据
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 
-const handleShare = (post) => {
+const handleSizeChange = () => {
+  // 当每页显示条数变化时，重置页码为1并重新加载数据
+  currentPage.value = 1
+  jumpPage.value = 1
+  loadPosts()
+}
+
+const handleJump = () => {
+  // 确保jumpPage在有效范围内
+  const targetPage = Math.max(1, Math.min(jumpPage.value, totalPages.value))
+  if (targetPage !== currentPage.value) {
+    currentPage.value = targetPage
+    jumpPage.value = targetPage
+    loadPosts()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+const handleShare = (post: ExtendedPost) => {
   // 实现分享功能
   if (navigator.share) {
     navigator.share({
       title: post.title,
-      text: post.excerpt,
+      text: post.excerpt || '',
       url: window.location.origin + `/post/${post.id}`
     })
   } else {
@@ -520,23 +616,20 @@ watch(() => route.params.category, (newCategory) => {
     selectedCategory.value = ''
   }
   currentPage.value = 1
+  jumpPage.value = 1
   loadPosts()
 })
 
 // 监听搜索参数
 watch(() => route.query.search, (newSearch) => {
   if (newSearch) {
-    searchQuery.value = newSearch
+    const searchValue = Array.isArray(newSearch) ? newSearch[0] : newSearch
+    if (searchValue && typeof searchValue === 'string') {
+      searchQuery.value = searchValue
+    }
   }
 })
 
-// 通知辅助函数（使用console避免TypeScript错误）
-const notify = {
-  success: (message: string) => console.log('Success:', message),
-  error: (message: string) => console.error('Error:', message),
-  warning: (message: string) => console.warn('Warning:', message),
-  info: (message: string) => console.info('Info:', message)
-};
 
 onMounted(() => {
   // 初始化分类选择（从路由参数获取）
@@ -546,7 +639,10 @@ onMounted(() => {
   
   // 如果有搜索参数，设置搜索框
   if (route.query.search) {
-    searchQuery.value = route.query.search
+    const searchValue = Array.isArray(route.query.search) ? route.query.search[0] : route.query.search
+    if (searchValue && typeof searchValue === 'string') {
+      searchQuery.value = searchValue
+    }
   }
   
   loadPosts()
@@ -967,6 +1063,7 @@ onMounted(() => {
   margin-bottom: 15px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1032,15 +1129,123 @@ onMounted(() => {
 }
 
 // 分页
+.pagination-container {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.pagination-info .divider {
+  margin: 0 4px;
+}
+
+.page-size-select {
+  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
 .pagination {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
   padding: 30px;
   background: #f9fafb;
 }
 
+.pagination-btn {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s;
+  min-width: 36px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-btn.active {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+  font-weight: 600;
+}
+
+.page-number {
+  min-width: 36px;
+  text-align: center;
+}
+
+.page-ellipsis {
+  padding: 8px 4px;
+  color: #9ca3af;
+  user-select: none;
+}
+
+.page-jump {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.jump-input {
+  width: 50px;
+  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.jump-btn {
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+}
+
+.jump-btn:hover {
+  background: #f9fafb;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* 保留旧的分页样式以确保兼容性 */
 .page-btn {
   padding: 8px 12px;
   border: 1px solid #d1d5db;

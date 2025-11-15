@@ -518,7 +518,7 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
       }
     }
   }
-  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
   .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; position: relative; }
   .card-link { text-decoration: none; color: inherit; display: block; }
   .card-link:hover .poster { opacity: 0.9; }

@@ -51,7 +51,7 @@ export const useSearchStore = defineStore('search', () => {
   const award = ref<string>('') // 奖项筛选（只要名字）
   const sort = ref<SearchQueryParams['sort']>('relevance_desc')
   const page = ref<number>(1)
-  const pageSize = ref<number>(24)
+  const pageSize = ref<number>(10)
 
   // results state
   const items = ref<SearchItem[]>([])
@@ -104,7 +104,7 @@ export const useSearchStore = defineStore('search', () => {
     award.value = (convertQueryValue(query.award) as string) || ''
     sort.value = (convertQueryValue(query.sort) as any) || 'relevance_desc'
     page.value = parseNumber(convertQueryValue(query.page)) || 1
-    pageSize.value = parseNumber(convertQueryValue(query.page_size)) || 24
+    pageSize.value = parseNumber(convertQueryValue(query.page_size)) || 10
   }
 
   async function syncToRoute(replace = false): Promise<void> {
