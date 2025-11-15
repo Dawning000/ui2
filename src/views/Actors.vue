@@ -10,6 +10,10 @@
           <p class="page-subtitle">探索优秀的演员和导演，发现他们的精彩作品</p>
         </div>
         <div class="header-actions">
+          <button class="awards-button" @click="goToAwardsList">
+            <i class="icon-trophy"></i>
+            所有奖项列表
+          </button>
           <button v-if="isAdmin" class="add-button" @click="handleAddActor">
             <i class="icon-plus"></i>
             添加演员/导演
@@ -71,22 +75,12 @@
           <div class="name">{{ actor.name }}</div>
           <div class="sub">
             <span v-if="actor.nationality" class="sub-item">
-              <i class="icon-location"></i>
+              <i class="icon-location location-icon"></i>
               {{ actor.nationality }}
             </span>
             <span v-if="actor.gender" class="sub-item">
-              <i class="icon-user"></i>
+              <i class="icon-user gender-icon"></i>
               {{ actor.gender }}
-            </span>
-          </div>
-          <div class="counts">
-            <span v-if="actor.moviesCount" class="count-item">
-              <i class="icon-film"></i>
-              电影 {{ actor.moviesCount }}
-            </span>
-            <span v-if="actor.tvShowsCount" class="count-item">
-              <i class="icon-tv"></i>
-              电视剧 {{ actor.tvShowsCount }}
             </span>
           </div>
         </div>
@@ -188,6 +182,7 @@ import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { fetchActors, saveActor } from '@/api/actors'
+import { notificationService } from '@/utils/notification'
 import type { ActorListItem, ActorSaveData } from '@/types/actors'
 import ActorForm from '@/components/ActorForm.vue'
 
@@ -331,6 +326,10 @@ function goDetail(id: number | string) {
   router.push({ name: 'ActorDetail', params: { id } })
 }
 
+function goToAwardsList() {
+  router.push({ name: 'AwardsList' })
+}
+
 // 处理图片加载失败
 function handleImageError(event: Event) {
   const img = event.target as HTMLImageElement
@@ -343,14 +342,8 @@ function handleAddActor() {
   showForm.value = true
 }
 
-// 获取全局通知服务
-// 通知辅助函数（使用console避免TypeScript错误）
-const notify = {
-  success: (message: string) => console.log('Success:', message),
-  error: (message: string) => console.error('Error:', message),
-  warning: (message: string) => console.warn('Warning:', message),
-  info: (message: string) => console.info('Info:', message)
-};
+// 使用项目中的通知服务
+const notify = notificationService;
 
 // 处理表单提交
 async function handleFormSubmit(actorData: ActorSaveData) {
@@ -363,10 +356,10 @@ async function handleFormSubmit(actorData: ActorSaveData) {
     await load()
     
     // 显示成功消息
-    $notification.success('演员/导演添加成功！')
+    notify.success('演员/导演添加成功！')
   } catch (err: any) {
     console.error('Failed to save actor:', err)
-    $notification.error(err?.message || '添加失败，请稍后重试')
+    notify.error(err?.message || '添加失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -425,7 +418,26 @@ onMounted(load)
   margin: 0;
   line-height: 1.6;
 }
-.header-actions { display: flex; align-items: center; justify-content: flex-end; }
+.header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.awards-button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+.awards-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
 .add-button { 
   padding: 12px 24px; 
   background: linear-gradient(135deg, var(--primary-color) 0%, #fb923c 100%);
@@ -504,14 +516,16 @@ onMounted(load)
 }
 .actors-grid { 
   display: grid; 
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
   gap: 24px; 
   min-height: 400px;
   width: 100%;
+  align-items: stretch;
 }
 .actor-card { 
   display: flex; 
-  gap: 16px; 
+  align-items: center;
+  gap: 20px; 
   padding: 20px; 
   border: 1px solid #e5e7eb;
   border-radius: 16px; 
@@ -521,6 +535,8 @@ onMounted(load)
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative;
   overflow: hidden;
+  height: 100%;
+  box-sizing: border-box;
 }
 .actor-card::before {
   content: '';
@@ -546,14 +562,20 @@ onMounted(load)
   flex-shrink: 0;
   overflow: hidden;
   border-radius: 12px;
+  width: 120px;
+  height: 160px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .avatar { 
-  width: 80px; 
-  height: 110px; 
+  width: 100%;
+  height: 100%;
   object-fit: cover; 
   object-position: center; 
   border-radius: 12px; 
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  background: #f3f4f6;
   transition: transform 0.3s ease;
   display: block;
 }
@@ -581,60 +603,78 @@ onMounted(load)
 .actor-card:hover .avatar-overlay {
   opacity: 1;
 }
+.card-avatar-wrapper img {
+  position: relative;
+  z-index: 1;
+}
+/* 当头像加载失败时显示占位符图标 */
+.card-avatar-wrapper:has(img[src*="actor_avatar.png"])::before {
+  content: '';
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border: 3px solid #9ca3af;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.3;
+  z-index: 0;
+}
+.card-avatar-wrapper:has(img[src*="actor_avatar.png"])::after {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 3px solid #9ca3af;
+  border-top: none;
+  border-radius: 0 0 20px 20px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -30%);
+  opacity: 0.3;
+  z-index: 0;
+}
 .meta { 
   display: flex; 
   flex-direction: column; 
-  gap: 8px;
+  gap: 12px;
   flex: 1;
   min-width: 0;
+  justify-content: center;
+  overflow: hidden;
 }
 .name { 
   font-weight: 700; 
   color: #111827;
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.4;
-  margin-bottom: 4px;
+  margin: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .sub {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 13px;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
   color: #6b7280;
 }
 .sub-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  color: #6b7280;
 }
 .sub-item i {
-  font-size: 12px;
-  color: var(--primary-color);
+  font-size: 16px;
+  flex-shrink: 0;
 }
-.counts { 
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 13px;
-  color: #6b7280;
-  margin-top: 4px;
+.location-icon {
+  color: #ec4899;
 }
-.count-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  background: #f9fafb;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-.count-item i {
-  font-size: 12px;
-  color: var(--primary-color);
-}
-.actor-card:hover .count-item {
-  background: rgba(249, 115, 22, 0.1);
-  color: var(--primary-color);
+.gender-icon {
+  color: #a855f7;
 }
 .pagination-container { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
 .pagination-info { display: flex; align-items: center; justify-content: center; gap: 8px; color: #6b7280; font-size: 14px; }

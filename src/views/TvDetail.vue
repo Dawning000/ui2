@@ -1083,12 +1083,42 @@ const notify = {
 .error { color: #ef4444; }
 
 @media (max-width: 768px) {
-  .movie-detail-page { padding: 16px; margin-top: 60px; }
-  .header { flex-direction: column; gap: 16px; }
-  .poster-wrapper { width: 100%; max-width: 200px; height: 260px; align-self: center; }
-  .title-row { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .admin-actions { width: 100%; justify-content: space-between; }
-  .trailer-video { height: 300px; }
-  .photos-grid, .seasons-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .movie-detail-page { 
+    padding: 16px; 
+    margin-top: 60px; 
+  }
+  .header { 
+    flex-direction: column; 
+    gap: 16px; 
+    padding: 20px;
+  }
+  .poster-wrapper { 
+    width: 100%; 
+    max-width: 200px; 
+    height: 260px; 
+    align-self: center; 
+  }
+  .info h1 {
+    font-size: 28px;
+  }
+  .title-row { 
+    flex-direction: column; 
+    align-items: flex-start; 
+    gap: 12px; 
+  }
+  .admin-actions { 
+    width: 100%; 
+    justify-content: space-between; 
+  }
+  .trailer-video { 
+    height: 300px; 
+  }
+  .photos-grid, .seasons-grid { 
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+    gap: 12px; 
+  }
+  .summary, .trailer-section, .photos-section, .seasons-section, .awards-section, .reviews-section {
+    padding: 20px;
+  }
 }
 </style>

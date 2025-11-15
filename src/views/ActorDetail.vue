@@ -4,43 +4,49 @@
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="detail">
       <div class="header">
-        <img 
-          :src="detail.avatar || fallbackAvatar" 
-          class="avatar" 
-          :alt="detail.name || 'avatar'" 
-          @error="handleAvatarError"
-        />
-        <div class="info">
-          <div class="title-row">
-            <h1>{{ detail.name }}</h1>
-            <div class="admin-actions">
-              <button 
-                v-if="isAdmin" 
-                class="edit-btn"
-                @click="handleEditClick"
-              >
-                修改演员信息
-              </button>
-              <button 
-                v-if="isAdmin" 
-                class="delete-btn"
-                @click="handleDeleteClick"
-              >
-                删除演员
+        <div class="header-content">
+          <div class="name-section">
+            <div class="name-row">
+              <h1 class="actor-name">{{ detail.name }}</h1>
+              <button v-if="isAdmin" class="edit-link-btn" @click="handleEditClick">
+                修改资料
               </button>
             </div>
           </div>
-          <div class="meta">
-            <span v-if="detail.birthDate">出生：{{ detail.birthDate }}</span>
-            <span v-if="detail.nationality"> · 国籍：{{ detail.nationality }}</span>
-            <span v-if="detail.gender"> · 性别：{{ detail.gender }}</span>
+          <div class="header-body">
+            <div class="avatar-wrapper">
+              <img 
+                :src="detail.avatar || fallbackAvatar" 
+                class="avatar" 
+                :alt="detail.name || 'avatar'" 
+                @error="handleAvatarError"
+              />
+            </div>
+            <div class="info">
+              <div class="info-item" v-if="detail.gender">
+                <span class="info-label">性别:</span>
+                <span class="info-value">{{ detail.gender }}</span>
+              </div>
+              <div class="info-item" v-if="detail.nationality">
+                <span class="info-label">国籍:</span>
+                <span class="info-value">{{ detail.nationality }}</span>
+              </div>
+              <div class="info-item" v-if="detail.birthDate">
+                <span class="info-label">出生:</span>
+                <span class="info-value">{{ detail.birthDate }}</span>
+              </div>
+              <div class="info-item" v-if="getProfession(detail)">
+                <span class="info-label">职业:</span>
+                <span class="info-value">{{ getProfession(detail) }}</span>
+              </div>
+            </div>
           </div>
-          <div class="stats" v-if="detail.moviesCount !== undefined || detail.tvShowsCount !== undefined">
-            <span v-if="detail.moviesCount !== undefined">电影 {{ detail.moviesCount }} 部</span>
-            <span v-if="detail.tvShowsCount !== undefined"> · 电视剧 {{ detail.tvShowsCount }} 部</span>
-          </div>
-          <p class="bio" v-if="detail.biography">{{ detail.biography }}</p>
         </div>
+      </div>
+
+      <div class="bio-section" v-if="detail.biography">
+        <h2 class="bio-title">简介</h2>
+        <p class="bio">{{ detail.biography }}</p>
       </div>
 
       <div class="section" v-if="(detail.movies?.length || 0) > 0">
@@ -273,6 +279,23 @@ async function performDelete() {
 // 使用项目中的通知服务
 const notify = notificationService;
 
+// 计算职业信息
+function getProfession(actor: ActorDetail): string {
+  const professions: string[] = []
+  if (actor.moviesCount && actor.moviesCount > 0) {
+    professions.push('演员')
+  }
+  if (actor.movies?.some(m => m.role?.includes('导演')) || 
+      actor.tvShows?.some(t => t.role?.includes('导演'))) {
+    professions.push('导演')
+  }
+  if (actor.movies?.some(m => m.role?.includes('编剧')) || 
+      actor.tvShows?.some(t => t.role?.includes('编剧'))) {
+    professions.push('编剧')
+  }
+  return professions.length > 0 ? professions.join('/') : ''
+}
+
 onMounted(load)
 </script>
 
@@ -286,133 +309,124 @@ onMounted(load)
   min-height: calc(100vh - 80px);
 }
 .header { 
-  display: flex; 
-  gap: 32px; 
   margin-bottom: 40px; 
+  padding: 0;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+.header-content {
+  display: flex;
+  flex-direction: column;
+}
+.name-section {
+  padding: 24px 32px 20px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.actor-name {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  line-height: 1.3;
+  flex: 1;
+}
+.header-body {
+  display: flex;
+  gap: 32px;
+  padding: 24px 32px;
+  align-items: flex-start;
+}
+.avatar-wrapper {
+  flex-shrink: 0;
+  width: 200px;
+  height: 280px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.avatar { 
+  width: 100%;
+  height: 100%;
+  object-fit: cover; 
+  object-position: center; 
+  display: block;
+  transition: transform 0.3s ease;
+}
+.avatar:hover {
+  transform: scale(1.05);
+}
+.info { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 16px; 
+  flex: 1;
+  padding-top: 4px;
+}
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.info-label {
+  color: #f97316;
+  font-weight: 500;
+  min-width: 60px;
+}
+.info-value {
+  color: #111827;
+  font-weight: 400;
+}
+.edit-link-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.edit-link-btn:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+.bio-section {
+  margin-bottom: 40px;
   padding: 32px;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   border: 1px solid #e5e7eb;
 }
-.avatar { 
-  width: 180px; 
-  height: 240px; 
-  object-fit: cover; 
-  object-position: center; 
-  border-radius: 16px; 
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  flex-shrink: 0; 
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  transition: transform 0.3s ease;
+.bio-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--primary-color);
 }
-.avatar:hover {
-  transform: scale(1.02);
-}
-.info { 
-  display: flex; 
-  flex-direction: column; 
-  gap: 16px; 
-  flex: 1; 
-}
-.title-row { 
-  display: flex; 
-  align-items: center; 
-  justify-content: space-between; 
-  gap: 16px; 
-  flex-wrap: wrap;
-}
-.info h1 { 
-  font-size: 36px; 
-  font-weight: 700; 
-  color: #111827; 
-  margin: 0; 
-  flex: 1;
-  background: linear-gradient(135deg, var(--primary-color) 0%, #fb923c 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.admin-actions { 
-  display: flex; 
-  gap: 12px; 
-  flex-wrap: wrap;
-}
-.edit-btn { 
-  padding: 10px 20px; 
-  background: linear-gradient(135deg, var(--primary-color) 0%, #fb923c 100%);
-  color: white; 
-  border: none; 
-  border-radius: 10px; 
-  font-size: 14px; 
-  font-weight: 600; 
-  cursor: pointer; 
-  transition: all 0.3s ease; 
-  white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
-}
-.delete-btn { 
-  padding: 10px 20px; 
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white; 
-  border: none; 
-  border-radius: 10px; 
-  font-size: 14px; 
-  font-weight: 600; 
-  cursor: pointer; 
-  transition: all 0.3s ease; 
-  white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-.delete-btn:hover { 
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  transform: translateY(-2px); 
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-}
-.edit-btn:hover { 
-  transform: translateY(-2px); 
-  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
-}
-.meta { 
-  color: #6b7280; 
+.bio {
+  color: #374151;
+  line-height: 1.8;
   font-size: 15px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.meta span {
-  padding: 6px 12px;
-  background: #f9fafb;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-}
-.stats { 
-  color: #6b7280; 
-  font-size: 15px; 
-  margin-top: 4px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.stats span {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%);
-  border-radius: 10px;
-  font-weight: 600;
-  color: var(--primary-color);
-  border: 1px solid rgba(249, 115, 22, 0.2);
-}
-.bio { 
-  color: #374151; 
-  line-height: 1.8; 
-  font-size: 16px; 
-  margin-top: 12px;
-  padding: 20px;
-  background: #f9fafb;
-  border-radius: 12px;
-  border-left: 4px solid var(--primary-color);
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .section { 
   margin-top: 40px;
@@ -682,6 +696,52 @@ onMounted(load)
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .actor-detail-page {
+    padding: 16px;
+  }
+  
+  .name-section {
+    padding: 20px 16px 16px;
+  }
+  
+  .actor-name {
+    font-size: 24px;
+  }
+  
+  .header-body {
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 16px;
+  }
+  
+  .avatar-wrapper {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    aspect-ratio: 5 / 7;
+    margin: 0 auto;
+  }
+  
+  .info {
+    width: 100%;
+  }
+  
+  .info-item {
+    font-size: 14px;
+  }
+  
+  .bio-section {
+    padding: 20px 16px;
+  }
+  
+  .bio-title {
+    font-size: 20px;
+  }
+  
+  .section {
+    padding: 20px 16px;
+  }
+  
   .confirm-dialog {
     margin: 20px;
     width: auto;

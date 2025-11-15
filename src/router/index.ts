@@ -12,6 +12,8 @@ import Test from '../views/Test.vue'
 import Search from '../views/Search.vue'
 import Actors from '../views/Actors.vue'
 import ActorDetail from '../views/ActorDetail.vue'
+import AwardsList from '../views/AwardsList.vue'
+import AwardDetail from '../views/AwardDetail.vue'
 import MovieDetail from '../views/MovieDetail.vue'
 import TvDetail from '../views/TvDetail.vue'
 import VarietyDetail from '../views/VarietyDetail.vue'
@@ -37,6 +39,17 @@ const routes: AppRouteRecord[] = [
     path: '/actor/:id',
     name: 'ActorDetail',
     component: ActorDetail,
+    props: true
+  },
+  {
+    path: '/awards',
+    name: 'AwardsList',
+    component: AwardsList
+  },
+  {
+    path: '/award/:id',
+    name: 'AwardDetail',
+    component: AwardDetail,
     props: true
   },
   {

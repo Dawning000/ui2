@@ -705,7 +705,7 @@ onMounted(load)
   padding: 24px; 
   width: 100%;
   max-width: 1600px;
-  margin: 80px auto 40px; 
+  margin: 80px auto 40px;
 }
 .header { 
   display: flex; 
@@ -876,13 +876,21 @@ onMounted(load)
 .favorite-btn.active i {
   color: #fbbf24;
 }
-.summary, .trailer-section, .photos-section, .awards-section, .rating-section { 
-  margin-top: 40px;
+.summary, .trailer-section, .photos-section, .awards-section { 
+  margin-top: 32px;
   padding: 32px;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   border: 1px solid #e5e7eb;
+}
+.rating-section {
+  margin-top: 32px;
+  padding: 24px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 .summary h2, .trailer-section h2, .photos-section h2, .awards-section h2, .rating-section h2 { 
   font-size: 28px; 
@@ -893,22 +901,29 @@ onMounted(load)
   border-bottom: 3px solid var(--primary-color);
 }
 .summary p { color: #374151; line-height: 1.8; font-size: 15px; white-space: pre-wrap; }
-.trailer-video { width: 100%; height: 500px; border-radius: 8px; }
+.trailer-video { 
+  width: 100%; 
+  height: 500px; 
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
 .photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
 .photo-wrapper {
   width: 100%;
   height: 280px;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   background: #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .photo-wrapper:hover {
-  transform: scale(1.05);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 .photo-wrapper img {
   width: 100%;
@@ -1000,4 +1015,44 @@ onMounted(load)
 .page-size-select:hover { border-color: var(--primary-color); }
 .loading, .error { text-align: center; padding: 40px; color: #6b7280; font-size: 16px; }
 .error { color: #ef4444; }
+
+@media (max-width: 768px) {
+  .variety-detail-page { 
+    padding: 16px; 
+    margin-top: 60px; 
+  }
+  .header { 
+    flex-direction: column; 
+    gap: 16px; 
+    padding: 20px;
+  }
+  .poster-wrapper { 
+    width: 100%; 
+    max-width: 200px; 
+    height: 260px; 
+    align-self: center; 
+  }
+  .info h1 {
+    font-size: 28px;
+  }
+  .title-row { 
+    flex-direction: column; 
+    align-items: flex-start; 
+    gap: 12px; 
+  }
+  .admin-actions { 
+    width: 100%; 
+    justify-content: space-between; 
+  }
+  .trailer-video { 
+    height: 300px; 
+  }
+  .photos-grid { 
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+    gap: 12px; 
+  }
+  .summary, .trailer-section, .photos-section, .awards-section, .rating-section, .reviews-section {
+    padding: 20px;
+  }
+}
 </style>
