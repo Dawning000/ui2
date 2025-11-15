@@ -173,9 +173,10 @@
           <label>海报图URL <span class="required">*</span></label>
           <ImageUploader
             v-model="form.poster"
-            placeholder="请输入海报图片URL或点击上传"
+            placeholder="请点击上传海报图片"
             upload-type="image"
             button-text="上传海报"
+            :disable-url-input="true"
             required
           />
         </div>
@@ -206,9 +207,10 @@
               <div v-for="(photo, index) in form.photos" :key="index" class="photo-item">
                 <ImageUploader
                   v-model="form.photos[index]"
-                  placeholder="请输入照片URL或点击上传"
+                  placeholder="请点击上传照片"
                   upload-type="image"
                   button-text="上传照片"
+                  :disable-url-input="true"
                 />
                 <button type="button" @click="removePhoto(index)" class="photo-remove">删除</button>
               </div>

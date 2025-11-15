@@ -226,6 +226,7 @@ import { saveVarietyShow } from '@/api/varietyShows'
 import type { MovieSaveData } from '@/api/movies'
 import type { TvShowSaveData } from '@/api/tvshows'
 import type { VarietyShowSaveData } from '@/api/varietyShows'
+import { notificationService as notify } from '@/utils/notification'
 import { nextTick, ref, computed, watch, getCurrentInstance } from 'vue'
 const store = useSearchStore()
 const userStore = useUserStore()
@@ -361,14 +362,6 @@ function getItemLink(item: any): string {
   return `/movie/${item.id}`
 }
 
-// 获取全局通知服务
-// 通知辅助函数（使用console避免TypeScript错误）
-const notify = {
-  success: function(message: string) { console.log('Success:', message); },
-  error: function(message: string) { console.error('Error:', message); },
-  warning: function(message: string) { console.warn('Warning:', message); },
-  info: function(message: string) { console.info('Info:', message); }
-};
 
 // 处理电影表单提交
 async function handleMovieSubmit(movieData: MovieSaveData) {
@@ -376,8 +369,8 @@ async function handleMovieSubmit(movieData: MovieSaveData) {
     await saveMovie(movieData)
     notify.success('电影保存成功！')
     showMovieForm.value = false
-    // 刷新搜索结果
-    await applySearch(true)
+    // 刷新搜索结果 - 直接调用 runSearch 重新获取数据并重新渲染
+    await store.runSearch()
   } catch (error: any) {
     notify.error(error?.message || '保存失败，请稍后重试')
   }
@@ -389,8 +382,8 @@ async function handleTvShowSubmit(tvShowData: TvShowSaveData) {
     await saveTvShow(tvShowData)
     notify.success('电视剧保存成功！')
     showTvShowForm.value = false
-    // 刷新搜索结果
-    await applySearch(true)
+    // 刷新搜索结果 - 直接调用 runSearch 重新获取数据并重新渲染
+    await store.runSearch()
   } catch (error: any) {
     notify.error(error?.message || '保存失败，请稍后重试')
   }
@@ -402,8 +395,8 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
     await saveVarietyShow(varietyShowData)
     notify.success('综艺保存成功！')
     showVarietyShowForm.value = false
-    // 刷新搜索结果
-    await applySearch(true)
+    // 刷新搜索结果 - 直接调用 runSearch 重新获取数据并重新渲染
+    await store.runSearch()
   } catch (error: any) {
     notify.error(error?.message || '保存失败，请稍后重试')
   }
@@ -522,7 +515,15 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
   .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; position: relative; }
   .card-link { text-decoration: none; color: inherit; display: block; }
   .card-link:hover .poster { opacity: 0.9; }
-  .card .poster { height: 180px; background-color: #f3f4f6; background-size: cover; background-position: center; transition: opacity 0.2s; }
+  .card .poster { 
+    width: 100%;
+    padding-top: 142.86%; /* 7:10 比例，保持电影海报常见比例 */
+    background-color: #f3f4f6; 
+    background-size: cover; 
+    background-position: center; 
+    background-repeat: no-repeat;
+    transition: opacity 0.2s; 
+  }
   .card .meta { padding: 10px; }
   .card .meta h3 { margin: 0; font-size: 14px; color: #111827; }
   .card-link:hover h3 { color: var(--primary-color); }

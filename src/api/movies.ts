@@ -1,5 +1,5 @@
 import { http, jsonBody } from '@/api/http'
-import type { MoviesListQuery, MoviesListResponse, MovieDetail } from '@/types/movies'
+import type { MoviesListQuery, MoviesListResponse, MovieDetail, MovieReviewsResponse } from '@/types/movies'
 
 function buildQuery(params: Record<string, unknown>): string {
   const s = new URLSearchParams()
@@ -81,8 +81,9 @@ export interface MovieSaveData {
   photos: string[];
 }
 
+// 保存电影 - 无论新增还是修改，都使用POST /movies/add接口，body里传id就是修改
 export async function saveMovie(movieData: MovieSaveData, signal?: AbortSignal): Promise<{ id: number }> {
-
+  // 统一使用POST /movies/add接口，body里传id就是修改，不传id就是新增
   const res = await http<{ code: number; data: { id: number } }>('/movies/add', {
     method: 'POST',
     body: jsonBody(movieData),
@@ -186,6 +187,87 @@ export async function deleteMovie(id: number | string, signal?: AbortSignal): Pr
     method: 'POST',
     signal
   })
+}
+
+// 获取热映电影（从猫眼API）
+export interface TopRatedMovie {
+  movieId: number
+  poster: string
+  score: string
+  name: string
+}
+
+export interface TopRatedMoviesResponse {
+  title: string
+  movieList: TopRatedMovie[]
+}
+
+export async function fetchTopRatedMovies(signal?: AbortSignal): Promise<TopRatedMoviesResponse> {
+  const res = await fetch('https://apis.netstart.cn/maoyan/index/topRatedMovies', {
+    signal,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`)
+  }
+  
+  const data = await res.json() as TopRatedMoviesResponse
+  return data
+}
+
+// 获取热门电影
+export async function fetchHotMovies(params: { page?: number; size?: number } = {}, signal?: AbortSignal): Promise<MoviesListResponse> {
+  const query = buildQuery({
+    page: params.page || 1,
+    size: params.size || 10
+  })
+  // 后端接口: GET /api/movies/hot
+  const res = await http<{ code: number; data: any }>(`/movies/hot${query ? `?${query}` : ''}`, { signal })
+  const data = res.data
+  // 转换后端格式到前端格式
+  return {
+    movies: data.movies || [],
+    total: data.pagination?.total || 0,
+    page: data.pagination?.page || params.page || 1,
+    size: data.pagination?.size || params.size || 10,
+    hasMore: data.pagination?.has_next || false
+  }
+}
+
+// 获取电影短评列表
+export async function fetchMovieReviews(
+  id: number | string, 
+  params: { page?: number; size?: number } = {}, 
+  signal?: AbortSignal
+): Promise<MovieReviewsResponse> {
+  const query = buildQuery({
+    page: params.page || 1,
+    size: params.size || 10
+  })
+  // 后端接口: GET /api/movies/{id}/reviews
+  const res = await http<{ code: number; data: any }>(`/movies/${id}/reviews${query ? `?${query}` : ''}`, { signal })
+  const data = res.data
+  
+  // 转换后端格式到前端格式
+  const reviews = (data.reviews || []).map((review: any) => ({
+    ...review,
+    createdAt: review.createTime || review.createdAt,
+    user: review.user || {
+      id: review.userId,
+      username: review.username || '匿名用户',
+      avatar: review.avatar
+    }
+  }))
+  
+  return {
+    reviews,
+    total: data.total || data.pagination?.total || 0,
+    page: data.pagination?.page || params.page || 1,
+    size: data.pagination?.size || params.size || 10
+  }
 }
 
 

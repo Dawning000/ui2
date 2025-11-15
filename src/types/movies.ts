@@ -14,6 +14,8 @@ export interface MovieItem {
   originalTitle?: string;
   year?: number;
   ratings?: number[];
+  rating?: number; // 10分制评分
+  tags?: string[]; // 标签数组
   poster?: string;
   summary?: string;
   duration?: number;
@@ -75,6 +77,32 @@ export interface MovieDetail {
   likes: number;
   isLiked?: boolean; // 当前用户是否已点赞
   isFavorited?: boolean; // 当前用户是否已收藏
+}
+
+// 短评用户信息
+export interface MovieReviewUser {
+  id: number;
+  username: string;
+  avatar?: string;
+}
+
+// 电影短评
+export interface MovieReview {
+  id: number;
+  userId: number;
+  user: MovieReviewUser;
+  score: number; // 1-10分
+  comment: string; // 评论内容
+  createdAt: string; // 创建时间
+  createTime?: string; // 兼容后端可能的字段名
+}
+
+// 短评列表响应
+export interface MovieReviewsResponse {
+  reviews: MovieReview[];
+  total: number;
+  page?: number;
+  size?: number;
 }
 
 

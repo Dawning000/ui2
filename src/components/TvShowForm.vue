@@ -168,9 +168,10 @@
           <label>海报URL</label>
           <ImageUploader 
             v-model="form.poster"
-            placeholder="请输入海报URL或点击上传"
+            placeholder="请点击上传海报图片"
             upload-type="image"
             button-text="上传海报"
+            :disable-url-input="true"
           />
         </div>
 
@@ -271,9 +272,10 @@
           <div v-for="(photo, index) in form.photos" :key="index" class="photo-item">
             <ImageUploader 
               v-model="form.photos[index]"
-              placeholder="请输入照片URL或点击上传"
+              placeholder="请点击上传照片"
               upload-type="image"
               button-text="上传照片"
+              :disable-url-input="true"
             />
             <button type="button" @click="removePhoto(index)" class="photo-remove">删除</button>
           </div>
@@ -354,6 +356,7 @@ const form = reactive<TvShowSaveData>({
 // 初始化表单数据
 if (props.initialData) {
   Object.assign(form, {
+    id: props.initialData.id, // 编辑模式下需要id
     title: props.initialData.title || '',
     original_title: props.initialData.originalTitle || props.initialData.original_title || '',
     year: props.initialData.year || new Date().getFullYear(),
@@ -573,6 +576,11 @@ async function handleSubmit() {
     // 确保tags是数组
     if (!Array.isArray(submitData.tags)) {
       submitData.tags = submitData.tags ? [submitData.tags] : []
+    }
+    
+    // 如果是编辑模式，添加id字段
+    if (props.isEdit && props.initialData?.id) {
+      submitData.id = props.initialData.id
     }
     
     // 发送请求

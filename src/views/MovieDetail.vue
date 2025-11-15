@@ -173,11 +173,113 @@
           </div>
         </div>
       </div>
+
+      <!-- 短评列表 -->
+      <div class="reviews-section">
+        <h2>短评 ({{ reviewsTotal }})</h2>
+        <div v-if="reviewsLoading" class="reviews-loading">加载中...</div>
+        <div v-else-if="reviews.length === 0" class="reviews-empty">暂无短评</div>
+        <div v-else>
+          <div class="reviews-list">
+            <div 
+              v-for="review in reviews" 
+              :key="review.id" 
+              class="review-item"
+            >
+              <div class="review-header">
+                <router-link :to="`/user/${review.user.id}`" class="review-avatar-link">
+                  <img 
+                    :src="review.user.avatar || '/avatar.png'" 
+                    :alt="review.user.username" 
+                    class="review-avatar"
+                    @error="e => (e.target as HTMLImageElement).src = '/avatar.png'"
+                  />
+                </router-link>
+                <div class="review-meta">
+                  <router-link :to="`/user/${review.user.id}`" class="review-author-link">
+                    <span class="review-author">{{ review.user.username }}</span>
+                  </router-link>
+                  <span class="review-time">{{ formatTime(review.createdAt) }}</span>
+                </div>
+                <div class="review-score">
+                  <RatingStars :readonly="true" :modelValue="review.score" tooltip-base="评分" />
+                  <span class="score-text">{{ review.score }}/10</span>
+                </div>
+              </div>
+              <div class="review-content">{{ review.comment }}</div>
+            </div>
+          </div>
+
+          <!-- 短评分页 -->
+          <div class="reviews-pagination-container" v-if="reviewsTotal > 0">
+            <div class="reviews-pagination-info">
+              <span>共 {{ reviewsTotal }} 条短评</span>
+              <span class="divider">|</span>
+              <span>每页显示</span>
+              <select v-model="reviewsPageSize" @change="handleReviewsSizeChange" class="page-size-select">
+                <option :value="10">10</option>
+                <option :value="20">20</option>
+                <option :value="50">50</option>
+              </select>
+              <span>条</span>
+            </div>
+            <div class="reviews-pagination" v-if="reviewsTotal > 0 && reviewsTotalPages > 0">
+              <button 
+                class="pagination-btn" 
+                :disabled="reviewsCurrentPage <= 1 || reviewsTotalPages <= 1" 
+                @click.stop="changeReviewsPage(1)"
+                title="首页"
+              >
+                首页
+              </button>
+              <button 
+                class="pagination-btn" 
+                :disabled="reviewsCurrentPage <= 1 || reviewsTotalPages <= 1" 
+                @click.stop="changeReviewsPage(reviewsCurrentPage - 1)"
+                title="上一页"
+              >
+                上一页
+              </button>
+              
+              <div class="page-numbers">
+                <template v-for="(p, index) in reviewsVisiblePages" :key="`review-page-${index}-${p}`">
+                  <button
+                    v-if="typeof p === 'number'"
+                    class="pagination-btn page-number"
+                    :class="{ active: p === reviewsCurrentPage }"
+                    @click.stop="changeReviewsPage(p)"
+                  >
+                    {{ p }}
+                  </button>
+                  <span v-else class="page-ellipsis">{{ p }}</span>
+                </template>
+              </div>
+              
+              <button 
+                class="pagination-btn" 
+                :disabled="reviewsCurrentPage >= reviewsTotalPages || reviewsTotalPages <= 1" 
+                @click.stop="changeReviewsPage(reviewsCurrentPage + 1)"
+                title="下一页"
+              >
+                下一页
+              </button>
+              <button 
+                class="pagination-btn" 
+                :disabled="reviewsCurrentPage >= reviewsTotalPages || reviewsTotalPages <= 1" 
+                @click.stop="changeReviewsPage(reviewsTotalPages)"
+                title="末页"
+              >
+                末页
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 编辑表单弹窗 -->
     <MovieForm
-      v-if="showEditForm"
+      v-if="showEditForm && editFormData"
       :isEdit="true"
       :initialData="editFormData"
       @submit="handleFormSubmit"
@@ -190,10 +292,11 @@
 import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { fetchMovieDetail, saveMovie, likeMovie, unlikeMovie, rateMovie, favoriteMovie, unfavoriteMovie, deleteMovie, type MovieSaveData, type MovieRateData } from '@/api/movies'
-import type { MovieDetail } from '@/types/movies'
+import { fetchMovieDetail, saveMovie, likeMovie, unlikeMovie, rateMovie, favoriteMovie, unfavoriteMovie, deleteMovie, fetchMovieReviews, type MovieSaveData, type MovieRateData } from '@/api/movies'
+import type { MovieDetail, MovieReview } from '@/types/movies'
 import MovieForm from '@/components/MovieForm.vue'
 import RatingStars from '@/components/RatingStars.vue'
+import { notificationService as notify } from '@/utils/notification'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -212,6 +315,11 @@ const userRating = ref<MovieRateData>({
   score: 0,
   comment: ''
 })
+const reviews = ref<MovieReview[]>([])
+const reviewsLoading = ref(false)
+const reviewsTotal = ref(0)
+const reviewsCurrentPage = ref(1)
+const reviewsPageSize = ref(10)
 
 // 点赞状态
 const isLiked = computed(() => {
@@ -235,20 +343,20 @@ const editFormData = computed(() => {
   return {
     id: detail.value.id,
     title: detail.value.title || '',
-    original_title: detail.value.originalTitle || '',
+    original_title: detail.value.originalTitle || detail.value.original_title || '',
     year: detail.value.year,
-    tags: detail.value.tags || [],
-    director: detail.value.director.id, // 导演ID
+    tags: detail.value.tags || detail.value.genre || [],
+    director: detail.value.director?.id || detail.value.director || 0, // 导演ID
     // 演员列表：如果后端返回了 role 和 description，使用它们；否则使用空值
-    actors: detail.value.actors.map((a: any) => ({
+    actors: (detail.value.actors || []).map((a: any) => ({
       id: a.id,
       role: a.role || '',
       description: a.description || ''
     })),
     poster: detail.value.poster || '',
     summary: detail.value.summary || '',
-    awards: detail.value.awards.map(a => a.id), // 奖项ID数组
-    duration: detail.value.duration,
+    awards: (detail.value.awards || []).map((a: any) => a.id || a), // 奖项ID数组
+    duration: detail.value.duration || 0,
     country: detail.value.country || '',
     language: detail.value.language || '',
     trailer: detail.value.trailer || '',
@@ -262,6 +370,8 @@ async function load() {
   try {
     detail.value = await fetchMovieDetail(id)
     loaded.value = true
+    // 加载短评列表
+    await loadReviews()
   } catch (err: any) {
     console.error('Failed to load movie detail:', err)
     if (err?.code === 404) {
@@ -275,6 +385,109 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+// 计算短评总页数
+const reviewsTotalPages = computed(() => Math.max(1, Math.ceil(reviewsTotal.value / reviewsPageSize.value)))
+
+// 计算可见的页码
+const reviewsVisiblePages = computed(() => {
+  const pages: (number | string)[] = []
+  const current = reviewsCurrentPage.value
+  const total = reviewsTotalPages.value
+  
+  if (total <= 7) {
+    // 总页数少于等于7页，显示所有页码
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+  } else {
+    // 总页数大于7页，显示部分页码
+    if (current <= 4) {
+      // 当前页在前4页，显示前5页和最后一页
+      for (let i = 1; i <= 5; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(total)
+    } else if (current >= total - 3) {
+      // 当前页在后4页，显示第一页和最后5页
+      pages.push(1)
+      pages.push('...')
+      for (let i = total - 4; i <= total; i++) {
+        pages.push(i)
+      }
+    } else {
+      // 当前页在中间，显示第一页、当前页前后各2页和最后一页
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 2; i <= current + 2; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(total)
+    }
+  }
+  
+  return pages
+})
+
+// 加载短评列表
+async function loadReviews() {
+  if (!id) return
+  
+  reviewsLoading.value = true
+  try {
+    const response = await fetchMovieReviews(id, { 
+      page: reviewsCurrentPage.value, 
+      size: reviewsPageSize.value 
+    })
+    reviews.value = response.reviews || []
+    reviewsTotal.value = response.total || 0
+    reviewsCurrentPage.value = response.page || reviewsCurrentPage.value
+    reviewsPageSize.value = response.size || reviewsPageSize.value
+  } catch (err: any) {
+    console.error('Failed to load reviews:', err)
+    reviews.value = []
+    reviewsTotal.value = 0
+  } finally {
+    reviewsLoading.value = false
+  }
+}
+
+// 切换短评页码
+function changeReviewsPage(page: number) {
+  const targetPage = Math.max(1, Math.min(page, reviewsTotalPages.value))
+  if (targetPage === reviewsCurrentPage.value) return
+  reviewsCurrentPage.value = targetPage
+  // 滚动到短评区域
+  const reviewsSection = document.querySelector('.reviews-section')
+  if (reviewsSection) {
+    reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  loadReviews()
+}
+
+// 改变每页显示数量
+function handleReviewsSizeChange() {
+  reviewsCurrentPage.value = 1
+  loadReviews()
+}
+
+// 格式化时间
+function formatTime(date: string) {
+  if (!date) return ''
+  const now = new Date()
+  const reviewDate = new Date(date)
+  const diff = now.getTime() - reviewDate.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor(diff / (1000 * 60))
+  
+  if (days > 0) return `${days}天前`
+  if (hours > 0) return `${hours}小时前`
+  if (minutes > 0) return `${minutes}分钟前`
+  return '刚刚'
 }
 
 // 处理海报加载失败
@@ -291,19 +504,26 @@ function handlePhotoError(event: Event) {
 
 // 点击编辑按钮
 function handleEditClick() {
+  if (!detail.value) {
+    console.error('无法编辑：详情数据未加载')
+    return
+  }
+  console.log('点击编辑按钮，editFormData:', editFormData.value)
   showEditForm.value = true
+  console.log('showEditForm 设置为:', showEditForm.value)
 }
 
 // 处理表单提交
 async function handleFormSubmit(data: MovieSaveData) {
   try {
     await saveMovie(data)
+    notify.success('电影信息修改成功！')
     showEditForm.value = false
-    // 重新加载数据
+    // 重新加载数据，确保页面显示最新信息
     await load()
   } catch (err: any) {
     console.error('保存电影信息失败:', err)
-    $notification.error(err?.message || '保存失败，请稍后重试')
+    notify.error(err?.message || '保存失败，请稍后重试')
   }
 }
 
@@ -321,12 +541,12 @@ async function handleDeleteClick() {
     deleteLoading.value = true
     try {
       await deleteMovie(id)
-      $notification.success('电影删除成功！')
+      notify.success('电影删除成功！')
       // 删除成功后跳转到电影列表页面
       window.location.href = '/search?type=movie'
   } catch (err: any) {
     console.error('删除电影失败:', err)
-    $notification.error(err?.message || '删除失败，请稍后重试')
+    notify.error(err?.message || '删除失败，请稍后重试')
   } finally {
     deleteLoading.value = false
   }
@@ -335,7 +555,7 @@ async function handleDeleteClick() {
 // 处理点赞
 async function handleLike() {
   if (!userStore.isLoggedIn) {
-    $notification.warning('请先登录')
+    notify.warning('请先登录')
     return
   }
   
@@ -358,7 +578,7 @@ async function handleLike() {
     }
   } catch (err: any) {
     console.error('点赞操作失败:', err)
-    $notification.error(err?.message || '操作失败，请稍后重试')
+    notify.error(err?.message || '操作失败，请稍后重试')
   } finally {
     likeLoading.value = false
   }
@@ -367,7 +587,7 @@ async function handleLike() {
 // 处理收藏
 async function handleFavorite() {
   if (!userStore.isLoggedIn) {
-    $notification.warning('请先登录')
+    notify.warning('请先登录')
     return
   }
   
@@ -386,7 +606,7 @@ async function handleFavorite() {
     }
   } catch (err: any) {
     console.error('收藏操作失败:', err)
-    $notification.error(err?.message || '操作失败，请稍后重试')
+    notify.error(err?.message || '操作失败，请稍后重试')
   } finally {
     favoriteLoading.value = false
   }
@@ -395,7 +615,7 @@ async function handleFavorite() {
 // 处理提交评分
 async function handleSubmitRating() {
   if (!userStore.isLoggedIn) {
-    $notification.warning('请先登录')
+    notify.warning('请先登录')
     return
   }
   
@@ -404,25 +624,25 @@ async function handleSubmitRating() {
   // 验证评分范围（1-10整数）
   const score = userRating.value.score
   if (!score || score < 1 || score > 10) {
-    $notification.warning('请选择1-10分的评分')
+    notify.warning('请选择1-10分的评分')
     return
   }
   
   // 验证评分是否为整数（API要求整数）
   const roundedScore = Math.round(score)
   if (roundedScore < 1 || roundedScore > 10) {
-    $notification.warning('评分必须是1-10之间的整数')
+    notify.warning('评分必须是1-10之间的整数')
     return
   }
   
   // 验证评论
   if (!userRating.value.comment.trim()) {
-    $notification.warning('请输入评论内容')
+    notify.warning('请输入评论内容')
     return
   }
   
   if (userRating.value.comment.length > 1000) {
-    $notification.warning('评论长度不能超过1000字')
+    notify.warning('评论长度不能超过1000字')
     return
   }
   
@@ -432,17 +652,18 @@ async function handleSubmitRating() {
       score: roundedScore,
       comment: userRating.value.comment.trim()
     })
-    $notification.success('评分提交成功！')
+    notify.success('评分提交成功！')
     // 清空表单
     userRating.value = {
       score: 0,
       comment: ''
     }
-    // 可选：重新加载电影详情以获取最新评分
-    // await load()
+    // 重置到第一页并重新加载短评列表
+    reviewsCurrentPage.value = 1
+    await loadReviews()
   } catch (err: any) {
     console.error('提交评分失败:', err)
-    $notification.error(err?.message || '提交失败，请稍后重试')
+    notify.error(err?.message || '提交失败，请稍后重试')
   } finally {
     ratingLoading.value = false
   }
@@ -451,13 +672,6 @@ async function handleSubmitRating() {
 onMounted(load)
 
 // 获取全局通知服务
-// 通知辅助函数（使用console避免TypeScript错误）
-const notify = {
-  success: (message: string) => console.log('Success:', message),
-  error: (message: string) => console.error('Error:', message),
-  warning: (message: string) => console.warn('Warning:', message),
-  info: (message: string) => console.info('Info:', message)
-};
 </script>
 
 <style scoped>
@@ -664,6 +878,36 @@ const notify = {
   cursor: not-allowed;
   transform: none;
 }
+.reviews-section { margin-top: 32px; padding: 24px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
+.reviews-section h2 { font-size: 24px; font-weight: 600; color: #111827; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 2px solid var(--primary-color); }
+.reviews-loading, .reviews-empty { text-align: center; padding: 40px; color: #6b7280; font-size: 14px; }
+.reviews-list { display: flex; flex-direction: column; gap: 20px; }
+.review-item { padding: 16px; background: white; border-radius: 8px; border: 1px solid #e5e7eb; }
+.review-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.review-avatar-link { display: flex; align-items: center; text-decoration: none; transition: transform 0.2s; }
+.review-avatar-link:hover { transform: scale(1.1); }
+.review-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e5e7eb; cursor: pointer; }
+.review-meta { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.review-author-link { text-decoration: none; display: inline-block; }
+.review-author { font-weight: 600; color: var(--primary-color); font-size: 14px; cursor: pointer; transition: color 0.2s; }
+.review-author-link:hover .review-author { color: var(--primary-dark); text-decoration: underline; }
+.review-time { color: #6b7280; font-size: 12px; }
+.review-score { display: flex; align-items: center; gap: 8px; }
+.score-text { color: var(--primary-color); font-weight: 600; font-size: 14px; }
+.review-content { color: #374151; line-height: 1.6; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+.reviews-pagination-container { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
+.reviews-pagination-info { display: flex; align-items: center; justify-content: center; gap: 8px; color: #6b7280; font-size: 14px; }
+.reviews-pagination-info .divider { margin: 0 4px; }
+.reviews-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.pagination-btn { padding: 8px 12px; border: 1px solid #e5e7eb; background: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; color: #374151; transition: all 0.2s; min-width: 36px; }
+.pagination-btn:hover:not(:disabled) { background: #f9fafb; border-color: var(--primary-color); color: var(--primary-color); }
+.pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pagination-btn.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); font-weight: 600; }
+.page-numbers { display: flex; align-items: center; gap: 4px; }
+.page-number { min-width: 36px; }
+.page-ellipsis { padding: 0 8px; color: #6b7280; font-size: 14px; }
+.page-size-select { padding: 6px 8px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; }
+.page-size-select:hover { border-color: var(--primary-color); }
 .loading, .error { text-align: center; padding: 40px; color: #6b7280; font-size: 16px; }
 .error { color: #ef4444; }
 </style>

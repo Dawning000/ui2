@@ -63,6 +63,9 @@ export const useSearchStore = defineStore('search', () => {
 
   // abort control
   let abortController: AbortController | null = null
+  
+  // 防止循环更新的标志
+  let isSyncing = false
 
   const params = computed<SearchQueryParams>(() => ({
     q: q.value || undefined,
@@ -108,6 +111,9 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   async function syncToRoute(replace = false): Promise<void> {
+    // 如果正在同步，避免循环
+    if (isSyncing) return
+    
     const query: Record<string, any> = {}
     if (q.value) query.q = q.value
     if (type.value) query.type = type.value
@@ -128,9 +134,33 @@ export const useSearchStore = defineStore('search', () => {
     if (page.value && page.value !== 1) query.page = page.value
     if (pageSize.value && pageSize.value !== 24) query.page_size = pageSize.value
 
-    const nav = { name: route.name || 'Search', query }
-    if (replace) await router.replace(nav)
-    else await router.push(nav)
+    // 检查 query 参数是否真的发生了变化，避免不必要的路由更新
+    const currentQuery = route.query
+    const queryChanged = Object.keys(query).some(key => {
+      const currentValue = currentQuery[key]
+      const newValue = query[key]
+      if (Array.isArray(currentValue)) {
+        return currentValue.join(',') !== newValue
+      }
+      return String(currentValue) !== String(newValue)
+    }) || Object.keys(currentQuery).some(key => !(key in query) && currentQuery[key] !== undefined)
+
+    // 如果 query 没有变化，且使用 replace 模式，则不更新路由
+    if (replace && !queryChanged) {
+      return
+    }
+
+    isSyncing = true
+    try {
+      const nav = { name: route.name || 'Search', query }
+      if (replace) await router.replace(nav)
+      else await router.push(nav)
+    } finally {
+      // 使用 nextTick 确保路由更新完成后再重置标志
+      setTimeout(() => {
+        isSyncing = false
+      }, 100)
+    }
   }
 
   async function runSearch(): Promise<void> {
@@ -180,6 +210,9 @@ export const useSearchStore = defineStore('search', () => {
 
   // watch route -> state
   watch(() => route.fullPath, () => {
+    // 如果正在同步路由，跳过这次更新，避免循环
+    if (isSyncing) return
+    
     syncFromRoute()
     runSearch()
   }, { immediate: true })

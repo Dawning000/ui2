@@ -15,6 +15,7 @@
           type="text"
           :placeholder="placeholder"
           :required="required"
+          :disabled="disableUrlInput"
           class="url-input"
           @input="handleUrlInput"
         />
@@ -54,13 +55,15 @@ interface Props {
   required?: boolean
   uploadType?: 'image' | 'avatar'
   buttonText?: string
+  disableUrlInput?: boolean // 是否禁用直接输入URL，强制通过上传接口
 }
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: '请输入图片URL或点击上传',
   required: false,
   uploadType: 'image',
-  buttonText: '上传图片'
+  buttonText: '上传图片',
+  disableUrlInput: false
 })
 
 const emit = defineEmits<{
@@ -174,6 +177,12 @@ function clearImage() {
   outline: none;
   border-color: var(--primary-color, #f97316);
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.url-input:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .upload-btn {

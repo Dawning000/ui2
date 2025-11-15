@@ -58,12 +58,11 @@
                 v-for="notification in filteredNotifications"
                 :key="notification.id"
                 :class="['notification-item', { unread: !notification.isRead, read: notification.isRead }]"
-                @click="handleNotificationClick(notification)"
               >
                 <div class="notification-icon" :class="{ 'unread-icon': !notification.isRead }">
                   <i :class="getNotificationIcon(notification)"></i>
                 </div>
-                <div class="notification-body">
+                <div class="notification-body" @click="handleNotificationNavigation(notification)">
                   <div class="notification-title" :class="{ 'unread-title': !notification.isRead }">
                     {{ notification.title }}
                     <span v-if="!notification.isRead" class="unread-badge">新</span>
@@ -85,7 +84,17 @@
                     {{ formatTime(notification.createdAt) }}
                   </div>
                 </div>
-                <div v-if="!notification.isRead" class="unread-dot"></div>
+                <div class="notification-actions">
+                  <button
+                    v-if="!notification.isRead"
+                    class="mark-read-btn"
+                    @click.stop="handleMarkAsRead(notification)"
+                    title="标记为已读"
+                  >
+                    <i class="icon-check"></i>
+                  </button>
+                  <div v-if="!notification.isRead" class="unread-dot"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -331,34 +340,32 @@ const handleUserClick = (userId: number) => {
 }
 
 /**
- * 处理通知点击
+ * 标记通知为已读
  */
-const handleNotificationClick = async (notification: NotificationItem) => {
-  // 标记为已读（如果还未读）
-  if (!notification.isRead) {
-    try {
-      // 调用 API 标记为已读
-      const response = await notificationApi.markAsRead(notification.id)
-      
-      if (response && response.code === 200) {
-        // 更新本地状态
-        const index = notifications.value.findIndex(n => n.id === notification.id)
-        if (index !== -1) {
-          notifications.value[index].isRead = true
-          notifications.value[index].read = true
-        }
-        
-        // 更新未读数量
-        const newUnreadCount = Math.max(0, props.unreadCount - 1)
-        emit('updateUnread', newUnreadCount)
-      }
-    } catch (error) {
-      console.error('标记通知已读失败:', error)
-    }
+const handleMarkAsRead = async (notification: NotificationItem) => {
+  if (notification.isRead) {
+    return
   }
 
-  // 根据通知类型和关联信息进行跳转
-  handleNotificationNavigation(notification)
+  try {
+    // 调用 API 标记为已读
+    const response = await notificationApi.markAsRead(notification.id)
+    
+    if (response && response.code === 200) {
+      // 更新本地状态
+      const index = notifications.value.findIndex(n => n.id === notification.id)
+      if (index !== -1) {
+        notifications.value[index].isRead = true
+        notifications.value[index].read = true
+      }
+      
+      // 更新未读数量
+      const newUnreadCount = Math.max(0, props.unreadCount - 1)
+      emit('updateUnread', newUnreadCount)
+    }
+  } catch (error) {
+    console.error('标记通知已读失败:', error)
+  }
 }
 
 /**
@@ -749,6 +756,7 @@ watch(() => props.visible, (newVal) => {
   .notification-body {
     flex: 1;
     min-width: 0;
+    cursor: pointer;
 
     .notification-title {
       font-size: 15px;
@@ -836,6 +844,47 @@ watch(() => props.visible, (newVal) => {
         opacity: 0.7;
       }
     }
+  }
+
+  .notification-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .mark-read-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: rgba(249, 115, 22, 0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--primary-color, #f97316);
+    transition: all 0.2s ease;
+    opacity: 0;
+    transform: scale(0.9);
+
+    i {
+      font-size: 14px;
+    }
+
+    &:hover {
+      background: rgba(249, 115, 22, 0.3);
+      transform: scale(1);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  &:hover .mark-read-btn {
+    opacity: 1;
+    transform: scale(1);
   }
 
   .unread-dot {

@@ -94,31 +94,72 @@
 
         <div class="form-group">
           <label>主持人</label>
-          <input 
-            v-model="form.host" 
-            type="text" 
-            placeholder="主持人姓名"
-          />
+          <div class="select-with-search">
+            <input 
+              v-model="hostSearch" 
+              type="text" 
+              placeholder="搜索主持人姓名..."
+              @input="searchHost"
+              class="search-input"
+            />
+            <select v-model.number="form.host" class="select-input">
+              <option :value="0">请选择主持人</option>
+              <option v-for="actor in hostOptions" :key="actor.id" :value="actor.id">
+                {{ actor.name }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
           <label>嘉宾列表</label>
-          <div class="tags-input">
-            <div v-if="form.guests.length > 0" class="tags-list">
-              <span v-for="(guest, index) in form.guests" :key="index" class="tag-item">
-                {{ guest }}
-                <button type="button" @click="removeGuest(index)" class="tag-remove">×</button>
-              </span>
-            </div>
-            <div class="tags-input-row">
-              <input 
-                v-model="newGuest" 
-                type="text" 
-                placeholder="输入嘉宾姓名后按回车添加"
-                @keyup.enter="addGuest"
-                class="tag-input"
-              />
-              <button type="button" @click="addGuest" class="add-tag-btn">添加</button>
+          <div class="select-with-search">
+            <input 
+              v-model="guestSearch" 
+              type="text" 
+              placeholder="搜索嘉宾姓名..."
+              @input="searchGuest"
+              class="search-input"
+            />
+            <div class="multi-select">
+              <select 
+                v-model="selectedGuest" 
+                @change="addGuest"
+                class="select-input"
+              >
+                <option :value="0">选择嘉宾后会自动添加</option>
+                <option v-for="actor in guestOptions" :key="actor.id" :value="actor.id">
+                  {{ actor.name }}
+                </option>
+              </select>
+              <div v-if="form.guests.length > 0" class="guests-list">
+                <div v-for="(guest, index) in form.guests" :key="index" class="guest-item">
+                  <div class="guest-header">
+                    <span class="guest-name">{{ getGuestName(guest.id) }}</span>
+                    <button type="button" @click="removeGuest(index)" class="item-remove">×</button>
+                  </div>
+                  <div class="guest-fields">
+                    <div class="guest-field">
+                      <label>角色</label>
+                      <input 
+                        v-model="guest.role" 
+                        type="text" 
+                        placeholder="如：常驻嘉宾、飞行嘉宾等"
+                        class="guest-input"
+                      />
+                    </div>
+                    <div class="guest-field">
+                      <label>描述</label>
+                      <input 
+                        v-model="guest.description" 
+                        type="text" 
+                        placeholder="描述嘉宾在该综艺中的表现"
+                        class="guest-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -127,9 +168,10 @@
           <label>海报图URL</label>
           <ImageUploader
             v-model="form.poster"
-            placeholder="请输入海报图片URL或点击上传"
+            placeholder="请点击上传海报图片"
             upload-type="image"
             button-text="上传海报"
+            :disable-url-input="true"
           />
         </div>
 
@@ -158,9 +200,10 @@
               <div v-for="(photo, index) in form.photos" :key="index" class="photo-item">
                 <ImageUploader
                   v-model="form.photos[index]"
-                  placeholder="请输入照片URL或点击上传"
+                  placeholder="请点击上传照片"
                   upload-type="image"
                   button-text="上传照片"
+                  :disable-url-input="true"
                 />
                 <button type="button" @click="removePhoto(index)" class="photo-remove">删除</button>
               </div>
@@ -171,24 +214,46 @@
 
         <div class="form-group">
           <label>奖项</label>
-          <div class="tags-input">
-            <div v-if="form.awards.length > 0" class="tags-list">
-              <span v-for="(award, index) in form.awards" :key="index" class="tag-item">
-                {{ award }}
-                <button type="button" @click="removeAward(index)" class="tag-remove">×</button>
-              </span>
+          <div v-for="(award, index) in form.awards" :key="index" class="award-item">
+            <div class="award-header">
+              <span>奖项 {{ index + 1 }}</span>
+              <button type="button" @click="removeAward(index)" class="item-remove">×</button>
             </div>
-            <div class="tags-input-row">
-              <input 
-                v-model="newAward" 
-                type="text" 
-                placeholder="输入奖项名称后按回车添加"
-                @keyup.enter="addAward"
-                class="tag-input"
-              />
-              <button type="button" @click="addAward" class="add-tag-btn">添加</button>
+            <div class="award-fields">
+              <div class="award-field">
+                <label>奖项ID</label>
+                <input 
+                  v-model.number="award.id" 
+                  type="number" 
+                  class="award-input"
+                />
+              </div>
+              <div class="award-field">
+                <label>年份</label>
+                <input 
+                  v-model.number="award.year" 
+                  type="number" 
+                  class="award-input"
+                />
+              </div>
+              <div class="award-field">
+                <label>状态</label>
+                <select v-model="award.status" class="award-select">
+                  <option value="nominated">提名</option>
+                  <option value="awarded">获奖</option>
+                </select>
+              </div>
+              <div class="award-field">
+                <label>备注</label>
+                <input 
+                  v-model="award.note" 
+                  type="text" 
+                  class="award-input"
+                />
+              </div>
             </div>
           </div>
+          <button type="button" @click="addAward" class="add-award-btn">+ 添加奖项</button>
         </div>
 
         <div class="form-actions">
@@ -203,27 +268,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, getCurrentInstance } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { fetchActors } from '@/api/actors'
+import type { VarietyShowSaveData, VarietyShowGuest, VarietyShowAward } from '@/api/varietyShows'
 import ImageUploader from './ImageUploader.vue'
-
-// 综艺保存数据接口
-export interface VarietyShowSaveData {
-  id?: number; // 有id则修改，无id则添加
-  title: string;
-  original_title?: string;
-  year: number;
-  tags: string[];
-  host: string;
-  guests: string[];
-  poster: string;
-  summary: string;
-  awards: string[];
-  episodes: number;
-  country: string;
-  language: string;
-  trailer?: string;
-  photos: string[];
-}
 
 interface Props {
   initialData?: any
@@ -241,8 +289,11 @@ const emit = defineEmits<{
 
 const submitting = ref(false)
 const newTag = ref('')
-const newGuest = ref('')
-const newAward = ref('')
+const hostSearch = ref('')
+const guestSearch = ref('')
+const selectedGuest = ref(0)
+const hostOptions = ref<any[]>([])
+const guestOptions = ref<any[]>([])
 
 // 响应式数据
 const form = reactive<Omit<VarietyShowSaveData, 'id'>>({
@@ -250,16 +301,32 @@ const form = reactive<Omit<VarietyShowSaveData, 'id'>>({
   original_title: '',
   year: new Date().getFullYear(),
   tags: [],
-  host: '',
-  guests: [],
+  host: 0,
+  guests: [] as VarietyShowGuest[],
   poster: '',
   summary: '',
-  awards: [],
+  awards: [] as VarietyShowAward[],
   episodes: 1,
   country: '',
   language: '',
   trailer: '',
   photos: []
+})
+
+// 加载演员列表
+async function loadActors() {
+  try {
+    const response = await fetchActors({ page: 1, size: 100 })
+    hostOptions.value = response.actors || []
+    guestOptions.value = response.actors || []
+  } catch (error) {
+    console.error('加载演员列表失败:', error)
+  }
+}
+
+// 组件挂载时加载演员列表
+onMounted(() => {
+  loadActors()
 })
 
 // 初始化表单数据
@@ -269,11 +336,33 @@ if (props.initialData) {
     original_title: props.initialData.original_title || props.initialData.originalTitle || '',
     year: props.initialData.year || new Date().getFullYear(),
     tags: props.initialData.tags || props.initialData.genre || [],
-    host: props.initialData.host || '',
-    guests: props.initialData.guests || [],
+    host: props.initialData.hostId || (typeof props.initialData.host === 'number' ? props.initialData.host : 0),
+    guests: (props.initialData.guests || []).map((g: any) => 
+      typeof g === 'object' ? {
+        id: g.id || 0,
+        role: g.role || '',
+        description: g.description || ''
+      } : {
+        id: 0,
+        role: '',
+        description: String(g)
+      }
+    ),
     poster: props.initialData.poster || '',
     summary: props.initialData.summary || '',
-    awards: props.initialData.awards || [],
+    awards: (props.initialData.awards || []).map((a: any) => 
+      typeof a === 'object' ? {
+        id: a.id || 0,
+        year: a.year || new Date().getFullYear(),
+        status: a.status || 'nominated',
+        note: a.note || ''
+      } : {
+        id: 0,
+        year: new Date().getFullYear(),
+        status: 'nominated' as const,
+        note: String(a)
+      }
+    ),
     episodes: props.initialData.episodes || 1,
     country: props.initialData.country || '',
     language: props.initialData.language || '',
@@ -285,6 +374,40 @@ if (props.initialData) {
 // 如果是新增，添加一个默认的照片
 if (!props.isEdit && form.photos.length === 0) {
   addPhoto()
+}
+
+// 获取嘉宾姓名
+function getGuestName(id: number): string {
+  const actor = guestOptions.value.find((a: any) => a.id === id)
+  return actor ? actor.name : `嘉宾${id}`
+}
+
+// 搜索主持人
+async function searchHost() {
+  if (!hostSearch.value.trim()) {
+    hostOptions.value = []
+    return
+  }
+  try {
+    const response = await fetchActors({ page: 1, size: 20, keyword: hostSearch.value })
+    hostOptions.value = response.actors || []
+  } catch (error) {
+    console.error('搜索主持人失败:', error)
+  }
+}
+
+// 搜索嘉宾
+async function searchGuest() {
+  if (!guestSearch.value.trim()) {
+    guestOptions.value = []
+    return
+  }
+  try {
+    const response = await fetchActors({ page: 1, size: 20, keyword: guestSearch.value })
+    guestOptions.value = response.actors || []
+  } catch (error) {
+    console.error('搜索嘉宾失败:', error)
+  }
 }
 
 // 添加标签
@@ -303,10 +426,13 @@ function removeTag(index: number) {
 
 // 添加嘉宾
 function addGuest() {
-  const guest = newGuest.value.trim()
-  if (guest && !form.guests.includes(guest)) {
-    form.guests.push(guest)
-    newGuest.value = ''
+  if (selectedGuest.value && !form.guests.find((g: VarietyShowGuest) => g.id === selectedGuest.value)) {
+    form.guests.push({
+      id: selectedGuest.value,
+      role: '',
+      description: ''
+    })
+    selectedGuest.value = 0
   }
 }
 
@@ -317,11 +443,12 @@ function removeGuest(index: number) {
 
 // 添加奖项
 function addAward() {
-  const award = newAward.value.trim()
-  if (award && !form.awards.includes(award)) {
-    form.awards.push(award)
-    newAward.value = ''
-  }
+  form.awards.push({
+    id: 0,
+    year: new Date().getFullYear(),
+    status: 'nominated',
+    note: ''
+  })
 }
 
 // 删除奖项
@@ -358,16 +485,25 @@ const notify = {
         return
       }
 
-      const submitData = {
+      const submitData: VarietyShowSaveData = {
         title: form.title,
         original_title: form.original_title || undefined,
         year: form.year,
         tags: form.tags,
-        host: form.host,
-        guests: form.guests,
+        host: Number(form.host),
+        guests: form.guests.map(g => ({
+          id: Number(g.id),
+          role: g.role.trim(),
+          description: g.description.trim()
+        })),
         poster: form.poster,
         summary: form.summary,
-        awards: form.awards,
+        awards: form.awards.map(a => ({
+          id: Number(a.id),
+          year: Number(a.year),
+          status: a.status,
+          note: a.note.trim()
+        })),
         episodes: Number(form.episodes),
         country: form.country,
         language: form.language,
@@ -604,6 +740,187 @@ function handleCancel() {
   font-size: 14px;
 }
 
+.select-with-search {
+  position: relative;
+}
+
+.search-input {
+  margin-bottom: 8px;
+}
+
+.select-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.select-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.multi-select {
+  margin-bottom: 12px;
+}
+
+.guests-list {
+  margin-top: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.guest-item {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.guest-item:last-child {
+  margin-bottom: 0;
+}
+
+.guest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.guest-name {
+  font-weight: 500;
+  color: #374151;
+}
+
+.item-remove {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.item-remove:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.guest-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.guest-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.guest-field label {
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.guest-input {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.guest-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.award-item {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.award-item:last-child {
+  margin-bottom: 0;
+}
+
+.award-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.award-header span {
+  font-weight: 500;
+  color: #374151;
+}
+
+.award-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.award-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.award-field label {
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.award-input,
+.award-select {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.award-input:focus,
+.award-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.add-award-btn {
+  margin-top: 10px;
+  padding: 10px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.add-award-btn:hover {
+  background: #059669;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -652,6 +969,11 @@ function handleCancel() {
 
 @media (max-width: 768px) {
   .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .guest-fields,
+  .award-fields {
     grid-template-columns: 1fr;
   }
 }

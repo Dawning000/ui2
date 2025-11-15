@@ -5,11 +5,21 @@ export interface VarietyShowDetail {
   originalTitle?: string;
   year: number;
   tags: string[];
-  host: string;
-  guests: string[];
+  host: string; // 主持人姓名（用于显示）
+  hostId?: number; // 主持人ID（用于编辑）
+  guests: Array<{
+    id: number;
+    role: string;
+    description: string;
+  } | string>; // 兼容旧格式
   poster: string;
   summary: string;
-  awards: string[];
+  awards: Array<{
+    id: number;
+    year: number;
+    status: 'nominated' | 'awarded';
+    note: string;
+  } | string>; // 兼容旧格式
   episodes: number;
   country: string;
   language: string;
@@ -22,15 +32,8 @@ export interface VarietyShowDetail {
   isFavorited: boolean;
 }
 
-// 综艺评分数据接口（前端表单使用）
+// 综艺评分数据接口
 export interface VarietyShowRateData {
-  score: number;
-  comment: string;
-}
-
-// 综艺评分API数据接口（与后端交互使用）
-export interface VarietyShowApiRateData {
-  userId: number;
-  varietyShowId: number;
-  rating: number;
+  score: number; // 1-10整数
+  comment: string; // 最大长度1000字
 }

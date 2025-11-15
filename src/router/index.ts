@@ -15,6 +15,7 @@ import ActorDetail from '../views/ActorDetail.vue'
 import MovieDetail from '../views/MovieDetail.vue'
 import TvDetail from '../views/TvDetail.vue'
 import VarietyDetail from '../views/VarietyDetail.vue'
+import HotMovies from '../views/HotMovies.vue'
 
 const routes: AppRouteRecord[] = [
   {
@@ -43,6 +44,11 @@ const routes: AppRouteRecord[] = [
     name: 'MovieDetail',
     component: MovieDetail,
     props: true
+  },
+  {
+    path: '/trending',
+    name: 'Trending',
+    component: HotMovies
   },
   {
     path: '/tv/:id',

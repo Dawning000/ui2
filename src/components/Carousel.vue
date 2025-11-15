@@ -1,36 +1,31 @@
 <template>
   <div class="carousel-container">
-    <div class="carousel-wrapper" :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
-      <div 
-        v-for="(slide, index) in slides" 
-        :key="index" 
-        class="carousel-slide"
-        :class="{ active: index === currentIndex }"
-      >
-        <div class="slide-image">
+    <div class="carousel-wrapper">
+      <div class="carousel-track" :style="{ transform: `translateX(-${currentIndex * cardWidth}px)`, transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }">
+        <div 
+          v-for="(slide, index) in slides" 
+          :key="slide.id || index" 
+          class="movie-card"
+          :class="{ active: index === currentIndex }"
+          @click="goToMovie(slide)"
+        >
+        <div class="card-poster">
           <img :src="slide.image" :alt="slide.title" />
-          <div class="slide-overlay"></div>
-        </div>
-        <div class="slide-content">
-          <div class="container">
-            <div class="content-wrapper">
-              <div class="slide-header">
-                <span v-if="slide.icon" class="slide-icon">{{ slide.icon }}</span>
-                <h2 class="slide-title">{{ slide.title }}</h2>
+          <div class="card-overlay">
+            <div class="card-content-overlay">
+              <div class="card-header-overlay">
+                <h3 class="card-title-overlay">{{ slide.title }}</h3>
+                <div class="card-rating-badge">
+                  <i class="icon-star"></i>
+                  <span>{{ slide.subtitle?.replace('评分 ', '') || '0.0' }}</span>
+                </div>
               </div>
-              <h3 v-if="slide.subtitle" class="slide-subtitle">{{ slide.subtitle }}</h3>
-              <p class="slide-description">{{ slide.description }}</p>
-              <div class="slide-actions">
-                <router-link :to="slide.link" class="btn btn-primary btn-lg">
-                  {{ slide.buttonText }}
-                </router-link>
-                <button class="btn btn-outline btn-lg" @click="playTrailer(slide)">
-                  <i class="icon-play"></i>
-                  观看预告片
-                </button>
-              </div>
+              <p class="card-description-overlay">{{ slide.description }}</p>
+
             </div>
           </div>
+          <div class="card-shine"></div>
+        </div>
         </div>
       </div>
     </div>
@@ -41,7 +36,7 @@
         v-for="(slide, index) in slides" 
         :key="index"
         class="dot"
-        :class="{ active: index === currentIndex }"
+        :class="{ active: currentIndex === index }"
         @click="goToSlide(index)"
       ></button>
     </div>
@@ -64,14 +59,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
+import { fetchTopRatedMovies } from '@/api/movies'
 
 // 响应式数据
-const currentIndex = ref(0)
+const currentIndex = ref(0) // 从0开始
 const autoplay = ref(true)
 const progress = ref(0)
 const autoplayInterval = ref(null)
 const progressInterval = ref(null)
+const loading = ref(false)
+const isTransitioning = ref(true)
+const cardWidth = ref(600) // 卡片宽度（包含间距，550px卡片 + 50px间距）
+const visibleCards = ref(3) // 可见卡片数量
 
 // 获取全局通知服务
 const instance = getCurrentInstance();
@@ -85,8 +85,8 @@ const notify = {
   info: (message) => $notification?.$notification?.info?.(message)
 };
 
-// 轮播图数据
-const slides = ref([
+// 默认轮播图数据（作为后备）
+const defaultSlides = [
   {
     id: 1,
     title: '橘橙影志',
@@ -97,52 +97,75 @@ const slides = ref([
     buttonText: '开始探索',
     trailer: 'https://example.com/trailer1',
     icon: '🍊'
-  },
-  {
-    id: 2,
-    title: '流浪地球2',
-    subtitle: '科幻巨制，震撼来袭',
-    description: '人类为了生存，启动"移山计划"，建造万座行星发动机推动地球离开太阳系。',
-    image: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=1920&h=1080&fit=crop',
-    link: '/forum/movie',
-    buttonText: '立即讨论',
-    trailer: 'https://example.com/trailer1',
-    icon: '🎬'
-  },
-  {
-    id: 3,
-    title: '狂飙',
-    subtitle: '扫黑风暴下的正义与人性',
-    description: '一部扫黑除恶题材的电视剧，展现正义与邪恶的较量，人性的复杂与救赎。',
-    image: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=1920&h=1080&fit=crop',
-    link: '/forum/tv',
-    buttonText: '追剧讨论',
-    trailer: 'https://example.com/trailer2',
-    icon: '📺'
-  },
-
-  {
-    id: 5,
-    title: '阿凡达：水之道',
-    subtitle: '潘多拉星球的奇幻之旅',
-    description: '杰克·萨利与纳威族人在潘多拉星球上展开的全新冒险，探索海洋的奥秘。',
-    image: 'https://images.unsplash.com/photo-1489599808000-0b2b0b2b0b2b?w=1920&h=1080&fit=crop',
-    link: '/forum/movie',
-    buttonText: '科幻讨论',
-    trailer: 'https://example.com/trailer4',
-    icon: '🌊'
   }
-])
+]
+
+// 轮播图数据
+const slides = ref([...defaultSlides])
+
+// 加载热映电影数据
+const loadTopRatedMovies = async () => {
+  loading.value = true
+  try {
+    const response = await fetchTopRatedMovies()
+    
+    if (response && response.movieList && response.movieList.length > 0) {
+      // 将 API 返回的电影数据转换为轮播图格式
+      const movieSlides = response.movieList.map((movie) => ({
+        id: movie.movieId,
+        title: movie.name,
+        subtitle: `评分 ${movie.score}`,
+        image: movie.poster,
+        link: `/movie/${movie.movieId}`,
+
+      }))
+      
+      // 将电影数据设置为轮播图内容
+      slides.value = movieSlides
+      
+      // 重置当前索引到第一个
+      currentIndex.value = 0
+    }
+  } catch (error) {
+    console.error('加载热映电影失败:', error)
+    // 如果加载失败，使用默认数据
+    slides.value = [...defaultSlides]
+    currentIndex.value = 0
+  } finally {
+    loading.value = false
+  }
+}
 
 // 方法
 const nextSlide = () => {
-  currentIndex.value = (currentIndex.value + 1) % slides.value.length
+  if (slides.value.length <= 1) return
+  
+  // 每次移动一张卡片
+  currentIndex.value++
   resetAutoplay()
+  
+  // 如果到达最后一张，直接跳转到第一张
+  if (currentIndex.value >= slides.value.length) {
+    currentIndex.value = 0
+  }
 }
 
 const prevSlide = () => {
-  currentIndex.value = currentIndex.value === 0 ? slides.value.length - 1 : currentIndex.value - 1
+  if (slides.value.length <= 1) return
+  
+  // 每次移动一张卡片
+  currentIndex.value--
   resetAutoplay()
+  
+  // 如果到达第一张，直接跳转到最后一张
+  if (currentIndex.value < 0) {
+    currentIndex.value = slides.value.length - 1
+  }
+}
+
+const goToMovie = (slide) => {
+  // 点击卡片跳转到电影详情页
+  // 这里可以添加路由跳转逻辑，如果需要的话
 }
 
 const goToSlide = (index) => {
@@ -192,13 +215,38 @@ const startProgress = () => {
   }, 100)
 }
 
+// 计算卡片宽度（响应式）
+const updateCardWidth = () => {
+  // 根据屏幕宽度调整可见卡片数和卡片大小
+  const width = window.innerWidth
+  if (width <= 480) {
+    visibleCards.value = 1
+    cardWidth.value = 420
+  } else if (width <= 768) {
+    visibleCards.value = 2
+    cardWidth.value = 500
+  } else {
+    visibleCards.value = 3
+    cardWidth.value = 600
+  }
+}
+
 // 生命周期
-onMounted(() => {
-  startAutoplay()
+onMounted(async () => {
+  updateCardWidth()
+  window.addEventListener('resize', updateCardWidth)
+  
+  // 加载热映电影数据
+  await loadTopRatedMovies()
+  // 确保有数据后再启动自动播放
+  if (slides.value.length > 0) {
+    startAutoplay()
+  }
 })
 
 onUnmounted(() => {
   stopAutoplay()
+  window.removeEventListener('resize', updateCardWidth)
 })
 </script>
 
@@ -206,189 +254,286 @@ onUnmounted(() => {
 .carousel-container {
   position: relative;
   width: 100%;
-  height: 100vh;
+  padding: 40px 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
   overflow: hidden;
-  background: #000;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(249, 115, 22, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
 }
 
 .carousel-wrapper {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.carousel-slide {
   position: relative;
-  min-width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 80px;
+  overflow: visible;
 }
 
-.slide-image {
-  position: absolute;
-  top: 0;
-  left: 0;
+.carousel-track {
+  display: flex;
+  gap: 50px;
+  align-items: center;
+  will-change: transform;
+  height: 850px;
+}
+
+.movie-card {
+  flex-shrink: 0;
+  width: 550px;
+  height: 800px;
+  background: white;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  z-index: 1;
+  
+  &:not(.active) {
+    transform: scale(0.85);
+    opacity: 0.7;
+    z-index: 0;
+  }
+  
+  &.active {
+    transform: scale(1);
+    z-index: 10;
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  
+  &:hover {
+    transform: scale(1.05);
+    z-index: 15;
+    box-shadow: 
+      0 30px 60px -12px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(59, 130, 246, 0.3);
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+}
+
+.card-poster {
+  position: relative;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-  }
-}
-
-.slide-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 0, 0, 0.7) 0%,
-    rgba(0, 0, 0, 0.3) 50%,
-    rgba(0, 0, 0, 0.7) 100%
-  );
-  z-index: 2;
-}
-
-.slide-content {
-  position: relative;
-  z-index: 3;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.content-wrapper {
-  text-align: center;
-  color: white;
-  max-width: 800px;
-  padding: 0 20px;
-}
-
-.slide-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 20px;
-  
-  .slide-icon {
-    font-size: 4rem;
-    animation: bounce 2s infinite;
-    
-    @media (max-width: 768px) {
-      font-size: 3rem;
-    }
-    
-    @media (max-width: 480px) {
-      font-size: 2.5rem;
-    }
-  }
-}
-
-.slide-title {
-  font-size: 4rem;
-  font-weight: 800;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-  line-height: 1.2;
-  margin: 0;
-  
-  @media (max-width: 768px) {
-    font-size: 2.5rem;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  @media (max-width: 480px) {
-    font-size: 2rem;
-  }
-}
-
-.slide-subtitle {
-  font-size: 1.8rem;
-  font-weight: 600;
-  margin-bottom: 20px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-  line-height: 1.4;
-  color: #fbbf24;
-  font-style: italic;
-  
-  @media (max-width: 768px) {
-    font-size: 1.4rem;
+  .movie-card:hover & img {
+    transform: scale(1.1);
   }
   
-  @media (max-width: 480px) {
-    font-size: 1.2rem;
+  .card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.2) 0%,
+      rgba(0, 0, 0, 0.4) 50%,
+      rgba(0, 0, 0, 0.9) 100%
+    );
+    display: flex;
+    align-items: flex-end;
+    padding: 0;
+    opacity: 1;
+    transition: opacity 0.4s ease;
   }
-}
-
-.slide-description {
-  font-size: 1.5rem;
-  margin-bottom: 40px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-  line-height: 1.6;
-  opacity: 0.9;
   
-  @media (max-width: 768px) {
-    font-size: 1.2rem;
-    margin-bottom: 30px;
+  .card-content-overlay {
+    width: 100%;
+    padding: 30px;
+    color: white;
   }
   
-  @media (max-width: 480px) {
-    font-size: 1rem;
-    margin-bottom: 25px;
-  }
-}
-
-.slide-actions {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
-  
-  @media (max-width: 480px) {
-    flex-direction: column;
-    align-items: center;
+  .card-header-overlay {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     gap: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .card-title-overlay {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: white;
+    margin: 0;
+    line-height: 1.3;
+    flex: 1;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    letter-spacing: -0.02em;
+  }
+  
+  .card-rating-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    padding: 8px 14px;
+    border-radius: 20px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    
+    i {
+      color: #fbbf24;
+      font-size: 1.1rem;
+      filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.5));
+    }
+  }
+  
+  .card-description-overlay {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 20px 0;
+    line-height: 1.6;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .card-link-overlay {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 12px 24px;
+    background: rgba(59, 130, 246, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    
+    &:hover {
+      background: rgba(59, 130, 246, 1);
+      transform: translateX(4px);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+    
+    i {
+      font-size: 0.9rem;
+      transition: transform 0.3s ease;
+    }
+    
+    &:hover i {
+      transform: translateX(4px);
+    }
+  }
+  
+  .card-shine {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 70%
+    );
+    transform: rotate(45deg);
+    transition: all 0.6s ease;
+    opacity: 0;
+  }
+  
+  .movie-card:hover & .card-shine {
+    animation: shine 1.5s ease-in-out;
   }
 }
+
+
 
 // 导航点
 .carousel-dots {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
+  justify-content: center;
   gap: 12px;
-  z-index: 4;
+  margin-top: 30px;
+  padding: 0 20px;
 }
 
 .dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  border: 2px solid #cbd5e1;
   background: transparent;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: #3b82f6;
+    transition: all 0.4s ease;
+  }
   
   &:hover {
-    border-color: var(--primary-color);
-    background: rgba(255, 255, 255, 0.3);
+    border-color: #3b82f6;
+    transform: scale(1.3);
+    
+    &::before {
+      width: 4px;
+      height: 4px;
+    }
   }
   
   &.active {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    transform: scale(1.2);
+    border-color: #3b82f6;
+    background: #3b82f6;
+    transform: scale(1.4);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    
+    &::before {
+      width: 6px;
+      height: 6px;
+    }
   }
 }
 
@@ -397,86 +542,94 @@ onUnmounted(() => {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 60px;
-  height: 60px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  width: 56px;
+  height: 56px;
+  background: white;
+  border: 2px solid #e2e8f0;
   border-radius: 50%;
-  color: white;
+  color: #475569;
   font-size: 20px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 4;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(10px);
   
   &:hover {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    transform: translateY(-50%) scale(1.1);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-color: #3b82f6;
+    color: white;
+    transform: translateY(-50%) scale(1.15);
+    box-shadow: 
+      0 10px 15px -3px rgba(59, 130, 246, 0.3),
+      0 4px 6px -2px rgba(59, 130, 246, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(-50%) scale(1.05);
   }
   
   &.prev {
-    left: 30px;
+    left: -20px;
   }
   
   &.next {
-    right: 30px;
+    right: -20px;
   }
   
   @media (max-width: 768px) {
-    width: 50px;
-    height: 50px;
+    width: 44px;
+    height: 44px;
     font-size: 16px;
     
     &.prev {
-      left: 20px;
+      left: -15px;
     }
     
     &.next {
-      right: 20px;
+      right: -15px;
     }
   }
   
   @media (max-width: 480px) {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     font-size: 14px;
     
     &.prev {
-      left: 15px;
+      left: -10px;
     }
     
     &.next {
-      right: 15px;
+      right: -10px;
     }
   }
 }
 
 // 自动播放指示器
 .autoplay-indicator {
-  position: absolute;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 200px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
-  overflow: hidden;
-  z-index: 4;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 100%;
-  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 0 20px;
+  
+  .progress-bar {
+    width: 200px;
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+  }
 }
 
 .progress {
   height: 100%;
-  background: var(--primary-color);
+  background: #3b82f6;
   border-radius: 2px;
   transition: width 0.1s linear;
 }
@@ -562,42 +715,109 @@ onUnmounted(() => {
 
 // 响应式设计
 @media (max-width: 1024px) {
-  .carousel-container {
-    height: 80vh;
+  .carousel-track {
+    height: 750px;
+  }
+  
+  .movie-card {
+    width: 450px;
+    height: 700px;
+  }
+  
+  .card-title-overlay {
+    font-size: 1.8rem;
   }
 }
 
 @media (max-width: 768px) {
   .carousel-container {
-    height: 70vh;
+    padding: 30px 0;
   }
   
-  .content-wrapper {
-    max-width: 600px;
+  .carousel-wrapper {
+    padding: 0 60px;
+  }
+  
+  .carousel-track {
+    height: 700px;
+  }
+  
+  .movie-card {
+    width: 380px;
+    height: 650px;
+  }
+  
+  .card-content-overlay {
+    padding: 32px;
+  }
+  
+  .card-title-overlay {
+    font-size: 1.6rem;
+  }
+  
+  .card-description-overlay {
+    font-size: 1rem;
   }
 }
 
 @media (max-width: 480px) {
   .carousel-container {
-    height: 60vh;
+    padding: 20px 0;
   }
   
-  .content-wrapper {
-    max-width: 100%;
-    padding: 0 15px;
+  .carousel-wrapper {
+    padding: 0 50px;
+  }
+  
+  .carousel-track {
+    height: 650px;
+  }
+  
+  .movie-card {
+    width: 320px;
+    height: 600px;
+  }
+  
+  .card-content-overlay {
+    padding: 28px;
+  }
+  
+  .card-title-overlay {
+    font-size: 1.4rem;
+  }
+  
+  .card-description-overlay {
+    font-size: 0.95rem;
+    -webkit-line-clamp: 2;
+  }
+  
+  .card-link-overlay {
+    padding: 12px 24px;
+    font-size: 1rem;
   }
 }
 
 // 动画效果
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
+@keyframes float {
+  0%, 100% {
     transform: translateY(0);
   }
-  40% {
+  50% {
     transform: translateY(-10px);
   }
-  60% {
-    transform: translateY(-5px);
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+    opacity: 0;
   }
 }
 </style>

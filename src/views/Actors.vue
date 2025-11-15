@@ -1,22 +1,43 @@
 <template>
   <div class="actors-page">
     <div class="page-header">
-      <h1>演员与导演</h1>
-      <div class="header-actions">
-        <button v-if="isAdmin" class="add-button" @click="handleAddActor">
-          + 添加演员/导演
-        </button>
+      <div class="header-content">
+        <div class="header-title-section">
+          <h1 class="page-title">
+            <i class="icon-user"></i>
+            演员与导演
+          </h1>
+          <p class="page-subtitle">探索优秀的演员和导演，发现他们的精彩作品</p>
+        </div>
+        <div class="header-actions">
+          <button v-if="isAdmin" class="add-button" @click="handleAddActor">
+            <i class="icon-plus"></i>
+            添加演员/导演
+          </button>
+        </div>
       </div>
       <div class="filters">
-        <input v-model="keyword" @keyup.enter="handleSearch" placeholder="搜索姓名，如：张艺谋 " />
-        <select v-model="gender" @change="handleSearch">
-          <option value="">性别（全部）</option>
-          <option value="男">男</option>
-          <option value="女">女</option>
-          <option value="其他">其他</option>
-        </select>
-        <input v-model="nationality" @keyup.enter="handleSearch" placeholder="国籍，如：中国 / 美国" />
-        <button @click="handleSearch" :disabled="loading">搜索</button>
+        <div class="filter-group">
+          <i class="icon-search"></i>
+          <input v-model="keyword" @keyup.enter="handleSearch" placeholder="搜索姓名，如：张艺谋" class="filter-input" />
+        </div>
+        <div class="filter-group">
+          <i class="icon-user"></i>
+          <select v-model="gender" @change="handleSearch" class="filter-select">
+            <option value="">性别（全部）</option>
+            <option value="男">男</option>
+            <option value="女">女</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <i class="icon-location"></i>
+          <input v-model="nationality" @keyup.enter="handleSearch" placeholder="国籍，如：中国 / 美国" class="filter-input" />
+        </div>
+        <button @click="handleSearch" :disabled="loading" class="search-button">
+          <i class="icon-search"></i>
+          <span>搜索</span>
+        </button>
       </div>
     </div>
 
@@ -29,22 +50,44 @@
       </div>
     </div>
     <div v-else class="actors-grid">
-      <div v-for="actor in actors" :key="actor.id" class="actor-card" @click="goDetail(actor.id)">
-        <img 
-          :src="actor.avatar || fallbackAvatar" 
-          :alt="actor.name" 
-          class="avatar" 
-          @error="handleImageError"
-        />
+      <div 
+        v-for="actor in actors" 
+        :key="actor.id" 
+        class="actor-card" 
+        @click="goDetail(actor.id)"
+      >
+        <div class="card-avatar-wrapper">
+          <img 
+            :src="actor.avatar || fallbackAvatar" 
+            :alt="actor.name" 
+            class="avatar" 
+            @error="handleImageError"
+          />
+          <div class="avatar-overlay">
+            <i class="icon-arrow-right"></i>
+          </div>
+        </div>
         <div class="meta">
           <div class="name">{{ actor.name }}</div>
           <div class="sub">
-            <span v-if="actor.nationality">{{ actor.nationality }}</span>
-            <span v-if="actor.gender"> · {{ actor.gender }}</span>
+            <span v-if="actor.nationality" class="sub-item">
+              <i class="icon-location"></i>
+              {{ actor.nationality }}
+            </span>
+            <span v-if="actor.gender" class="sub-item">
+              <i class="icon-user"></i>
+              {{ actor.gender }}
+            </span>
           </div>
           <div class="counts">
-            <span v-if="actor.moviesCount">电影 {{ actor.moviesCount }}</span>
-            <span v-if="actor.tvShowsCount"> · 电视剧 {{ actor.tvShowsCount }}</span>
+            <span v-if="actor.moviesCount" class="count-item">
+              <i class="icon-film"></i>
+              电影 {{ actor.moviesCount }}
+            </span>
+            <span v-if="actor.tvShowsCount" class="count-item">
+              <i class="icon-tv"></i>
+              电视剧 {{ actor.tvShowsCount }}
+            </span>
           </div>
         </div>
       </div>
@@ -338,28 +381,261 @@ onMounted(load)
   width: 100%;
   max-width: 1600px;
   margin: 80px auto 40px; 
+  background: linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%);
+  min-height: calc(100vh - 80px);
 }
-.page-header { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
+.page-header { 
+  margin-bottom: 32px; 
+  padding: 32px;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, rgba(249, 115, 22, 0.02) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(249, 115, 22, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.header-title-section {
+  flex: 1;
+}
+.page-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #fb923c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.page-title i {
+  font-size: 32px;
+  -webkit-text-fill-color: var(--primary-color);
+}
+.page-subtitle {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
+}
 .header-actions { display: flex; align-items: center; justify-content: flex-end; }
-.add-button { padding: 10px 20px; background: var(--primary-color); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
-.add-button:hover { background: var(--primary-dark); }
-.filters { display: flex; gap: 8px; flex-wrap: wrap; }
-.filters input, .filters select { padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; }
-.filters button { padding: 10px 16px; background: var(--primary-color); color: #fff; border: none; border-radius: 8px; cursor: pointer; }
-.filters button:disabled { opacity: 0.6; cursor: not-allowed; }
+.add-button { 
+  padding: 12px 24px; 
+  background: linear-gradient(135deg, var(--primary-color) 0%, #fb923c 100%);
+  color: #fff; 
+  border: none; 
+  border-radius: 10px; 
+  cursor: pointer; 
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+.add-button:hover { 
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+}
+.filters { 
+  display: flex; 
+  gap: 12px; 
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+}
+.filter-group i {
+  position: absolute;
+  left: 12px;
+  color: #9ca3af;
+  font-size: 16px;
+  z-index: 1;
+}
+.filter-input, .filter-select {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.2s;
+  background: #fff;
+}
+.filter-input:focus, .filter-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+.search-button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #fb923c 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+.search-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+}
+.search-button:disabled { 
+  opacity: 0.6; 
+  cursor: not-allowed;
+  transform: none;
+}
 .actors-grid { 
   display: grid; 
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
-  gap: 16px; 
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+  gap: 24px; 
   min-height: 400px;
   width: 100%;
 }
-.actor-card { display: flex; gap: 12px; padding: 12px; border: 1px solid #f3f4f6; border-radius: 12px; background: #fff; cursor: pointer; transition: all .2s; }
-.actor-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(249,115,22,.12); }
-.avatar { width: 72px; height: 96px; object-fit: contain; object-position: center; border-radius: 8px; background: #f3f4f6; flex-shrink: 0; }
-.meta { display: flex; flex-direction: column; gap: 6px; }
-.name { font-weight: 700; color: #111827; }
-.sub, .counts { font-size: 12px; color: #6b7280; }
+.actor-card { 
+  display: flex; 
+  gap: 16px; 
+  padding: 20px; 
+  border: 1px solid #e5e7eb;
+  border-radius: 16px; 
+  background: #fff; 
+  cursor: pointer; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+.actor-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color) 0%, #fb923c 100%);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+.actor-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(249, 115, 22, 0.15);
+  border-color: var(--primary-color);
+}
+.actor-card:hover::before {
+  transform: scaleX(1);
+}
+.card-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 12px;
+}
+.avatar { 
+  width: 80px; 
+  height: 110px; 
+  object-fit: cover; 
+  object-position: center; 
+  border-radius: 12px; 
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  transition: transform 0.3s ease;
+  display: block;
+}
+.actor-card:hover .avatar {
+  transform: scale(1.1);
+}
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(249, 115, 22, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 12px;
+}
+.avatar-overlay i {
+  color: #fff;
+  font-size: 24px;
+}
+.actor-card:hover .avatar-overlay {
+  opacity: 1;
+}
+.meta { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.name { 
+  font-weight: 700; 
+  color: #111827;
+  font-size: 18px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+.sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #6b7280;
+}
+.sub-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sub-item i {
+  font-size: 12px;
+  color: var(--primary-color);
+}
+.counts { 
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+.count-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #f9fafb;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.count-item i {
+  font-size: 12px;
+  color: var(--primary-color);
+}
+.actor-card:hover .count-item {
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--primary-color);
+}
 .pagination-container { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
 .pagination-info { display: flex; align-items: center; justify-content: center; gap: 8px; color: #6b7280; font-size: 14px; }
 .pagination-info .divider { margin: 0 4px; }
@@ -375,11 +651,61 @@ onMounted(load)
 .jump-input { width: 50px; padding: 6px 8px; border: 1px solid #e5e7eb; border-radius: 6px; text-align: center; font-size: 14px; }
 .jump-btn { padding: 6px 12px; border: 1px solid #e5e7eb; background: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; color: #374151; }
 .jump-btn:hover { background: #f9fafb; border-color: var(--primary-color); color: var(--primary-color); }
-.empty-container { min-height: 400px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
-.empty { text-align: center; color: #6b7280; padding-top: 40px; }
+.empty-container { 
+  min-height: 400px; 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: space-between; 
+  align-items: center;
+  padding: 60px 20px;
+}
+.empty { 
+  text-align: center; 
+  color: #6b7280; 
+  padding-top: 40px;
+  font-size: 16px;
+}
 .empty-container .pagination-info { margin-bottom: 16px; }
-.loading, .error { text-align: center; padding: 40px; color: #6b7280; }
-.error { color: #ef4444; }
+.loading, .error { 
+  text-align: center; 
+  padding: 60px 40px; 
+  color: #6b7280;
+  font-size: 16px;
+}
+.error { 
+  color: #ef4444;
+  background: #fef2f2;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #fecaca;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .actors-page {
+    padding: 16px;
+  }
+  .page-header {
+    padding: 20px;
+  }
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .page-title {
+    font-size: 28px;
+  }
+  .filter-group {
+    min-width: 100%;
+  }
+  .actors-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+    gap: 16px;
+  }
+  .actor-card {
+    padding: 16px;
+  }
+}
 </style>
 
 
