@@ -122,7 +122,15 @@ const routes: AppRouteRecord[] = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // 如果有保存的滚动位置（浏览器后退/前进），则恢复该位置
+    if (savedPosition) {
+      return savedPosition
+    }
+    // 否则滚动到页面顶部
+    return { top: 0 }
+  }
 })
 
 export default router

@@ -116,7 +116,16 @@ export const useSearchStore = defineStore('search', () => {
     
     const query: Record<string, any> = {}
     if (q.value) query.q = q.value
-    if (type.value) query.type = type.value
+    // 如果 store.type 有值，使用它；否则，如果当前路由有 type 参数，保留它并更新 store
+    // 这样可以避免在分类页面搜索时丢失 type 参数
+    if (type.value) {
+      query.type = type.value
+    } else if (route.query.type) {
+      const routeType = convertQueryValue(route.query.type) as string
+      query.type = routeType
+      // 同时更新 store.type，确保状态一致
+      type.value = routeType as SearchQueryParams['type']
+    }
     if (genres.value.length) query.genres = genres.value.join(',')
     if (regions.value.length) query.regions = regions.value.join(',')
     if (languages.value.length) query.languages = languages.value.join(',')
@@ -147,6 +156,10 @@ export const useSearchStore = defineStore('search', () => {
 
     // 如果 query 没有变化，且使用 replace 模式，则不更新路由
     if (replace && !queryChanged) {
+      // 即使路由没有变化，也要确保从路由同步状态并执行搜索
+      // 因为用户可能在同一个页面手动修改了搜索条件
+      syncFromRoute()
+      await runSearch()
       return
     }
 
@@ -155,6 +168,11 @@ export const useSearchStore = defineStore('search', () => {
       const nav = { name: route.name || 'Search', query }
       if (replace) await router.replace(nav)
       else await router.push(nav)
+      
+      // 路由更新后，从路由同步状态（因为路由可能已经变化）
+      syncFromRoute()
+      // 显式调用 runSearch，因为 watch 可能因为 isSyncing 标志被跳过
+      await runSearch()
     } finally {
       // 使用 nextTick 确保路由更新完成后再重置标志
       setTimeout(() => {

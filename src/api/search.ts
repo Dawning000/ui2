@@ -164,8 +164,14 @@ export async function search(params: SearchQueryParams, signal?: AbortSignal): P
       const res = await http<{ code: number; data: any }>(`/tvshows/search${query ? `?${query}` : ''}`, { signal })
       const data = res.data
       
+      // 兼容两种数据结构：
+      // 1. data.items + data.total + data.page + data.size + data.hasMore
+      // 2. data.tvshows + data.pagination.total + data.pagination.page + data.pagination.size + data.pagination.has_next
+      const items = data.items || data.tvshows || []
+      const pagination = data.pagination || {}
+      
       return {
-        items: (data.items || []).map((item: any) => ({
+        items: items.map((item: any) => ({
           id: item.id,
           title: item.title,
           year: item.year,
@@ -175,10 +181,10 @@ export async function search(params: SearchQueryParams, signal?: AbortSignal): P
           regions: item.regions || undefined,
           highlight: item.highlight
         })),
-        total: data.total,
-        page: data.page,
-        pageSize: data.size,
-        hasMore: data.hasMore,
+        total: data.total || pagination.total || 0,
+        page: data.page || pagination.page || params.page || 1,
+        pageSize: data.size || pagination.size || params.pageSize || 24,
+        hasMore: data.hasMore !== undefined ? data.hasMore : (pagination.has_next !== undefined ? pagination.has_next : false),
         facets: data.facets
       }
     } else {
