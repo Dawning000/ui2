@@ -1,0 +1,32 @@
+# Node 依赖目录（核心：忽略整个 node_modules）
+node_modules/
+
+# npm 安装依赖时生成的锁文件（二选一，根据你用的包管理器）
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Node 运行时生成的缓存/日志
+.npm/
+.yarn/
+.pnpm-store/
+logs/
+*.log
+
+# 环境变量文件（敏感信息，绝不提交）
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# 编译/构建产物（如 dist、build，根据你的项目调整）
+dist/
+build/
+coverage/
+
+# 编辑器/IDE 配置文件（可选，避免团队协作时冲突）
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store # Mac 系统自动生成的文件
