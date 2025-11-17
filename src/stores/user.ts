@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, LoginCredentials, RegisterData, ApiResponse, ProfileUpdateData } from '@/types/user'
 import { http, jsonBody } from '@/api/http'
+import { userApi } from '../api/users'
 
 // localStorage 键名
 const STORAGE_KEY_CREDENTIALS = 'remembered_credentials'
@@ -179,58 +180,36 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const loadUserFromStorage = async (): Promise<void> => {
+    // 首先尝试从本地存储加载完整用户信息
     try {
-      // 首先尝试从本地存储加载完整用户信息
       const storedUserInfo = localStorage.getItem('user_info')
       if (storedUserInfo) {
         const loadedUser = JSON.parse(storedUserInfo) as User
         console.log('从本地存储加载的用户信息:', loadedUser)
         user.value = loadedUser
         userId.value = user.value.id
-        
-        // 检查是否缺少角色信息，若缺少则从后端获取最新信息
-        if (!loadedUser.role) {
-          console.log('本地存储缺少角色信息，从后端获取...')
-          const response = await http<any>(`/user/${userId.value}/info`)
-          console.log('从后端获取的用户信息:', response.data)
-          if (response && response.code === 200 && response.data) {
-            user.value = response.data as unknown as User
-            // 更新本地存储
-            localStorage.setItem('user_info', JSON.stringify(response.data))
-            console.log('本地存储已更新为完整用户信息:', response.data)
-          }
-        }
-        return
-      }
-      
-      // 如果本地存储没有完整用户信息，则尝试通过用户id获取
-      const storedUserId = localStorage.getItem('current_user_id')
-      if (storedUserId) {
-        userId.value = parseInt(storedUserId)
-        
-        // 使用用户id获取用户信息
-        const response = await http<any>(`/user/${userId.value}/info`)
-        if (response && response.code === 200 && response.data) {
-          user.value = response.data as unknown as User
-          // 将完整用户信息保存到本地存储
-          localStorage.setItem('user_info', JSON.stringify(response.data))
-        } else {
-          // 清理无效数据
-          user.value = null
-          userId.value = null
-          localStorage.removeItem('current_user_id')
-          localStorage.removeItem('user_info')
-        }
-      } else {
-        user.value = null
       }
     } catch (error) {
-      console.error('加载用户数据失败:', error)
-      // 清理无效数据
-      user.value = null
-      userId.value = null
-      localStorage.removeItem('current_user_id')
-      localStorage.removeItem('user_info')
+      console.error('从本地存储加载用户信息失败:', error)
+      // 如果本地存储加载失败，不要清理数据
+    }
+
+    // 调用/user/me接口获取最新用户信息（单独的try/catch，避免网络问题导致本地数据被清除）
+    try {
+      console.log('从后端获取最新用户信息...')
+      const response = await userApi.getCurrentUser()
+      console.log('从后端获取的用户信息:', response.data)
+      if (response && response.code === 200 && response.data) {
+        user.value = response.data as unknown as User
+        userId.value = user.value.id
+        // 更新本地存储
+        localStorage.setItem('user_info', JSON.stringify(response.data))
+        localStorage.setItem('current_user_id', response.data.id.toString())
+        console.log('本地存储已更新为最新用户信息:', response.data)
+      }
+    } catch (error) {
+      console.error('从后端获取最新用户信息失败:', error)
+      // 如果网络请求失败，保持本地存储的用户信息
     }
   }
 

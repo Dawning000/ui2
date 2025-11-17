@@ -14,8 +14,8 @@
               <img :src="user.avatar || '/avatar.png'" :alt="user.username" class="user-avatar" />
             </div>
             <div class="user-info">
-              <h1 class="username">{{ user.username }}</h1>
-              <p class="user-nickname" v-if="user.nickname">{{ user.nickname }}</p>
+              <h1 class="username" v-if="user.nickname">{{ user.nickname }}</h1>
+              <p class="user-nickname" >{{ user.username }}</p>
               <div class="user-stats">
                 <div class="stat-item">
                   <span class="stat-number">{{ user.followersCount }}</span>

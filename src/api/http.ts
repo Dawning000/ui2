@@ -23,14 +23,7 @@ export async function http<T>(path: string, init: RequestInit = {}): Promise<T> 
   const ct = res.headers.get('content-type') || ''
   if (ct.includes('application/json')) {
     const json = await res.json() as any
-    // 检查后端的业务错误码
-    if (json && typeof json.code === 'number' && json.code !== 200) {
-      const errorMsg = json.message || '操作失败'
-      const error = new Error(errorMsg)
-      // @ts-expect-error 添加 code 属性
-      error.code = json.code
-      throw error
-    }
+    // 直接返回json，不检查code
     return json as Promise<T>
   }
   // @ts-expect-error allow unknown

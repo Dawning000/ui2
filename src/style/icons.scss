@@ -50,7 +50,16 @@
 .icon-empty::before { content: "📭"; }
 .icon-weibo::before { content: "📱"; }
 .icon-wechat::before { content: "💬"; }
-.icon-qq::before { content: "🐧"; }
+.icon-qq::before {
+  content: '';
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+  background-image: url('/qq.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
 .icon-github::before { content: "🐙"; }
 .icon-bell::before { content: "🔔"; }
 .icon-settings::before { content: "⚙️"; }

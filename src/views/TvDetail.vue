@@ -181,7 +181,7 @@
             <button 
               class="submit-rating-btn" 
               @click="handleSubmitRating"
-              :disabled="ratingLoading || !userRating.score || userRating.score < 1 || !userRating.comment.trim()"
+              :disabled="ratingLoading"
             >
               {{ ratingLoading ? '提交中...' : '提交评分' }}
             </button>
@@ -205,14 +205,14 @@
                 <router-link :to="`/user/${review.user.id}`" class="review-avatar-link">
                   <img 
                     :src="review.user.avatar || '/avatar.png'" 
-                    :alt="review.user.username" 
+                    :alt="review.user.nickname" 
                     class="review-avatar"
                     @error="e => (e.target as HTMLImageElement).src = '/avatar.png'"
                   />
                 </router-link>
                 <div class="review-meta">
                   <router-link :to="`/user/${review.user.id}`" class="review-author-link">
-                    <span class="review-author">{{ review.user.username }}</span>
+                    <span class="review-author">{{ review.user.nickname }}</span>
                   </router-link>
                   <span class="review-time">{{ formatTime(review.createdAt) }}</span>
                 </div>

@@ -13,7 +13,7 @@
             <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
             <div class="author-info">
               <router-link :to="`/user/${post.author.id}`" class="author-name">
-                {{ post.author.username }}
+                {{ post.author.nickname }}
               </router-link>
               <span class="post-time">{{ formatTime(post.createTime) }}</span>
             </div>
@@ -115,7 +115,7 @@
               <div class="comment-header">
                 <img :src="comment.author.avatar || '/avatar.png'" :alt="comment.author.username" class="comment-avatar" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
                 <div class="comment-meta">
-                  <span class="comment-author">{{ comment.author.username }}</span>
+                  <span class="comment-author">{{ comment.author.nickname }}</span>
                   <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
                 </div>
                 <div class="comment-actions">
@@ -204,7 +204,7 @@
                   <div class="comment-header">
                     <img :src="reply.author.avatar || '/avatar.png'" :alt="reply.author.username" class="comment-avatar" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
                     <div class="comment-meta">
-                      <span class="comment-author">{{ reply.author.username }}</span>
+                      <span class="comment-author">{{ reply.author.nickname }}</span>
                       <span class="comment-time">{{ formatTime(reply.createdAt) }}</span>
                     </div>
                     <div class="comment-actions">
@@ -747,7 +747,7 @@ const handleSubmitEdit = async () => {
         ...updatedPost,
         author: updatedPost.author || {
           id: 0,
-          username: '',
+          nickname: '',
           avatar: ''
         }
       } as any

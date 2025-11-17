@@ -130,7 +130,7 @@
             <button class="user-trigger">
               <img :src="user?.avatar || '/avatar.png'" :alt="user?.username || '用户'" class="user-avatar" />
               <div class="user-info">
-                <span class="username">{{ user?.username || '用户' }}</span>
+                <span class="username">{{ user?.nickname || user?.username || '用户' }}</span>
                 <span class="user-level">Lv.{{ user?.level || 0 }}</span>
               </div>
               <i class="user-arrow icon-arrow-down" :class="{ rotated: showUserMenu }"></i>
@@ -140,7 +140,7 @@
               <div class="user-profile">
                 <img :src="user?.avatar || '/avatar.png'" :alt="user?.username || '用户'" class="profile-avatar" />
                 <div class="profile-info">
-                  <h4>{{ user?.username || '用户' }}</h4>
+                  <h4>{{ user?.nickname || user?.username || '用户' }}</h4>
                   <!-- <p>{{ user.nickname }}</p> -->
                 </div>
               </div>

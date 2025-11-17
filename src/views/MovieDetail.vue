@@ -164,12 +164,12 @@
           </div>
           <div class="rating-actions">
             <button 
-              class="submit-rating-btn" 
-              @click="handleSubmitRating"
-              :disabled="ratingLoading || !userRating.score || userRating.score < 1 || !userRating.comment.trim()"
-            >
-              {{ ratingLoading ? '提交中...' : '提交评分' }}
-            </button>
+        class="submit-rating-btn" 
+        @click="handleSubmitRating"
+        :disabled="ratingLoading"
+      >
+        {{ ratingLoading ? '提交中...' : '提交评分' }}
+      </button>
           </div>
         </div>
       </div>
@@ -188,19 +188,19 @@
             >
               <div class="review-header">
                 <router-link :to="`/user/${review.user.id}`" class="review-avatar-link">
-                  <img 
-                    :src="review.user.avatar || '/avatar.png'" 
-                    :alt="review.user.username" 
-                    class="review-avatar"
-                    @error="e => (e.target as HTMLImageElement).src = '/avatar.png'"
-                  />
-                </router-link>
-                <div class="review-meta">
-                  <router-link :to="`/user/${review.user.id}`" class="review-author-link">
-                    <span class="review-author">{{ review.user.username }}</span>
-                  </router-link>
-                  <span class="review-time">{{ formatTime(review.createdAt) }}</span>
-                </div>
+        <img 
+          :src="review.user.avatar || '/avatar.png'" 
+          :alt="review.user.nickname" 
+          class="review-avatar"
+          @error="e => (e.target as HTMLImageElement).src = '/avatar.png'"
+        />
+      </router-link>
+      <div class="review-meta">
+        <router-link :to="`/user/${review.user.id}`" class="review-author-link">
+          <span class="review-author">{{ review.user.nickname }}</span>
+        </router-link>
+        <span class="review-time">{{ formatTime(review.createdAt) }}</span>
+      </div>
                 <div class="review-score">
                   <RatingStars :readonly="true" :modelValue="review.score" tooltip-base="评分" />
                   <span class="score-text">{{ review.score }}/10</span>

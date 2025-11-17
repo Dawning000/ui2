@@ -84,6 +84,7 @@ export interface MovieReviewUser {
   id: number;
   username: string;
   avatar?: string;
+  nickname?: string;
 }
 
 // 电影短评

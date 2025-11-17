@@ -75,7 +75,7 @@
                   <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="(e: Event) => { const target = e.target as HTMLImageElement; if (target) target.src = '/avatar.png' }" />
                   <div class="author-info">
                     <router-link :to="`/user/${post.author.id}`" class="author-name">
-                      {{ post.author.username }}
+                      {{ post.author.nickname }}
                     </router-link>
                     <span class="post-time">{{ formatTime(post.createdAt || post.createTime) }}</span>
                   </div>
