@@ -6,7 +6,7 @@
 
 <script setup>
 // 仅导入要测试的组件
-import Navbar from '../components/Navbar.vue'
+import NavBar from '../components/NavBar.vue'
 import Footer from '../components/Footer.vue'
 import Carousel from '../components/Carousel.vue'
 

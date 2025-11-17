@@ -343,9 +343,9 @@ const editFormData = computed(() => {
   return {
     id: detail.value.id,
     title: detail.value.title || '',
-    original_title: detail.value.originalTitle || detail.value.original_title || '',
+    original_title: detail.value.originalTitle || '',
     year: detail.value.year,
-    tags: detail.value.tags || detail.value.genre || [],
+    tags: detail.value.tags || [],
     director: detail.value.director?.id || detail.value.director || 0, // 导演ID
     // 演员列表：如果后端返回了 role 和 description，使用它们；否则使用空值
     actors: (detail.value.actors || []).map((a: any) => ({

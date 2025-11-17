@@ -511,7 +511,7 @@ async function handleSubmit() {
     emit('submit', submitData)
     notify.success('电影保存成功！')
   } catch (error) {
-    notify.error(error?.message || '保存失败，请稍后重试')
+    notify.error((error as any)?.message || '保存失败，请稍后重试')
   } finally {
     submitting.value = false
   }

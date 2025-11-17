@@ -117,7 +117,7 @@
           <div class="confirm-dialog-icon">
             <i class="icon-warning-circle"></i>
           </div>
-          <p>确定要删除演员"{{detail.value?.name}}"吗？此操作不可撤销。删除后将自动跳转到演员列表页。</p>
+          <p>确定要删除演员"{{detail?.name ?? '未知演员'}}"吗？此操作不可撤销。删除后将自动跳转到演员列表页。</p>
         </div>
         <div class="confirm-dialog-footer">
           <button class="confirm-dialog-cancel" @click="cancelDelete">取消</button>

@@ -79,7 +79,7 @@
                 <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="e => e.target.src = '/avatar.png'" />
                 <div class="author-info">
                   <span class="author-name">{{ post.author.username }}</span>
-                  <span class="post-time">{{ formatTime(post.createdAt) }}</span>
+                  <span class="post-time">{{ formatTime(post.createTime) }}</span>
                 </div>
               </div>
               <div class="post-category">

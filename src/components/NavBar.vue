@@ -128,24 +128,24 @@
           <!-- 用户菜单 -->
           <div class="user-menu" @mouseenter="showUserMenu = true" @mouseleave="showUserMenu = false">
             <button class="user-trigger">
-              <img :src="user.avatar || '/avatar.png'" :alt="user.username" class="user-avatar" />
+              <img :src="user?.avatar || '/avatar.png'" :alt="user?.username || '用户'" class="user-avatar" />
               <div class="user-info">
-                <span class="username">{{ user.username }}</span>
-                <span class="user-level">Lv.{{ user.level }}</span>
+                <span class="username">{{ user?.username || '用户' }}</span>
+                <span class="user-level">Lv.{{ user?.level || 0 }}</span>
               </div>
               <i class="user-arrow icon-arrow-down" :class="{ rotated: showUserMenu }"></i>
             </button>
             
             <div class="user-dropdown" :class="{ show: showUserMenu }">
               <div class="user-profile">
-                <img :src="user.avatar || '/avatar.png'" :alt="user.username" class="profile-avatar" />
+                <img :src="user?.avatar || '/avatar.png'" :alt="user?.username || '用户'" class="profile-avatar" />
                 <div class="profile-info">
-                  <h4>{{ user.username }}</h4>
+                  <h4>{{ user?.username || '用户' }}</h4>
                   <!-- <p>{{ user.nickname }}</p> -->
                 </div>
               </div>
               <div class="user-menu-list">
-                <router-link :to="`/user/${user.id}`" class="menu-item">
+                <router-link :to="user ? `/user/${user.id}` : '#'" class="menu-item">
                   <i class="menu-icon icon-user"></i>
                   <span>个人中心</span>
                 </router-link>

@@ -6,13 +6,43 @@ import { useUserStore } from '../stores/user'
 const router = useRouter()
 const userStore = useUserStore()
 
-// QQ登录成功后，获取用户信息并跳转到主页
+// QQ登录成功后，获取URL中的用户信息并保存
 onMounted(() => {
-  // 可以在这里添加获取用户信息的逻辑
-  // 例如：userStore.getUserInfo()
-  
-  // 跳转到主页
-  router.push('/')
+  try {
+    // 解析URL中的用户信息
+    const searchParams = new URLSearchParams(window.location.search)
+    const userInfoStr = searchParams.get('userInfo') || ''
+    const userInfo = JSON.parse(decodeURIComponent(userInfoStr))
+    
+    // 映射用户信息到User接口
+    const mappedUser = {
+      id: userInfo.id,
+      username: userInfo.username,
+      email: userInfo.email,
+      avatar: userInfo.avatar,
+      nickname: userInfo.nickname,
+      level: userInfo.level,
+      joinDate: userInfo.join_date,
+      followersCount: userInfo.followers_count,
+      followingCount: userInfo.following_count,
+      postsCount: 0,
+      role: userInfo.role || 'USER'
+    }
+    
+    // 保存用户信息到store
+    userStore.user = mappedUser
+    userStore.userId = mappedUser.id
+    
+    // 保存用户ID到localStorage
+    localStorage.setItem('current_user_id', mappedUser.id.toString())
+    
+    // 跳转到主页
+    router.push('/')
+  } catch (error) {
+    console.error('解析用户信息失败:', error)
+    // 解析失败也跳转到主页
+    router.push('/')
+  }
 })
 </script>
 

@@ -35,29 +35,29 @@
           </div>
           
           <div class="profile-details">
-            <div class="detail-item" v-if="user.bio">
+            <div class="detail-item" v-if="user?.bio">
               <i class="icon-user"></i>
-              <span>{{ user.bio }}</span>
+              <span>{{ user?.bio }}</span>
             </div>
             <div class="detail-item">
               <i class="icon-calendar"></i>
-              <span>加入时间：{{ formatDate(user.joinDate) }}</span>
+              <span>加入时间：{{ formatDate(user?.joinDate || '') }}</span>
             </div>
-            <div class="detail-item" v-if="user.exp">
+            <div class="detail-item">
               <i class="icon-level"></i>
-              <span>等级：{{ user.level }} | 当前经验：{{ user.exp.now }} | 升级经验：{{ user.exp.next }}</span>
+              <span>等级：{{ user?.level || 1 }}</span>
             </div>
-            <div class="detail-item" v-if="user.location">
+            <div class="detail-item" v-if="user?.location">
               <i class="icon-location"></i>
-              <span>{{ user.location }}</span>
+              <span>{{ user?.location }}</span>
             </div>
-            <div class="detail-item" v-if="user.website">
+            <div class="detail-item" v-if="user?.website">
               <i class="icon-link"></i>
-              <a :href="user.website" target="_blank" class="website-link">{{ user.website }}</a>
+              <a :href="user?.website" target="_blank" class="website-link">{{ user?.website }}</a>
             </div>
-            <div class="detail-item" v-if="user.role">
+            <div class="detail-item" v-if="user?.role">
               <i class="icon-role"></i>
-              <span>角色：{{ user.role === 'ADMIN' ? '管理员' : '普通用户' }}</span>
+              <span>角色：{{ user?.role === 'ADMIN' ? '管理员' : '普通用户' }}</span>
             </div>
           </div>
         </div>
@@ -209,7 +209,7 @@
             <!-- 分类标签 -->
             <div class="favorites-tabs">
               <button 
-                v-for="type in ['movies', 'tvshows', 'varieties']" 
+                v-for="type in favoriteTypes" 
                 :key="type"
                 :class="['favorite-tab-btn', { active: activeFavoritesType === type }]"
                 @click="handleFavoritesTypeChange(type)"
@@ -492,8 +492,10 @@ const route = useRoute()
 
 // 响应式数据
 const loading = ref(true)
-const user = ref(null)
-const userPosts = ref([])
+import type { User } from '../types/user'
+const user = ref<User | null>(null)
+import type { Post } from '../api/posts'
+const userPosts = ref<Post[]>([]);
 const activeTab = ref('posts')
 const isFollowing = ref(false)
 
@@ -516,16 +518,22 @@ const pageSize = ref(10)
 const totalPosts = ref(0)
 const jumpPage = ref(1)
 // 收藏相关状态
+interface Favorites {
+  movies: any[];
+  tvshows: any[];
+  varieties: any[];
+}
+
 const loadingFavorites = ref(false);
-const favorites = ref({
+const favorites = ref<Favorites>({
   movies: [],
   tvshows: [],
   varieties: []
 });
 
 // 处理海报加载失败，设置纯色背景
-function handlePosterError(event) {
-  const target = event.target;
+function handlePosterError(event: Event) {
+  const target = event.target as HTMLImageElement;
   // 设置图片不可见
   target.style.display = 'none';
   // 给父元素添加纯色背景
@@ -548,7 +556,13 @@ function handlePosterError(event) {
     }
   }
 }
-const favoritesPagination = ref({
+interface FavoritesPagination {
+  movies: { total: number; page: number; size: number; has_next: boolean }
+  tvshows: { total: number; page: number; size: number; has_next: boolean }
+  varieties: { total: number; page: number; size: number; has_next: boolean }
+}
+
+const favoritesPagination = ref<FavoritesPagination>({
   movies: { total: 0, page: 1, size: 10, has_next: false },
   tvshows: { total: 0, page: 1, size: 10, has_next: false },
   varieties: { total: 0, page: 1, size: 10, has_next: false }
@@ -556,7 +570,9 @@ const favoritesPagination = ref({
 const currentFavoritesPage = ref(1)
 const favoritesJumpPage = ref(1)
 const favoritesPageSize = ref(10)
-const activeFavoritesType = ref('movies')
+const activeFavoritesType = ref<keyof FavoritesPagination>('movies')
+// 定义收藏类型数组，用于类型安全的循环遍历
+const favoriteTypes: Array<keyof FavoritesPagination> = ['movies', 'tvshows', 'varieties']
 
 const tabs = [
   { id: 'posts', label: '帖子', icon: 'icon-edit' },
@@ -567,7 +583,7 @@ const tabs = [
 // 修改密码功能已迁移到账号设置页面
 
 // 方法
-const formatDate = (date) => {
+const formatDate = (date: Date | string) => {
   return new Date(date).toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',
@@ -621,9 +637,9 @@ watch(() => route.params.id, (newId, oldId) => {
   }
 }, { immediate: false })
 
-const formatTime = (date) => {
-  const now = new Date()
-  const diff = now - new Date(date)
+const formatTime = (date: Date | string) => {
+  const now = new Date().getTime()
+  const diff = now - new Date(date).getTime()
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor(diff / (1000 * 60 * 60))
   const minutes = Math.floor(diff / (1000 * 60))
@@ -638,7 +654,7 @@ const formatTime = (date) => {
 const loadUserFavorites = async (type = 'movies', page = 1, size = 10) => {
   loadingFavorites.value = true
   try {
-    const userId = parseInt(route.params.id)
+    const userId = parseInt(route.params.id as string)
     // 构建查询参数
     const queryParams = new URLSearchParams({
       type,
@@ -646,22 +662,25 @@ const loadUserFavorites = async (type = 'movies', page = 1, size = 10) => {
       size: size.toString()
     })
     // 调用API获取用户收藏列表 - 使用正确的http函数调用方式
-    const response = await http(`/user/${userId}/favorites?${queryParams}`)
+    const response = await http<{ code: number; data?: { movies?: any[]; tvshows?: any[]; varieties?: any[]; pagination?: any } }>(`/user/${userId}/favorites?${queryParams}`)
     
     if (response && response.code === 200 && response.data) {
+      // 确保type是有效的Favorites键
+      const safeType = type as keyof Favorites;
       // 更新收藏数据
-      favorites.value[type] = response.data[type] || []
+      favorites.value[safeType] = response.data[safeType] || []
       
       // 更新分页信息
-      favoritesPagination.value[type] = {
-        total: response.data.pagination?.[type]?.total || 0,
-        page: response.data.pagination?.[type]?.page || page,
-        size: response.data.pagination?.[type]?.size || size,
-        has_next: response.data.pagination?.[type]?.has_next || false
+      favoritesPagination.value[safeType] = {
+        total: (response as any).data?.pagination?.[type]?.total || 0,
+        page: (response as any).data?.pagination?.[type]?.page || page,
+        size: (response as any).data?.pagination?.[type]?.size || size,
+        has_next: (response as any).data?.pagination?.[type]?.has_next || false
       }
       
       // 确保收藏数据在页面加载时正确初始化
-      if (favorites.value[type].length === 0 && favoritesPagination.value[type].total > 0) {
+      const favoritesKey = type as keyof Favorites;
+        if (favorites.value[favoritesKey].length === 0 && favoritesPagination.value[favoritesKey].total > 0) {
         console.log('No favorites data returned for type:', type)
       }
     }
@@ -676,7 +695,7 @@ const loadUserProfile = async () => {
   loading.value = true
   try {
       // 使用真实API获取用户信息
-      const userId = parseInt(route.params.id)
+      const userId = parseInt(route.params.id as string)
       
       // 获取用户store实例
       const userStore = useUserStore();
@@ -695,7 +714,6 @@ const loadUserProfile = async () => {
         avatar: response.data.avatar || '/avatar.png',
         nickname: response.data.nickname,
         level: response.data.level,
-        exp: response.data.exp,
         joinDate: response.data.join_date,
         postsCount: response.data.posts_count,
         followersCount: response.data.followers_count,
@@ -735,7 +753,7 @@ const loadUserProfile = async () => {
 
 const handleFollow = async () => {
   try {
-    const userId = parseInt(route.params.id)
+    const userId = parseInt(route.params.id as string)
     let response
     
     // 根据当前关注状态调用不同的接口
@@ -752,10 +770,12 @@ const handleFollow = async () => {
       isFollowing.value = !isFollowing.value
       
       // 更新粉丝数
-      if (isFollowing.value) {
-        user.value.followersCount++
-      } else {
-        user.value.followersCount--
+      if (user.value) {
+        if (isFollowing.value) {
+          user.value.followersCount++
+        } else {
+          user.value.followersCount--
+        }
       }
     } else {
       console.error('关注操作失败:', response?.message || '未知错误')
@@ -775,7 +795,7 @@ const loadFollowingList = async () => {
   
   try {
     followingLoading.value = true
-    const userId = parseInt(route.params.id)
+    const userId = parseInt(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id)
     const response = await userApi.getFollowingList(userId, followingPage.value, followingPageSize.value)
     
     if (response && response.code === 200 && response.data) {
@@ -926,7 +946,7 @@ const handleFollowingJump = () => {
  * @param page 页码
  * @param size 每页数量
  */
-const loadUserPosts = async (userId, page, size) => {
+const loadUserPosts = async (userId: number, page: number, size: number) => {
   const loadingPosts = ref(true)
   try {
     const response = await postApi.getUserPosts(userId, page, size)
@@ -1009,14 +1029,16 @@ const loadUserPosts = async (userId, page, size) => {
   
   // 收藏列表相关计算属性
   const totalFavoritesPages = computed(() => {
-    const pagination = favoritesPagination.value[activeFavoritesType.value]
+    const type = activeFavoritesType.value as keyof FavoritesPagination
+    const pagination = favoritesPagination.value[type]
     return Math.ceil(pagination.total / pagination.size)
   })
   
   const visibleFavoritesPages = computed(() => {
     const pages = []
     const total = totalFavoritesPages.value
-    const current = favoritesPagination.value[activeFavoritesType.value].page
+    const type = activeFavoritesType.value as keyof FavoritesPagination
+    const current = favoritesPagination.value[type].page
     
     // 生成可见页码
     if (total <= 7) {
@@ -1049,13 +1071,13 @@ const loadUserPosts = async (userId, page, size) => {
   })
   
   // 收藏分页控制函数
-  const handleFavoritesPageChange = (page) => {
+  const handleFavoritesPageChange = (page: number) => {
     currentFavoritesPage.value = page
     favoritesJumpPage.value = page
     loadUserFavorites(activeFavoritesType.value, page, favoritesPageSize.value)
   }
   
-  const handleFavoritesPageSizeChange = (size) => {
+  const handleFavoritesPageSizeChange = (size: number) => {
     favoritesPageSize.value = size
     currentFavoritesPage.value = 1
     favoritesJumpPage.value = 1
@@ -1072,7 +1094,7 @@ const loadUserPosts = async (userId, page, size) => {
     handleFavoritesPageChange(page)
   }
   
-  const handleFavoritesTypeChange = (type) => {
+  const handleFavoritesTypeChange = (type: keyof FavoritesPagination) => {
     activeFavoritesType.value = type
     // 切换类型时重新加载数据
     loadUserFavorites(type, 1, favoritesPageSize.value)
@@ -1082,7 +1104,7 @@ const loadUserPosts = async (userId, page, size) => {
    * 切换页码
    * @param p 目标页码
    */
-  const changePage = (p) => {
+  const changePage = (p: number) => {
     const targetPage = Math.max(1, Math.min(p, totalPages.value))
     if (targetPage === currentPage.value || !user.value) return // 如果目标页就是当前页或用户不存在，不重复加载
     currentPage.value = targetPage
@@ -1113,9 +1135,7 @@ const handleJump = () => {
 
 // 编辑资料和头像上传功能已迁移到账号设置页面
 
-// 获取全局通知服务
-const instance = getCurrentInstance();
-const $notification = instance && instance.proxy && instance.proxy.$notification;
+// 获取全局通知服务已删除，未使用
 
 onMounted(() => {
   loadUserProfile()

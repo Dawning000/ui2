@@ -10,12 +10,12 @@
         <!-- 帖子头部 -->
         <div class="post-header">
           <div class="post-meta">
-            <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="e => e.target.src = '/avatar.png'" />
+            <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
             <div class="author-info">
               <router-link :to="`/user/${post.author.id}`" class="author-name">
                 {{ post.author.username }}
               </router-link>
-              <span class="post-time">{{ formatTime(post.createdAt) }}</span>
+              <span class="post-time">{{ formatTime(post.createTime) }}</span>
             </div>
           </div>
           <div class="post-actions">
@@ -113,7 +113,7 @@
               :class="{ 'comment-highlight': route.query.commentId === comment.id.toString() }"
             >
               <div class="comment-header">
-                <img :src="comment.author.avatar || '/avatar.png'" :alt="comment.author.username" class="comment-avatar" @error="e => e.target.src = '/avatar.png'" />
+                <img :src="comment.author.avatar || '/avatar.png'" :alt="comment.author.username" class="comment-avatar" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
                 <div class="comment-meta">
                   <span class="comment-author">{{ comment.author.username }}</span>
                   <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
@@ -202,7 +202,7 @@
                   :class="{ 'comment-highlight': route.query.commentId === reply.id.toString() }"
                 >
                   <div class="comment-header">
-                    <img :src="reply.author.avatar || '/avatar.png'" :alt="reply.author.username" class="comment-avatar" @error="e => e.target.src = '/avatar.png'" />
+                    <img :src="reply.author.avatar || '/avatar.png'" :alt="reply.author.username" class="comment-avatar" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
                     <div class="comment-meta">
                       <span class="comment-author">{{ reply.author.username }}</span>
                       <span class="comment-time">{{ formatTime(reply.createdAt) }}</span>
@@ -440,9 +440,10 @@ const editPostData = ref({
 })
 
 // 方法
-const formatTime = (date) => {
+const formatTime = (date: string | undefined) => {
+  if (!date) return '刚刚'
   const now = new Date()
-  const diff = now - new Date(date)
+  const diff = now.getTime() - new Date(date).getTime()
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor(diff / (1000 * 60 * 60))
   const minutes = Math.floor(diff / (1000 * 60))
@@ -459,7 +460,7 @@ const formatContent = (content: string) => {
 }
 
 // 获取评论列表的函数
-const loadComments = async (postId) => {
+const loadComments = async (postId: number) => {
   try {
     const response = await postApi.getComments(postId);
     console.log('评论API响应:', response);

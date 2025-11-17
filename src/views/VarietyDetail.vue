@@ -688,7 +688,7 @@ async function handleSubmitRating() {
 }
 
 // 通知辅助函数（使用console避免TypeScript错误）
-const notify = {
+const localNotify = {
   success: (message: string) => console.log('Success:', message),
   error: (message: string) => console.error('Error:', message),
   warning: (message: string) => console.warn('Warning:', message),

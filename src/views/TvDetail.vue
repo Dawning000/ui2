@@ -741,13 +741,6 @@ onMounted(load)
 
 // 获取全局通知服务（使用类型断言解决TypeScript错误）
 const instance = getCurrentInstance();
-// 通知辅助函数
-const notify = {
-  success: (message: string) => console.log('Success:', message),
-  error: (message: string) => console.error('Error:', message),
-  warning: (message: string) => console.warn('Warning:', message),
-  info: (message: string) => console.info('Info:', message)
-};
 </script>
 
 <style scoped>

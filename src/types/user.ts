@@ -10,6 +10,9 @@ export interface User {
   followersCount: number;
   followingCount: number;
   role?: string; // 用户角色，如 "ADMIN"
+  bio?: string; // 用户简介
+  location?: string; // 用户位置
+  website?: string; // 用户网站
 }
 
 export interface LoginCredentials {
