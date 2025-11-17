@@ -123,9 +123,8 @@
         v-for="award in awards" 
         :key="award.id" 
         class="award-row"
-        @click="goToDetail(award.id)"
       >
-        <div class="award-main">
+        <div class="award-main" @click="goToDetail(award.id)">
           <h3 class="award-name">{{ award.name }}</h3>
           <div class="award-meta">
             <span v-if="award.organization" class="award-org">{{ award.organization }}</span>
@@ -133,7 +132,7 @@
             <span v-if="award.year" class="award-year">{{ award.year }}</span>
           </div>
         </div>
-        <div class="award-details">
+        <div class="award-details" @click.stop>
           <div v-if="award.movie" class="award-detail-item">
             <span class="detail-label">作品:</span>
             <span class="detail-value">{{ award.movie }}</span>
@@ -146,6 +145,16 @@
             <span class="detail-label">类别:</span>
             <span class="detail-value">{{ award.category }}</span>
           </div>
+        </div>
+        <div class="award-actions">
+          <button 
+            v-if="isAdmin"
+            class="delete-button"
+            @click.stop="handleDeleteAward(award.id)"
+          >
+            删除
+            <i class="icon-delete"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -224,8 +233,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { saveAward, fetchAwardsList, fetchAwardDetail } from '@/api/awards'
+import { saveAward, fetchAwardsList, fetchAwardDetail, deleteAward } from '@/api/awards'
 import { notificationService } from '@/utils/notification'
+import { confirmService } from '@/utils/confirm'
 import AwardForm from '@/components/AwardForm.vue'
 import type { AwardSaveData, AwardDetail, AwardWinner } from '@/api/awards'
 
@@ -233,9 +243,7 @@ const router = useRouter()
 const userStore = useUserStore()
 
 // 检查是否为管理员
-const isAdmin = computed(() => {
-  return userStore.user?.role === 'ADMIN'
-})
+const isAdmin = computed(() => userStore.isAdmin)
 
 // 表单弹窗状态
 const showForm = ref(false)
@@ -476,6 +484,23 @@ function handleImageError(event: Event) {
 
 // 使用项目中的通知服务
 const notify = notificationService
+
+// 处理删除奖项
+async function handleDeleteAward(id: number | string) {
+  try {
+    const confirmed = await confirmService.danger('确定要删除此奖项吗？', {
+      title: '删除确认'
+    })
+    if (confirmed) {
+      await deleteAward(id)
+      await load()
+      notify.success('奖项删除成功！')
+    }
+  } catch (err: any) {
+    console.error('Failed to delete award:', err)
+    notify.error(err?.message || '删除失败，请稍后重试')
+  }
+}
 
 // 处理表单提交
 async function handleFormSubmit(awardData: AwardSaveData) {
@@ -1025,6 +1050,25 @@ onMounted(load)
   min-height: 200px;
 }
 
+.award-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.delete-button {
+  color: var(--error-color);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: var(--error-color);
+    color: white;
+  }
+}
+
 @media (max-width: 768px) {
   .awards-page {
     padding: 16px;
@@ -1040,6 +1084,10 @@ onMounted(load)
   .award-details {
     min-width: 100%;
     width: 100%;
+  }
+  .award-actions {
+    margin-left: 0;
+    align-self: flex-end;
   }
   .detail-modal {
     width: 95%;

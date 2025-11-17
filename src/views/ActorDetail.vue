@@ -8,9 +8,14 @@
           <div class="name-section">
             <div class="name-row">
               <h1 class="actor-name">{{ detail.name }}</h1>
-              <button v-if="isAdmin" class="edit-link-btn" @click="handleEditClick">
-                修改资料
-              </button>
+              <div v-if="isAdmin" class="admin-actions">
+                <button class="edit-link-btn" @click="handleEditClick">
+                  修改资料
+                </button>
+                <button class="delete-btn" @click="handleDeleteClick" :disabled="loading">
+                  {{ loading ? '删除中...' : '删除演员' }}
+                </button>
+              </div>
             </div>
           </div>
           <div class="header-body">
@@ -388,6 +393,22 @@ onMounted(load)
   color: #111827;
   font-weight: 400;
 }
+.delete-btn {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+  background-color: #dc2626;
+}
+
 .edit-link-btn {
   background: none;
   border: none;

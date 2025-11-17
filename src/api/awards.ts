@@ -91,3 +91,10 @@ export async function fetchAwardDetail(id: number | string): Promise<AwardDetail
   return res.data
 }
 
+// 删除奖项
+export async function deleteAward(id: number | string): Promise<void> {
+  await http<void>(`/award/${id}/delete`, {
+    method: 'POST'
+  })
+}
+

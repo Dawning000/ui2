@@ -45,6 +45,15 @@ export const useUserStore = defineStore('user', () => {
 
   // 计算属性
   const isLoggedIn = computed(() => !!user.value)
+  const isAdmin = computed(() => {
+    if (!user.value) return false
+    // 检查用户名是否为admin（针对可能没有返回role的情况）
+    if (user.value.username === "admin") return true
+    if (!user.value?.role) return false
+    const role = user.value.role.toLowerCase()
+    // 支持多种可能的管理员角色名称
+    return role.includes("admin") || role === "administrator" || role === "role_admin"
+  })
 
   // 动作
   const login = async (credentials: LoginCredentials): Promise<ApiResponse> => {
@@ -60,14 +69,26 @@ export const useUserStore = defineStore('user', () => {
       })
       // 兼容后端返回: { code: 200, data: {...}, message: 'success' }
       if ((res && (res.code === 200 || res.code === '200')) && res.data) {
-        user.value = res.data as unknown as User
-        // 保存用户id
-        userId.value = res.data.id
-        // 同时保存到本地存储，以便刷新页面后仍能使用
-        try {
-          localStorage.setItem('current_user_id', res.data.id.toString())
-        } catch (error) {
-          console.error('保存用户id失败:', error)
+        // 登录成功后获取完整用户信息（包含角色）
+        const userInfoResponse = await http<any>(`/user/${res.data.id}/info`)
+        if (userInfoResponse && userInfoResponse.code === 200 && userInfoResponse.data) {
+          user.value = userInfoResponse.data as unknown as User
+          // 保存用户id和完整用户信息
+          try {
+            localStorage.setItem('current_user_id', userInfoResponse.data.id.toString())
+            localStorage.setItem('user_info', JSON.stringify(userInfoResponse.data))
+          } catch (error) {
+            console.error('保存用户数据失败:', error)
+          }
+        } else {
+          //  fallback: 使用登录响应数据
+          user.value = res.data as unknown as User
+          try {
+            localStorage.setItem('current_user_id', res.data.id.toString())
+            localStorage.setItem('user_info', JSON.stringify(res.data))
+          } catch (error) {
+            console.error('保存用户数据失败:', error)
+          }
         }
         
         // 如果勾选了"记住我"且登录成功，保存账号密码
@@ -159,26 +180,57 @@ export const useUserStore = defineStore('user', () => {
 
   const loadUserFromStorage = async (): Promise<void> => {
     try {
-      // 首先尝试从本地存储获取用户id
+      // 首先尝试从本地存储加载完整用户信息
+      const storedUserInfo = localStorage.getItem('user_info')
+      if (storedUserInfo) {
+        const loadedUser = JSON.parse(storedUserInfo) as User
+        console.log('从本地存储加载的用户信息:', loadedUser)
+        user.value = loadedUser
+        userId.value = user.value.id
+        
+        // 检查是否缺少角色信息，若缺少则从后端获取最新信息
+        if (!loadedUser.role) {
+          console.log('本地存储缺少角色信息，从后端获取...')
+          const response = await http<any>(`/user/${userId.value}/info`)
+          console.log('从后端获取的用户信息:', response.data)
+          if (response && response.code === 200 && response.data) {
+            user.value = response.data as unknown as User
+            // 更新本地存储
+            localStorage.setItem('user_info', JSON.stringify(response.data))
+            console.log('本地存储已更新为完整用户信息:', response.data)
+          }
+        }
+        return
+      }
+      
+      // 如果本地存储没有完整用户信息，则尝试通过用户id获取
       const storedUserId = localStorage.getItem('current_user_id')
       if (storedUserId) {
         userId.value = parseInt(storedUserId)
         
-        // 使用用户id获取用户信息，不再使用/user/me接口
+        // 使用用户id获取用户信息
         const response = await http<any>(`/user/${userId.value}/info`)
         if (response && response.code === 200 && response.data) {
           user.value = response.data as unknown as User
+          // 将完整用户信息保存到本地存储
+          localStorage.setItem('user_info', JSON.stringify(response.data))
         } else {
+          // 清理无效数据
           user.value = null
           userId.value = null
           localStorage.removeItem('current_user_id')
+          localStorage.removeItem('user_info')
         }
       } else {
         user.value = null
       }
-    } catch {
+    } catch (error) {
+      console.error('加载用户数据失败:', error)
+      // 清理无效数据
       user.value = null
       userId.value = null
+      localStorage.removeItem('current_user_id')
+      localStorage.removeItem('user_info')
     }
   }
 
@@ -204,6 +256,7 @@ export const useUserStore = defineStore('user', () => {
     user,
     userId,
     isLoggedIn,
+    isAdmin,
     login,
     register,
     logout,
