@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import type { AppRouteRecord } from '@/types/router'
 
 import Home from '../views/Home.vue'
@@ -127,7 +127,7 @@ const routes: AppRouteRecord[] = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
   scrollBehavior(to, from, savedPosition) {
     // 如果有保存的滚动位置（浏览器后退/前进），则恢复该位置
