@@ -140,7 +140,7 @@
             <i class="icon-wechat"></i>
             微信注册
           </button>
-          <button class="social-btn qq">
+          <button class="social-btn qq" @click="handleQQLogin">
             <i class="icon-qq"></i>
             QQ注册
           </button>
@@ -184,6 +184,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { API_BASE } from '../api/http'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -285,6 +286,11 @@ const handleRegister = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// QQ登录
+const handleQQLogin = () => {
+  window.location.href = `${API_BASE}/oauth2/qq`
 }
 </script>
 

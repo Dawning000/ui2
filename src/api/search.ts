@@ -250,8 +250,9 @@ export async function search(params: SearchQueryParams, signal?: AbortSignal): P
       const res = await http<{ code: number; data: any }>(`/varieties/search${query ? `?${query}` : ''}`, { signal })
       const data = res.data
       
+      const items = data.items || data.varieties || []
       return {
-        items: (data.items || []).map((item: any) => ({
+        items: items.map((item: any) => ({
           id: item.id,
           title: item.title,
           year: item.year,
@@ -264,7 +265,7 @@ export async function search(params: SearchQueryParams, signal?: AbortSignal): P
         total: data.total || data.pagination?.total || 0,
         page: data.page || data.pagination?.page || params.page || 1,
         pageSize: data.pageSize || data.pagination?.size || params.pageSize || 24,
-        hasMore: data.hasMore !== undefined ? data.hasMore : ((data.page || 1) * (data.pageSize || 24) < (data.total || 0)),
+        hasMore: data.hasMore !== undefined ? data.hasMore : (data.pagination?.has_next !== undefined ? data.pagination?.has_next : false),
         facets: data.facets
       }
     } else {

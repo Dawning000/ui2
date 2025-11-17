@@ -9,6 +9,7 @@ import UserSettings from '../views/UserSettings.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Test from '../views/Test.vue'
+import QQLoginSuccess from '../views/QQLoginSuccess.vue'
 import Search from '../views/Search.vue'
 import Actors from '../views/Actors.vue'
 import ActorDetail from '../views/ActorDetail.vue'
@@ -117,6 +118,11 @@ const routes: AppRouteRecord[] = [
     path: '/test',
     name: 'Test',
     component: Test
+  },
+  {
+    path: '/login/qq/success',
+    name: 'QQLoginSuccess',
+    component: QQLoginSuccess
   }
 ]
 
