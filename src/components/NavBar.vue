@@ -72,12 +72,15 @@
               <div class="dropdown-section">
                 <h4 class="section-title">热门标签</h4>
                 <div class="tag-list">
-                  <a href="#" class="tag-item">科幻</a>
-                  <a href="#" class="tag-item">悬疑</a>
-                  <a href="#" class="tag-item">爱情</a>
-                  <a href="#" class="tag-item">动作</a>
-                  <a href="#" class="tag-item">喜剧</a>
-                  <a href="#" class="tag-item">恐怖</a>
+                  <a
+                    v-for="tag in hotTags"
+                    :key="tag"
+                    href="#"
+                    class="tag-item"
+                    @click.prevent="handleTagClick(tag)"
+                  >
+                    {{ tag }}
+                  </a>
                 </div>
               </div>
             </div>
@@ -128,24 +131,24 @@
           <!-- 用户菜单 -->
           <div class="user-menu" @mouseenter="showUserMenu = true" @mouseleave="showUserMenu = false">
             <button class="user-trigger">
-              <img :src="user?.avatar || '/avatar.png'" :alt="user?.username || '用户'" class="user-avatar" />
+              <img :src="user.avatar || '/avatar.png'" :alt="user.username" class="user-avatar" />
               <div class="user-info">
-                <span class="username">{{ user?.nickname || user?.username || '用户' }}</span>
-                <span class="user-level">Lv.{{ user?.level || 0 }}</span>
+                <span class="username">{{ user.username }}</span>
+                <span class="user-level">Lv.{{ user.level }}</span>
               </div>
               <i class="user-arrow icon-arrow-down" :class="{ rotated: showUserMenu }"></i>
             </button>
             
             <div class="user-dropdown" :class="{ show: showUserMenu }">
               <div class="user-profile">
-                <img :src="user?.avatar || '/avatar.png'" :alt="user?.username || '用户'" class="profile-avatar" />
+                <img :src="user.avatar || '/avatar.png'" :alt="user.username" class="profile-avatar" />
                 <div class="profile-info">
-                  <h4>{{ user?.nickname || user?.username || '用户' }}</h4>
+                  <h4>{{ user.username }}</h4>
                   <!-- <p>{{ user.nickname }}</p> -->
                 </div>
               </div>
               <div class="user-menu-list">
-                <router-link :to="user ? `/user/${user.id}` : '#'" class="menu-item">
+                <router-link :to="`/user/${user.id}`" class="menu-item">
                   <i class="menu-icon icon-user"></i>
                   <span>个人中心</span>
                 </router-link>
@@ -181,6 +184,9 @@ import NotificationPanel from './NotificationPanel.vue'
 const router = useRouter()
 const userStore = useUserStore()
 
+// 常量
+const hotTags = ['剧情', '喜剧', '动作', '爱情', '科幻', '悬疑', '惊悚', '犯罪']
+
 // 响应式数据
 const searchQuery = ref('')
 const showDropdown = ref(false)
@@ -207,6 +213,16 @@ const handleSearch = () => {
   router.push({
     name: 'Search',
     query: Object.keys(query).length > 0 ? query : undefined
+  })
+}
+
+const handleTagClick = (tag: string) => {
+  router.push({
+    name: 'Search',
+    query: {
+      type: 'movie',
+      tag
+    }
   })
 }
 

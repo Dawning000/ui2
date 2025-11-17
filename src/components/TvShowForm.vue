@@ -187,9 +187,28 @@
 
         <div class="form-group">
           <label>奖项</label>
+          <div class="select-with-search">
+            <input 
+              v-model="awardSearch"
+              type="text"
+              placeholder="搜索奖项名称..."
+              @input="searchAward"
+              class="search-input"
+            />
+            <select 
+              v-model="selectedAward"
+              @change="addAward"
+              class="select-input"
+            >
+              <option :value="0">选择奖项后会自动添加</option>
+              <option v-for="award in awardOptions" :key="award.id" :value="award.id">
+                {{ award.name }}
+              </option>
+            </select>
+          </div>
           <div v-for="(award, index) in form.awards" :key="index" class="award-item">
             <div class="award-header">
-              <span>奖项 {{ index + 1 }}</span>
+              <span>奖项 {{ index + 1 }} - {{ getAwardName(award.id) }}</span>
               <button type="button" @click="removeAward(index)" class="item-remove">×</button>
             </div>
             <div class="award-fields">
@@ -198,6 +217,7 @@
                 <input 
                   v-model.number="award.id" 
                   type="number" 
+                  readonly
                   class="award-input"
                 />
               </div>
@@ -226,7 +246,14 @@
               </div>
             </div>
           </div>
-          <button type="button" @click="addAward" class="add-award-btn">+ 添加奖项</button>
+          <button 
+            type="button" 
+            @click="addAward" 
+            class="add-award-btn"
+            :disabled="!selectedAward"
+          >
+            + 添加选中奖项
+          </button>
         </div>
 
         <div class="form-group">
@@ -294,10 +321,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, getCurrentInstance } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { fetchActors } from '../api/actors'
 import { saveTvShow } from '../api/tvshows'
 import type { TvShowSaveData, TvShowActor, TvShowAward, TvShowSeason } from '../api/tvshows'
+import { fetchAwardsList, type AwardListItem } from '@/api/awards'
 import ImageUploader from './ImageUploader.vue'
 
 interface Props {
@@ -323,16 +351,11 @@ const selectedActor = ref(0)
 const directorOptions = ref<any[]>([])
 const actorOptions = ref<any[]>([])
 
-// 定义奖项选项接口
-interface AwardOption {
-  id: number
-  name: string
-}
-
 // 响应式数据
 const awardSearch = ref('')
 const selectedAward = ref(0)
-const awardOptions = ref<AwardOption[]>([])
+const awardOptions = ref<AwardListItem[]>([])
+let awardSearchTimer: ReturnType<typeof setTimeout> | null = null
 
 // 初始化表单数据
 const form = reactive<TvShowSaveData>({
@@ -401,6 +424,7 @@ async function loadActors() {
 // 组件挂载时加载演员列表
 onMounted(() => {
   loadActors()
+  loadAwards()
 })
 
 // 如果是新增，添加一个默认的照片
@@ -442,20 +466,41 @@ async function searchActor() {
   }
 }
 
-// 搜索奖项
-async function searchAward() {
-  if (!awardSearch.value.trim()) {
-    awardOptions.value = []
-    return
-  }
+async function loadAwards(keyword?: string) {
   try {
-    // 这里应该调用奖项搜索API，暂时使用模拟数据
-    awardOptions.value = [
-      { id: 1, name: `奖项: ${awardSearch.value}` }
-    ]
+    const { awards } = await fetchAwardsList({
+      page: 1,
+      size: 20,
+      keyword: keyword?.trim() || undefined,
+      target_type: 'TVSHOW'
+    })
+    awardOptions.value = awards || []
+    ensureInitialAwardOptions()
   } catch (error) {
-    console.error('搜索奖项失败:', error)
+    console.error('加载奖项失败:', error)
   }
+}
+
+function ensureInitialAwardOptions() {
+  if (!props.initialData?.awards?.length) return
+  props.initialData.awards.forEach((award: any) => {
+    if (!award?.id || !award?.name) return
+    if (awardOptions.value.some(a => a.id === award.id)) return
+    awardOptions.value.push({
+      id: award.id,
+      name: award.name,
+      organization: award.organization,
+      target_type: award.target_type,
+      description: award.description
+    })
+  })
+}
+
+function searchAward() {
+  if (awardSearchTimer) clearTimeout(awardSearchTimer)
+  awardSearchTimer = setTimeout(() => {
+    loadAwards(awardSearch.value)
+  }, 300)
 }
 
 // 添加标签
@@ -490,17 +535,29 @@ function removeActor(index: number) {
 
 // 添加奖项
 function addAward() {
+  const awardId = selectedAward.value
+  if (!awardId) return
+  if (form.awards.find((aw: TvShowAward) => aw.id === awardId)) {
+    selectedAward.value = 0
+    return
+  }
   form.awards.push({
-    id: 0,
+    id: awardId,
     year: new Date().getFullYear(),
     status: 'nominated',
     note: ''
   })
+  selectedAward.value = 0
 }
 
 // 删除奖项
 function removeAward(index: number) {
   form.awards.splice(index, 1)
+}
+
+function getAwardName(id: number): string {
+  const award = awardOptions.value.find(a => a.id === id)
+  return award?.name || `奖项ID ${id}`
 }
 
 // 添加季度
@@ -900,6 +957,11 @@ function handleCancel() {
 .add-season-btn:hover,
 .add-photo-btn:hover {
   background: #059669;
+}
+
+.add-award-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .photo-remove {

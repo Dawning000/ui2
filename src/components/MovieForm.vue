@@ -262,16 +262,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, getCurrentInstance } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { fetchActors } from '@/api/actors'
 import type { ActorListItem } from '@/types/actors'
 import type { MovieSaveData, MovieActor } from '@/api/movies'
+import { fetchAwardsList, type AwardListItem } from '@/api/awards'
 import ImageUploader from './ImageUploader.vue'
-
-interface AwardOption {
-  id: number
-  name: string
-}
 
 interface Props {
   initialData?: any
@@ -297,7 +293,8 @@ const selectedAward = ref(0)
 
 const directorOptions = ref<ActorListItem[]>([])
 const actorOptions = ref<ActorListItem[]>([])
-const awardOptions = ref<AwardOption[]>([])
+const awardOptions = ref<AwardListItem[]>([])
+let awardSearchTimer: ReturnType<typeof setTimeout> | null = null
 
 const form = reactive<Omit<MovieSaveData, 'id'>>({
   title: '',
@@ -380,10 +377,41 @@ async function searchActor() {
 }
 
 // 搜索奖项（简化版，实际应该调用奖项API）
+async function loadAwards(keyword?: string) {
+  try {
+    const { awards } = await fetchAwardsList({
+      page: 1,
+      size: 20,
+      keyword: keyword?.trim() || undefined,
+      target_type: 'FILM'
+    })
+    awardOptions.value = awards || []
+    ensureInitialAwardOptions()
+  } catch (error) {
+    console.error('加载奖项列表失败:', error)
+  }
+}
+
+function ensureInitialAwardOptions() {
+  if (!props.initialData?.awards?.length) return
+  props.initialData.awards.forEach((award: any) => {
+    if (!award?.id || !award?.name) return
+    if (awardOptions.value.find(a => a.id === award.id)) return
+    awardOptions.value.push({
+      id: award.id,
+      name: award.name,
+      organization: award.organization,
+      target_type: award.target_type,
+      description: award.description
+    })
+  })
+}
+
 async function searchAward() {
-  // TODO: 实现奖项搜索API调用
-  // 目前使用模拟数据
-  awardOptions.value = []
+  if (awardSearchTimer) clearTimeout(awardSearchTimer)
+  awardSearchTimer = setTimeout(() => {
+    loadAwards(awardSearch.value)
+  }, 300)
 }
 
 // 添加标签
@@ -524,6 +552,9 @@ function handleCancel() {
 
 // 组件挂载时加载演员列表
 loadActors()
+onMounted(() => {
+  loadAwards()
+})
 </script>
 
 <style scoped>

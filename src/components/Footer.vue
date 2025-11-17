@@ -58,16 +58,15 @@
         <div class="footer-section">
           <h4 class="footer-title">热门标签</h4>
           <div class="footer-tags">
-            <span class="tag">科幻电影</span>
-            <span class="tag">悬疑剧</span>
-            <span class="tag">爱情片</span>
-            <span class="tag">动作片</span>
-            <span class="tag">喜剧</span>
-            <span class="tag">古装剧</span>
-            <span class="tag">韩剧</span>
-            <span class="tag">美剧</span>
-            <span class="tag">日剧</span>
-            <span class="tag">国产剧</span>
+            <button
+              v-for="tag in footerTags"
+              :key="tag"
+              type="button"
+              class="tag"
+              @click="handleTagClick(tag)"
+            >
+              {{ tag }}
+            </button>
           </div>
         </div>
       </div>
@@ -89,12 +88,15 @@
   </footer>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 const onlineUsers = ref(0)
 const todayPosts = ref(0)
 const totalPosts = ref(0)
+const footerTags = ['剧情', '喜剧', '动作', '爱情', '科幻', '悬疑', '惊悚', '犯罪']
+const router = useRouter()
 
 onMounted(() => {
   // 模拟数据，实际项目中应该从API获取
@@ -102,6 +104,16 @@ onMounted(() => {
   todayPosts.value = Math.floor(Math.random() * 100) + 50
   totalPosts.value = Math.floor(Math.random() * 10000) + 50000
 })
+
+const handleTagClick = (tag: string) => {
+  router.push({
+    name: 'Search',
+    query: {
+      type: 'movie',
+      tag
+    }
+  })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -211,6 +223,9 @@ onMounted(() => {
     color: #d1d5db;
     transition: all 0.2s;
     cursor: pointer;
+    border: none;
+    outline: none;
+    font: inherit;
     
     &:hover {
       background: var(--primary-color);

@@ -1,13 +1,16 @@
 <template>
   <div class="search-page">
     <div class="search-header">
-      <input
-        v-model="store.q"
-        @keyup.enter="() => applySearch()"
-        class="search-input"
-        type="text"
-        :placeholder="getPlaceholder()"
-      />
+      <div class="search-input-wrapper">
+        <i class="icon-search leading-icon"></i>
+        <input
+          v-model="store.q"
+          @keyup.enter="() => applySearch()"
+          class="search-input"
+          type="text"
+          :placeholder="getPlaceholder()"
+        />
+      </div>
       <button class="search-btn" @click="() => applySearch()">
         <i class="icon-search"></i>
         搜索
@@ -17,7 +20,7 @@
     <div class="search-body">
       <aside class="facet-panel">
         <section class="facet-section">
-          <h4>筛选</h4>
+
           <div class="range-row">
             <label>标签</label>
             <input type="text" v-model="store.tag" placeholder="如 动作" />
@@ -420,17 +423,39 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
   border-radius: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   border: 1px solid #e5e7eb;
-  .search-input {
+  align-items: center;
+  flex-wrap: wrap;
+  .search-input-wrapper {
     flex: 1;
-    padding: 12px 16px;
+    min-width: 240px;
+    max-width: 640px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
     border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    font-size: 15px;
+    border-radius: 999px;
+    background: #f9fafb;
+    box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.04);
     transition: all 0.3s ease;
-    &:focus {
-      outline: none;
+    &:focus-within {
       border-color: var(--primary-color);
       box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+      background: #fff;
+    }
+    .leading-icon {
+      color: #9ca3af;
+      font-size: 16px;
+    }
+  }
+  .search-input {
+    flex: 1;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    &:focus {
+      outline: none;
     }
   }
   .search-btn {
@@ -473,6 +498,9 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
   height: fit-content;
   position: sticky;
   top: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   .facet-section { 
     & + .facet-section { margin-top: 12px; }
     h4 { margin: 0 0 8px 0; font-size: 13px; color: #6b7280; }
@@ -484,33 +512,44 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
     .count { margin-left: 6px; color: #9ca3af; }
   }
   .range-row { 
-    display: flex; 
-    align-items: center;
-    gap: 8px; 
-    margin: 8px 0; 
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 10px 0;
     label {
-      font-size: 13px;
-      color: #6b7280;
-      font-weight: 500;
-      min-width: 60px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #94a3b8;
+      font-weight: 600;
     }
     input {
-      flex: 1;
-      padding: 8px 10px;
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      font-size: 13px;
+      width: 100%;
+      padding: 10px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 999px;
+      font-size: 14px;
+      background: #f8fafc;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+      &:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+      }
     }
   }
   .apply-btn { 
     width: 100%; 
-    padding: 10px 16px; 
+    padding: 12px 18px; 
     border: none; 
     background: linear-gradient(135deg, var(--primary-color) 0%, #fb923c 100%);
     color: #fff; 
-    border-radius: 10px; 
+    border-radius: 999px; 
     cursor: pointer; 
     font-weight: 600;
+    font-size: 15px;
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
     &:hover {
@@ -520,13 +559,14 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
   }
   .clear-btn { 
     width: 100%; 
-    margin-top: 8px; 
-    padding: 10px 16px; 
-    border: 2px solid #e5e7eb; 
-    background: #fff; 
-    border-radius: 10px; 
+    margin-top: 4px; 
+    padding: 12px 18px; 
+    border: 2px solid #e2e8f0; 
+    background: #fff;
+    border-radius: 999px; 
     cursor: pointer; 
     font-weight: 500;
+    font-size: 15px;
     transition: all 0.3s ease;
     &:hover {
       border-color: var(--primary-color);
@@ -781,6 +821,10 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
   .search-header {
     padding: 16px;
     flex-direction: column;
+    .search-input-wrapper {
+      width: 100%;
+      max-width: none;
+    }
     .search-input {
       width: 100%;
     }
