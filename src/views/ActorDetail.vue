@@ -57,7 +57,12 @@
       <div class="section" v-if="(detail.movies?.length || 0) > 0">
         <h2>电影作品</h2>
         <div class="cards">
-          <div v-for="m in detail.movies" :key="m.id" class="card">
+          <div
+            v-for="m in detail.movies"
+            :key="m.id"
+            class="card"
+            @click="navigateToMovie(m.id)"
+          >
             <img :src="m.poster || placeholder" alt="poster" @error="handlePosterError" />
             <div class="title">{{ m.title }}</div>
             <div class="sub" v-if="m.year || m.role">{{ m.year }}{{ m.year && m.role ? ' · ' : '' }}{{ m.role }}</div>
@@ -68,7 +73,12 @@
       <div class="section" v-if="(detail.tvShows?.length || 0) > 0">
         <h2>电视剧作品</h2>
         <div class="cards">
-          <div v-for="t in detail.tvShows" :key="t.id" class="card">
+          <div
+            v-for="t in detail.tvShows"
+            :key="t.id"
+            class="card"
+            @click="navigateToTv(t.id)"
+          >
             <img :src="t.poster || placeholder" alt="poster" @error="handlePosterError" />
             <div class="title">{{ t.title }}</div>
             <div class="sub" v-if="t.year || t.role">{{ t.year }}{{ t.year && t.role ? ' · ' : '' }}{{ t.role }}</div>
@@ -79,7 +89,12 @@
       <div class="section" v-if="(detail.varietyShows?.length || 0) > 0">
         <h2>综艺作品</h2>
         <div class="cards">
-          <div v-for="v in detail.varietyShows" :key="v.id" class="card">
+          <div
+            v-for="v in detail.varietyShows"
+            :key="v.id"
+            class="card"
+            @click="navigateToVariety(v.id)"
+          >
             <img :src="v.poster || placeholder" alt="poster" @error="handlePosterError" />
             <div class="title">{{ v.title }}</div>
             <div class="sub" v-if="v.year || v.role">{{ v.year }}{{ v.year && v.role ? ' · ' : '' }}{{ v.role }}</div>
@@ -134,8 +149,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, getCurrentInstance } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { fetchActorDetail, saveActor, deleteActor } from '@/api/actors'
 import { notificationService } from '@/utils/notification'
@@ -143,6 +158,7 @@ import ActorForm from '@/components/ActorForm.vue'
 import type { ActorDetail, ActorSaveData, ActorAward } from '@/types/actors'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 const id = route.params.id as string
 
@@ -221,6 +237,21 @@ function handlePosterError(event: Event) {
   if (img.src !== placeholder) {
     img.src = placeholder
   }
+}
+
+function navigateToMovie(movieId?: number) {
+  if (!movieId) return
+  router.push({ name: 'MovieDetail', params: { id: movieId.toString() } })
+}
+
+function navigateToTv(tvId?: number) {
+  if (!tvId) return
+  router.push({ name: 'TvDetail', params: { id: tvId.toString() } })
+}
+
+function navigateToVariety(varietyId?: number) {
+  if (!varietyId) return
+  router.push({ name: 'VarietyDetail', params: { id: varietyId.toString() } })
 }
 
 // 点击编辑按钮
