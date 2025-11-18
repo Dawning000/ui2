@@ -1,5 +1,5 @@
 <template>
-  <div class="actor-form-overlay" @click.self="handleCancel">
+  <div class="actor-form-overlay">
     <div class="actor-form-modal">
       <div class="modal-header">
         <h2>{{ isEdit ? '编辑演员/导演' : '添加演员/导演' }}</h2>

@@ -260,7 +260,7 @@
       </div>
 
       <!-- 编辑帖子模态框 -->
-      <div v-if="showEditForm" class="modal-overlay" @click="closeEditForm">
+      <div v-if="showEditForm" class="modal-overlay">
         <div class="modal-content" @click.stop>
           <div class="modal-header">
             <h3>编辑帖子</h3>
