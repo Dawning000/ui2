@@ -11,7 +11,7 @@
         <div class="profile-card">
           <div class="profile-header">
             <div class="avatar-section">
-              <img :src="user.avatar || '/avatar.png'" :alt="user.username" class="user-avatar" />
+              <img :src="user.avatar || '/avatar.png'" :alt="user.username" class="user-avatar" referrerpolicy="no-referrer" />
             </div>
             <div class="user-info">
               <h1 class="username" v-if="user.nickname">{{ user.nickname }}</h1>
@@ -354,6 +354,7 @@
                     :src="followingUser.avatar || '/avatar.png'" 
                     :alt="followingUser.nickname || followingUser.username"
                     class="following-avatar"
+                    referrerpolicy="no-referrer"
                     @error="handleAvatarError"
                   />
                   <div class="following-info">

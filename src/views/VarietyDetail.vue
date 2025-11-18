@@ -10,6 +10,7 @@
             :src="detail.poster" 
             class="poster" 
             :alt="detail.title || 'poster'" 
+            referrerpolicy="no-referrer"
             @error="handlePosterError"
           />
           <div v-else class="poster-placeholder"></div>
@@ -115,6 +116,7 @@
             <img 
               :src="photo" 
               alt="photo" 
+              referrerpolicy="no-referrer"
               @error="handlePhotoError"
             />
           </div>
@@ -185,9 +187,10 @@
               <div class="review-header">
                 <router-link :to="`/user/${review.user.id}`" class="review-avatar-link">
                   <img 
-                    :src="review.user.avatar || '/avatar.png'"
+                    :src="review.user.avatar || '/avatar.png'" 
                     :alt="review.user.nickname" 
                     class="review-avatar"
+                    referrerpolicy="no-referrer"
                     @error="e => (e.target as HTMLImageElement).src = '/avatar.png'"
                   />
                 </router-link>

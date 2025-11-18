@@ -65,6 +65,7 @@
             :src="actor.avatar || fallbackAvatar" 
             :alt="actor.name" 
             class="avatar" 
+            referrerpolicy="no-referrer"
             @error="handleImageError"
           />
           <div class="avatar-overlay">

@@ -84,7 +84,17 @@
         <div v-else-if="store.items.length" class="grid">
           <article v-for="it in store.items" :key="it.id" class="card">
             <router-link :to="getItemLink(it)" class="card-link">
-              <div class="poster" :style="{ backgroundImage: it.poster ? `url(${it.poster})` : undefined }"></div>
+              <div class="poster">
+                <img
+                  v-if="it.poster"
+                  :src="it.poster"
+                  :alt="it.title"
+                  class="poster-img"
+                  referrerpolicy="no-referrer"
+                  @error="handlePosterError"
+                />
+                <div v-else class="poster-placeholder"></div>
+              </div>
               <div class="meta">
                 <h3 v-html="it.highlight?.title || it.title"></h3>
                 <div class="sub">
@@ -238,6 +248,7 @@ const showMovieForm = ref(false)
 const showTvShowForm = ref(false)
 const showVarietyShowForm = ref(false)
 const jumpPage = ref(1)
+const fallbackPoster = '/actor_avatar.png'
 
 // 检查是否为管理员
 const isAdmin = computed(() => {
@@ -363,6 +374,17 @@ function getItemLink(item: any): string {
   if (store.type === 'tv') return `/tv/${item.id}`
   if (store.type === 'variety') return `/variety/${item.id}`
   return `/movie/${item.id}`
+}
+
+function handlePosterError(event: Event) {
+  const img = event.target as HTMLImageElement
+  if (!img) return
+  if (img.dataset.fallback) {
+    img.style.display = 'none'
+    return
+  }
+  img.dataset.fallback = '1'
+  img.src = fallbackPoster
 }
 
 
@@ -645,11 +667,28 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
   .card .poster { 
     width: 100%;
     padding-top: 142.86%; /* 7:10 比例，保持电影海报常见比例 */
-    background-color: #f3f4f6; 
-    background-size: cover; 
-    background-position: center; 
-    background-repeat: no-repeat;
-    transition: opacity 0.2s; 
+    border-radius: 16px 16px 0 0;
+    transition: opacity 0.2s;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  }
+  .poster-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .poster-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
   }
   .card .meta { padding: 10px; }
   .card .meta h3 { margin: 0; font-size: 14px; color: #111827; }
@@ -668,22 +707,23 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
     display: inline-block;
   }
   .card .meta .tag.tag-0 {
-    background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+    background: linear-gradient(135deg, #ff6f1f 0%, #f97316 100%);
   }
   .card .meta .tag.tag-1 {
-    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
   }
   .card .meta .tag.tag-2 {
-    background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+    background: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
   }
   .card .meta .tag.tag-3 {
-    background: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
   }
   .card .meta .tag.tag-4 {
-    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
   }
   .card .meta .tag.tag-5 {
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);
+    color: #92400e;
   }
   .card .meta .tag:hover {
     transform: translateY(-1px);

@@ -72,7 +72,7 @@
             <div class="post-content">
               <div class="post-header">
                 <div class="post-meta">
-                  <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="(e: Event) => { const target = e.target as HTMLImageElement; if (target) target.src = '/avatar.png' }" />
+                  <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" referrerpolicy="no-referrer" @error="(e: Event) => { const target = e.target as HTMLImageElement; if (target) target.src = '/avatar.png' }" />
                   <div class="author-info">
                     <router-link :to="`/user/${post.author.id}`" class="author-name">
                       {{ post.author.nickname }}

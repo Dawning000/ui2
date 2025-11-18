@@ -41,6 +41,7 @@
                     :src="user?.avatar || '/avatar.png'" 
                     :alt="user?.nickname || 'User Avatar'"
                     class="user-avatar"
+                    referrerpolicy="no-referrer"
                     @click="triggerAvatarFileSelect"
                   >
                   <div class="avatar-upload-hint" @click="triggerAvatarFileSelect">点击修改头像</div>
@@ -104,6 +105,7 @@
                   :src="avatarUrl || '/avatar.png'" 
                   :alt="'上传的头像'" 
                   class="preview-avatar"
+                  referrerpolicy="no-referrer"
                 >
                 <div class="uploader-container">
                   <ImageUploader 

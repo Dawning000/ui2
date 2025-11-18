@@ -24,6 +24,7 @@
                 :src="detail.avatar || fallbackAvatar" 
                 class="avatar" 
                 :alt="detail.name || 'avatar'" 
+                referrerpolicy="no-referrer"
                 @error="handleAvatarError"
               />
             </div>
@@ -63,7 +64,7 @@
             class="card"
             @click="navigateToMovie(m.id)"
           >
-            <img :src="m.poster || placeholder" alt="poster" @error="handlePosterError" />
+            <img :src="m.poster || placeholder" alt="poster" referrerpolicy="no-referrer" @error="handlePosterError" />
             <div class="title">{{ m.title }}</div>
             <div class="sub" v-if="m.year || m.role">{{ m.year }}{{ m.year && m.role ? ' · ' : '' }}{{ m.role }}</div>
           </div>
@@ -79,7 +80,7 @@
             class="card"
             @click="navigateToTv(t.id)"
           >
-            <img :src="t.poster || placeholder" alt="poster" @error="handlePosterError" />
+            <img :src="t.poster || placeholder" alt="poster" referrerpolicy="no-referrer" @error="handlePosterError" />
             <div class="title">{{ t.title }}</div>
             <div class="sub" v-if="t.year || t.role">{{ t.year }}{{ t.year && t.role ? ' · ' : '' }}{{ t.role }}</div>
           </div>
@@ -95,7 +96,7 @@
             class="card"
             @click="navigateToVariety(v.id)"
           >
-            <img :src="v.poster || placeholder" alt="poster" @error="handlePosterError" />
+            <img :src="v.poster || placeholder" alt="poster" referrerpolicy="no-referrer" @error="handlePosterError" />
             <div class="title">{{ v.title }}</div>
             <div class="sub" v-if="v.year || v.role">{{ v.year }}{{ v.year && v.role ? ' · ' : '' }}{{ v.role }}</div>
           </div>
@@ -303,7 +304,7 @@ async function performDelete() {
     // 使用notify辅助函数显示成功通知
     notify.success('演员删除成功')
     // 使用Vue Router的方式跳转到演员列表页
-    window.location.href = '/actors'
+    router.push({ name: 'Actors' })
   } catch (err: any) {
     console.error('删除演员失败:', err)
     // 使用notify辅助函数显示错误通知

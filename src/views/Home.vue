@@ -29,7 +29,7 @@
         <div class="floating-cards">
           <div class="movie-card" v-for="(movie, index) in featuredMovies" :key="movie.id" 
                :style="{ animationDelay: `${index * 0.2}s` }">
-            <img :src="movie.poster" :alt="movie.title" />
+            <img :src="movie.poster" :alt="movie.title" referrerpolicy="no-referrer" />
             <div class="card-overlay">
               <h4>{{ movie.title }}</h4>
               <p>{{ movie.rating }}分</p>
@@ -76,7 +76,7 @@
           <div v-for="post in hotPosts" :key="post.id" class="post-card">
             <div class="post-header">
               <div class="post-meta">
-                <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="e => e.target.src = '/avatar.png'" />
+                <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" referrerpolicy="no-referrer" @error="e => e.target.src = '/avatar.png'" />
                 <div class="author-info">
                   <span class="author-name">{{ post.author.username }}</span>
                   <span class="post-time">{{ formatTime(post.createTime) }}</span>
@@ -121,7 +121,7 @@
         <div class="movies-slider">
           <div class="movie-item" v-for="movie in latestMovies" :key="movie.id">
             <div class="movie-poster">
-              <img :src="movie.poster" :alt="movie.title" />
+              <img :src="movie.poster" :alt="movie.title" referrerpolicy="no-referrer" />
               <div class="movie-overlay">
                 <button class="play-btn">
                   <i class="icon-play"></i>

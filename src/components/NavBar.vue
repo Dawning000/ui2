@@ -131,7 +131,7 @@
           <!-- 用户菜单 -->
           <div class="user-menu" @mouseenter="showUserMenu = true" @mouseleave="showUserMenu = false">
             <button class="user-trigger">
-              <img :src="user?.avatar || '/avatar.png'" :alt="user?.username || 'user avatar'" class="user-avatar" />
+              <img :src="user?.avatar || '/avatar.png'" :alt="user?.username || 'user avatar'" class="user-avatar" referrerpolicy="no-referrer" />
               <div class="user-info">
                 <span class="username">{{ user?.username || '未命名' }}</span>
                 <span class="user-level">Lv.{{ user?.level ?? 0 }}</span>
@@ -141,7 +141,7 @@
             
             <div class="user-dropdown" :class="{ show: showUserMenu }">
               <div class="user-profile">
-                <img :src="user?.avatar || '/avatar.png'" :alt="user?.username || 'user avatar'" class="profile-avatar" />
+                <img :src="user?.avatar || '/avatar.png'" :alt="user?.username || 'user avatar'" class="profile-avatar" referrerpolicy="no-referrer" />
                 <div class="profile-info">
                   <h4>{{ user?.username || '未命名' }}</h4>
                   <!-- <p>{{ user.nickname }}</p> -->

@@ -41,6 +41,7 @@
         :src="previewUrl" 
         alt="预览" 
         class="preview-image"
+        referrerpolicy="no-referrer"
         @load="handleImageLoad"
         @error="handleImageError"
       />

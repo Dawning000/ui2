@@ -10,7 +10,7 @@
         <!-- 帖子头部 -->
         <div class="post-header">
           <div class="post-meta">
-            <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
+            <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" referrerpolicy="no-referrer" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
             <div class="author-info">
               <router-link :to="`/user/${post.author.id}`" class="author-name">
                 {{ post.author.nickname }}
@@ -113,7 +113,7 @@
               :class="{ 'comment-highlight': route.query.commentId === comment.id.toString() }"
             >
               <div class="comment-header">
-                <img :src="comment.author.avatar || '/avatar.png'" :alt="comment.author.username" class="comment-avatar" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
+                <img :src="comment.author.avatar || '/avatar.png'" :alt="comment.author.username" class="comment-avatar" referrerpolicy="no-referrer" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
                 <div class="comment-meta">
                   <span class="comment-author">{{ comment.author.nickname }}</span>
                   <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
@@ -202,7 +202,7 @@
                   :class="{ 'comment-highlight': route.query.commentId === reply.id.toString() }"
                 >
                   <div class="comment-header">
-                    <img :src="reply.author.avatar || '/avatar.png'" :alt="reply.author.username" class="comment-avatar" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
+                    <img :src="reply.author.avatar || '/avatar.png'" :alt="reply.author.username" class="comment-avatar" referrerpolicy="no-referrer" @error="e => (e.target as HTMLImageElement).src = '/avatar.png'" />
                     <div class="comment-meta">
                       <span class="comment-author">{{ reply.author.nickname }}</span>
                       <span class="comment-time">{{ formatTime(reply.createdAt) }}</span>

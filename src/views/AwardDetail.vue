@@ -43,7 +43,7 @@
             @click="goToWinnerDetail(winner)"
           >
             <div class="winner-image" v-if="winner.picture">
-              <img :src="winner.picture" :alt="winner.name" @error="handleImageError" />
+              <img :src="winner.picture" :alt="winner.name" referrerpolicy="no-referrer" @error="handleImageError" />
             </div>
             <div class="winner-info">
               <h3 class="winner-name">{{ winner.name }}</h3>

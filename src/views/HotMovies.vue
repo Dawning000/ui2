@@ -48,7 +48,16 @@
             </div>
             
             <div class="poster-wrapper">
-              <div class="poster" :style="{ backgroundImage: movie.poster ? `url(${movie.poster})` : undefined }">
+              <div class="poster">
+                <img
+                  v-if="movie.poster"
+                  :src="movie.poster"
+                  :alt="movie.title"
+                  class="poster-img"
+                  referrerpolicy="no-referrer"
+                  @error="handlePosterError"
+                />
+                <div v-else class="poster-placeholder"></div>
                 <div class="poster-overlay">
                   <div class="poster-rating" v-if="movie.rating">
                     <i class="icon-star"></i>
@@ -181,6 +190,7 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const jumpPage = ref(1)
+const fallbackPoster = '/actor_avatar.png'
 
 // 计算总页数
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
@@ -315,6 +325,17 @@ function getRankBadgeClass(index: number): string {
   if (index === 1) return 'rank-badge-silver'
   if (index === 2) return 'rank-badge-bronze'
   return ''
+}
+
+function handlePosterError(event: Event) {
+  const img = event.target as HTMLImageElement
+  if (!img) return
+  if (img.dataset.fallback) {
+    img.style.display = 'none'
+    return
+  }
+  img.dataset.fallback = '1'
+  img.src = fallbackPoster
 }
 
 onMounted(() => {
@@ -581,14 +602,26 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #f3f4f6;
-  background-size: cover;
-  background-position: center;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  overflow: hidden;
   
   .card:hover & {
     transform: scale(1.08);
   }
+}
+
+.poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.poster-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
 }
 
 .poster-overlay {

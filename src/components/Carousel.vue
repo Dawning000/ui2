@@ -10,7 +10,7 @@
           @click="goToMovie(slide)"
         >
         <div class="card-poster">
-          <img :src="slide.image" :alt="slide.title" />
+          <img :src="slide.image" :alt="slide.title" referrerpolicy="no-referrer" />
           <div class="card-overlay">
             <div class="card-content-overlay">
               <div class="card-header-overlay">
