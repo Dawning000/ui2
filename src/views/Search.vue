@@ -35,7 +35,7 @@
           </div>
           <div class="range-row">
             <label>演员</label>
-            <input type="text" v-model="store.actor" placeholder="如 张三（只要名字）" />
+            <input type="text" v-model="store.actor" placeholder="如 梁朝伟（只要名字）" />
           </div>
           <div class="range-row">
             <label>奖项</label>

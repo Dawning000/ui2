@@ -185,6 +185,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { API_BASE } from '../api/http'
+import { notificationService as notify } from '@/utils/notification'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -279,10 +280,14 @@ const handleRegister = async () => {
       // 注册成功，跳转到登录页
       router.push('/login')
     } else {
-      errors.value.general = result.message || '注册失败，请稍后重试'
+      const message = result.message || '注册失败，请稍后重试'
+      errors.value.general = message
+      notify.error(message)
     }
   } catch (error) {
-    errors.value.general = '注册失败，请稍后重试'
+    const message = '注册失败，请稍后重试'
+    errors.value.general = message
+    notify.error(message)
   } finally {
     loading.value = false
   }

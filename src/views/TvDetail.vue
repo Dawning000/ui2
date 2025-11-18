@@ -308,7 +308,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, getCurrentInstance } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { fetchTvShowDetail, saveTvShow, deleteTvShow, likeTvShow, unlikeTvShow, favoriteTvShow, unfavoriteTvShow, fetchTvShowReviews, rateTvShow, type TvShowSaveData, type TvShowRateData } from '@/api/tvshows'
 import type { MovieReview } from '@/types/movies'
@@ -346,6 +346,7 @@ interface TvShowDetail {
 // 直接使用从API导入的TvShowRateData类型
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 const id = route.params.id as string
 
@@ -606,8 +607,12 @@ async function handleDeleteClick() {
     deleteLoading.value = true
     try {
       await deleteTvShow(id)
+      notify.success('电视剧删除成功！')
       // 删除成功后跳转到电视剧列表页面
-      window.location.href = '/search?type=tv'
+      await router.replace({
+        path: '/search',
+        query: { type: 'tv' }
+      })
   } catch (err: any) {
     console.error('删除电视剧失败:', err)
     notify.error(err?.message || '删除失败，请稍后重试')
@@ -855,22 +860,22 @@ const instance = getCurrentInstance();
   display: inline-block;
 }
 .tag.tag-0 {
-  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  background: linear-gradient(135deg, #b45309 0%, #f97316 100%);
 }
 .tag.tag-1 {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: linear-gradient(135deg, #c2410c 0%, #fb923c 100%);
 }
 .tag.tag-2 {
-  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+  background: linear-gradient(135deg, #ea580c 0%, #fdba74 100%);
 }
 .tag.tag-3 {
-  background: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
+  background: linear-gradient(135deg, #f97316 0%, #ffb34d 100%);
 }
 .tag.tag-4 {
-  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  background: linear-gradient(135deg, #7c2d12 0%, #f97316 100%);
 }
 .tag.tag-5 {
-  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  background: linear-gradient(135deg, #f97316 0%, #fed7aa 100%);
 }
 .tag:hover {
   transform: translateY(-2px);

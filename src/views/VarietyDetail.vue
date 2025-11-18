@@ -289,7 +289,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, getCurrentInstance } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { fetchVarietyShowDetail, saveVarietyShow, deleteVarietyShow, likeVarietyShow, unlikeVarietyShow, favoriteVarietyShow, unfavoriteVarietyShow, rateVarietyShow, fetchVarietyShowReviews } from '@/api/varietyShows'
 import type { VarietyShowDetail, VarietyShowRateData } from '@/types/variety'
@@ -299,6 +299,7 @@ import RatingStars from '@/components/RatingStars.vue'
 import { notificationService as notify } from '@/utils/notification'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 const id = route.params.id as string
 
@@ -564,7 +565,10 @@ async function handleDeleteClick() {
       await deleteVarietyShow(parseInt(id))
       notify.success('综艺删除成功！')
       // 删除成功后跳转到综艺列表页面
-      window.location.href = '/search?type=variety'
+      await router.replace({
+        path: '/search',
+        query: { type: 'variety' }
+      })
   } catch (err: any) {
     console.error('删除综艺失败:', err)
     notify.error(err?.message || '删除失败，请稍后重试')
@@ -810,22 +814,22 @@ onMounted(load)
   display: inline-block;
 }
 .tag.tag-0 {
-  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  background: linear-gradient(135deg, #b45309 0%, #f97316 100%);
 }
 .tag.tag-1 {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: linear-gradient(135deg, #c2410c 0%, #fb923c 100%);
 }
 .tag.tag-2 {
-  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+  background: linear-gradient(135deg, #ea580c 0%, #fdba74 100%);
 }
 .tag.tag-3 {
-  background: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
+  background: linear-gradient(135deg, #f97316 0%, #ffb34d 100%);
 }
 .tag.tag-4 {
-  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  background: linear-gradient(135deg, #7c2d12 0%, #f97316 100%);
 }
 .tag.tag-5 {
-  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  background: linear-gradient(135deg, #f97316 0%, #fed7aa 100%);
 }
 .tag:hover {
   transform: translateY(-2px);
