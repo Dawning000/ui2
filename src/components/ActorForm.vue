@@ -213,8 +213,7 @@ async function loadAwards(keyword?: string) {
     const { awards } = await fetchAwardsList({
       page: 1,
       size: 20,
-      keyword: keyword?.trim() || undefined,
-      target_type: 'ACTOR'
+      keyword: keyword?.trim() || undefined
     })
     awardOptions.value = awards || []
     ensureInitialAwardOptions()
@@ -232,7 +231,7 @@ function ensureInitialAwardOptions() {
       id: award.id,
       name: award.name,
       organization: award.organization,
-      target_type: 'ACTOR',
+      target_type: award.target_type,
       description: award.description
     })
   })

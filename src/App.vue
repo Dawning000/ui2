@@ -9,6 +9,7 @@
     <Footer />
     <!-- 全局通知组件 -->
     <Notification />
+    <GlobalMusic />
     <ConfirmDialog 
       :visible="confirmConfig.visible"
       :title="confirmConfig.title"
@@ -30,6 +31,7 @@ import NavBar from './components/NavBar.vue'
 import Footer from './components/Footer.vue'
 import Notification from './components/Notification.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
+import GlobalMusic from './components/GlobalMusic.vue'
 import { useUserStore } from './stores/user'
 import { confirmService, confirmConfig } from './utils/confirm'
 

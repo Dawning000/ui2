@@ -165,6 +165,7 @@
         </div>
       </div>
     </section>
+
   </div>
 </template>
 
@@ -306,7 +307,9 @@ async function loadMovies() {
   }))
 }
 
-onMounted(loadMovies)
+onMounted(() => {
+  loadMovies()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -1007,4 +1010,5 @@ onMounted(loadMovies)
     transform: translateY(-5px);
   }
 }
+
 </style>

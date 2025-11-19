@@ -13,7 +13,7 @@
           </p>
         </div>
         <div class="header-actions">
-          <button class="btn btn-primary" @click="showCreatePost = true">
+          <button class="btn btn-primary" @click="openCreatePost">
             <i class="icon-plus"></i>
             发布新帖
           </button>
@@ -66,7 +66,7 @@
           <i class="icon-empty"></i>
           <h3>暂无帖子</h3>
           <p>还没有人在这里发布帖子，快来成为第一个吧！</p>
-          <button class="btn btn-primary" @click="showCreatePost = true">
+          <button class="btn btn-primary" @click="openCreatePost">
             发布第一个帖子
           </button>
         </div>
@@ -204,8 +204,8 @@
     </div>
 
     <!-- 创建帖子模态框 -->
-    <div v-if="showCreatePost" class="modal-overlay" @click="closeCreatePost">
-      <div class="modal-content" @click.stop>
+    <div v-if="showCreatePost" class="modal-overlay">
+      <div class="modal-content">
         <div class="modal-header">
             <h3>发布新帖子</h3>
             <button class="close-btn" @click="closeCreatePost">
@@ -242,15 +242,70 @@
                 class="form-input"
               >
             </div>
-            <div class="form-group">
+            <div class="form-group rich-text-editor">
               <label>内容</label>
-              <textarea 
-                v-model="newPost.content"
-                placeholder="分享你的想法..."
-                rows="8"
-                required
-                class="form-textarea"
-              ></textarea>
+              <div class="editor-toolbar">
+                <button type="button" class="editor-btn" @mousedown.prevent @click="formatText('bold')" title="加粗">
+                  B
+                </button>
+                <button type="button" class="editor-btn" @mousedown.prevent @click="formatText('italic')" title="斜体">
+                  I
+                </button>
+                <button type="button" class="editor-btn" @mousedown.prevent @click="formatText('underline')" title="下划线">
+                  U
+                </button>
+                <span class="toolbar-divider"></span>
+                <button type="button" class="editor-btn" @mousedown.prevent @click="formatText('insertUnorderedList')" title="无序列表">
+                  ••
+                </button>
+                <button type="button" class="editor-btn" @mousedown.prevent @click="formatText('insertOrderedList')" title="有序列表">
+                  1.
+                </button>
+                <button type="button" class="editor-btn" @mousedown.prevent @click="formatText('blockquote')" title="引用">
+                  ❝
+                </button>
+                <span class="toolbar-divider"></span>
+                <button type="button" class="editor-btn" @mousedown.prevent @click="insertLink" title="插入链接">
+                  🔗
+                </button>
+                <button type="button" class="editor-btn" @mousedown.prevent @click="triggerImageUpload" title="插入图片">
+                  🌄
+                </button>
+                <button type="button" class="editor-btn" @mousedown.prevent @click="clearFormatting" title="清除格式">
+                  ⌫
+                </button>
+                <div v-if="selectedImage" class="image-resize-controls">
+                  <label>宽度: {{ imageWidth }}%</label>
+                  <input
+                    type="range"
+                    min="20"
+                    max="100"
+                    v-model.number="imageWidth"
+                    @input="applyImageWidth"
+                  />
+                  <button type="button" class="editor-btn" @mousedown.prevent @click="resetImageWidth" title="恢复默认宽度">
+                    ↺
+                  </button>
+                  <button type="button" class="editor-btn" @mousedown.prevent @click="clearImageSelection" title="取消选中图片">
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <input
+                type="file"
+                ref="imageInputRef"
+                class="sr-only"
+                accept="image/*"
+                @change="handleImageSelected"
+              />
+              <div
+                class="editor-content"
+                contenteditable="true"
+                ref="editorRef"
+                @input="handleEditorInput"
+                @click="handleEditorClick"
+                data-placeholder="分享你的想法..."
+              ></div>
             </div>
             <div class="form-actions">
               <button type="button" class="btn btn-outline" @click="closeCreatePost">
@@ -268,7 +323,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { postApi, CreatePostParams } from '../api/posts'
 import { notificationService as notify } from '../utils/notification'
@@ -296,6 +351,10 @@ const postsPerPage = ref(10)
 const showCreatePost = ref(false)
 const creating = ref(false)
 const jumpPage = ref(1)
+const editorRef = ref<HTMLDivElement | null>(null)
+const imageInputRef = ref<HTMLInputElement | null>(null)
+const selectedImage = ref<HTMLImageElement | null>(null)
+const imageWidth = ref(100)
 // 分页信息
 const pagination = ref({
   total: 0,
@@ -312,6 +371,14 @@ const newPost = ref({
   tagsInput: '',
   content: ''
 })
+
+const stripHtml = (html: string) =>
+  html
+    .replace(/<style([\s\S]*?)<\/style>/gi, '')
+    .replace(/<script([\s\S]*?)<\/script>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim()
 
 // 计算属性 - 使用后端返回的数据，只做前端排序（如果需要）
 const sortedPosts = computed(() => {
@@ -570,6 +637,20 @@ const handleShare = (post: ExtendedPost) => {
     }
 }
 
+const updateEditorContent = (content = '') => {
+  if (editorRef.value) {
+    editorRef.value.innerHTML = content
+  }
+}
+
+const openCreatePost = () => {
+  showCreatePost.value = true
+  nextTick(() => {
+    updateEditorContent(newPost.value.content)
+    editorRef.value?.focus()
+  })
+}
+
 const closeCreatePost = () => {
   showCreatePost.value = false
   newPost.value = {
@@ -578,12 +659,141 @@ const closeCreatePost = () => {
     tagsInput: '',
     content: ''
   }
+  updateEditorContent('')
+  clearImageSelection()
+}
+
+const handleEditorInput = () => {
+  if (editorRef.value) {
+    newPost.value.content = editorRef.value.innerHTML
+  }
+}
+
+const handleEditorClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (target && target.tagName === 'IMG') {
+    if (selectedImage.value && selectedImage.value !== target) {
+      selectedImage.value.classList.remove('selected-image')
+    }
+    selectedImage.value = target as HTMLImageElement
+    selectedImage.value.classList.add('selected-image')
+    const widthString = selectedImage.value.style.width
+    if (widthString.endsWith('%')) {
+      imageWidth.value = parseInt(widthString, 10)
+    } else {
+      const parentWidth = selectedImage.value.parentElement?.clientWidth || selectedImage.value.clientWidth
+      imageWidth.value = Math.min(100, Math.max(20, Math.round((selectedImage.value.clientWidth / parentWidth) * 100)))
+    }
+  } else if (selectedImage.value) {
+    selectedImage.value.classList.remove('selected-image')
+    selectedImage.value = null
+  }
+}
+
+const ensureEditorFocus = () => {
+  if (!editorRef.value) return
+  editorRef.value.focus()
+  const selection = window.getSelection()
+  if (selection && selection.rangeCount === 0) {
+    const range = document.createRange()
+    range.selectNodeContents(editorRef.value)
+    range.collapse(false)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+}
+
+const formatText = (command: string) => {
+  ensureEditorFocus()
+  if (command === 'blockquote') {
+    document.execCommand('formatBlock', false, 'blockquote')
+  } else {
+    document.execCommand(command, false)
+  }
+  handleEditorInput()
+}
+
+const insertLink = () => {
+  ensureEditorFocus()
+  const url = prompt('请输入链接地址（包含 https://）')
+  if (url) {
+    document.execCommand('createLink', false, url)
+    handleEditorInput()
+  }
+}
+
+const triggerImageUpload = () => {
+  imageInputRef.value?.click()
+}
+
+const handleImageSelected = () => {
+  const file = imageInputRef.value?.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    const result = reader.result
+    if (!result || typeof result !== 'string') return
+    ensureEditorFocus()
+    const tempId = `temp-img-${Date.now()}`
+    document.execCommand('insertHTML', false, `<img src="${result}" alt="用户上传图片" data-temp-id="${tempId}" />`)
+    handleEditorInput()
+    nextTick(() => {
+      const newImg = editorRef.value?.querySelector(`img[data-temp-id='${tempId}']`) as HTMLImageElement | null
+      if (newImg) {
+        newImg.removeAttribute('data-temp-id')
+        if (selectedImage.value && selectedImage.value !== newImg) {
+          selectedImage.value.classList.remove('selected-image')
+        }
+        selectedImage.value = newImg
+        selectedImage.value.classList.add('selected-image')
+        imageWidth.value = 100
+      }
+    })
+  }
+  reader.readAsDataURL(file)
+  if (imageInputRef.value) {
+    imageInputRef.value.value = ''
+  }
+}
+
+const applyImageWidth = () => {
+  if (selectedImage.value) {
+    selectedImage.value.style.width = `${imageWidth.value}%`
+  }
+}
+
+const resetImageWidth = () => {
+  if (selectedImage.value) {
+    selectedImage.value.style.width = ''
+    imageWidth.value = 100
+  }
+}
+
+const clearImageSelection = () => {
+  if (selectedImage.value) {
+    selectedImage.value.classList.remove('selected-image')
+    selectedImage.value = null
+  }
+  imageWidth.value = 100
+}
+
+const clearFormatting = () => {
+  ensureEditorFocus()
+  document.execCommand('removeFormat', false)
+  document.execCommand('unlink', false)
+  handleEditorInput()
 }
 
 /**
  * 处理创建新帖子
  */
 const handleCreatePost = async () => {
+  const plainContent = stripHtml(newPost.value.content)
+  if (!plainContent) {
+    notify.warning('请先填写帖子内容')
+    return
+  }
+
   creating.value = true
   try {
     // 解析标签
@@ -639,6 +849,15 @@ watch(() => route.query.search, (newSearch) => {
     if (searchValue && typeof searchValue === 'string') {
       searchQuery.value = searchValue
     }
+  }
+})
+
+watch(showCreatePost, (visible) => {
+  if (visible) {
+    nextTick(() => {
+      updateEditorContent(newPost.value.content)
+      editorRef.value?.focus()
+    })
   }
 })
 
@@ -1378,6 +1597,142 @@ onMounted(() => {
 .form-textarea {
   resize: vertical;
   min-height: 120px;
+}
+
+.rich-text-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+
+  .editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #f9fafb;
+    align-items: center;
+    position: relative;
+  }
+
+  .editor-btn {
+    min-width: 32px;
+    height: 32px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #2563eb;
+      border-color: #bfdbfe;
+      background: #eff6ff;
+    }
+  }
+
+  .toolbar-divider {
+    width: 1px;
+    background: #e5e7eb;
+    margin: 0 4px;
+  }
+
+  .image-resize-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 6px 10px;
+    border: 1px dashed #cbd5f5;
+    border-radius: 8px;
+    background: #eef2ff;
+    margin-left: auto;
+
+    label {
+      font-size: 13px;
+      color: #4338ca;
+      font-weight: 600;
+    }
+
+    input[type='range'] {
+      width: 140px;
+    }
+  }
+
+  .editor-content {
+    min-height: 220px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    background: #fff;
+    overflow-y: auto;
+
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    &:empty:before {
+      content: attr(data-placeholder);
+      color: #9ca3af;
+    }
+
+    ul {
+      padding-left: 20px;
+      list-style: disc;
+      margin-bottom: 10px;
+    }
+
+    ol {
+      padding-left: 20px;
+      list-style: decimal;
+      margin-bottom: 10px;
+    }
+
+    blockquote {
+      border-left: 3px solid #c7d2fe;
+      padding-left: 12px;
+      color: #4b5563;
+      margin: 10px 0;
+      background: #f5f3ff;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 10px 0;
+      display: block;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+
+      &.selected-image {
+        outline: 2px solid #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+      }
+    }
+  }
 }
 
 .form-actions {
