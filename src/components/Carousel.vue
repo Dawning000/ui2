@@ -85,23 +85,8 @@ const notify = {
   info: (message) => $notification?.$notification?.info?.(message)
 };
 
-// 默认轮播图数据（作为后备）
-const defaultSlides = [
-  {
-    id: 1,
-    title: '橘橙影志',
-    subtitle: '橘橙暖时光，影志话悠长',
-    description: '在这个温暖的橘橙色调中，我们一起分享电影的美好时光，记录每一个动人的瞬间。',
-    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1920&h=1080&fit=crop&q=80',
-    link: '/forum',
-    buttonText: '开始探索',
-    trailer: 'https://example.com/trailer1',
-    icon: '🍊'
-  }
-]
-
 // 轮播图数据
-const slides = ref([...defaultSlides])
+const slides = ref([])
 
 // 加载热映电影数据
 const loadTopRatedMovies = async () => {
@@ -128,8 +113,8 @@ const loadTopRatedMovies = async () => {
     }
   } catch (error) {
     console.error('加载热映电影失败:', error)
-    // 如果加载失败，使用默认数据
-    slides.value = [...defaultSlides]
+    // 如果加载失败，不再使用默认数据
+    slides.value = []
     currentIndex.value = 0
   } finally {
     loading.value = false
@@ -251,11 +236,12 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+// 轮播图容器背景改为米黄色
 .carousel-container {
   position: relative;
   width: 100%;
   padding: 40px 0;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%);
   overflow: hidden;
   
   &::before {

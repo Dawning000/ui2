@@ -76,8 +76,14 @@ export const useUserStore = defineStore('user', () => {
           user.value = userInfoResponse.data as unknown as User
           // 保存用户id和完整用户信息
           try {
-            localStorage.setItem('current_user_id', userInfoResponse.data.id.toString())
-            localStorage.setItem('user_info', JSON.stringify(userInfoResponse.data))
+            if (credentials.remember) {
+              localStorage.setItem('current_user_id', userInfoResponse.data.id.toString())
+              localStorage.setItem('user_info', JSON.stringify(userInfoResponse.data))
+            } else {
+              // 未勾选"记住我"，使用 sessionStorage 保存用户信息
+              sessionStorage.setItem('current_user_id', userInfoResponse.data.id.toString())
+              sessionStorage.setItem('user_info', JSON.stringify(userInfoResponse.data))
+            }
           } catch (error) {
             console.error('保存用户数据失败:', error)
           }
@@ -85,8 +91,14 @@ export const useUserStore = defineStore('user', () => {
           //  fallback: 使用登录响应数据
           user.value = res.data as unknown as User
           try {
-            localStorage.setItem('current_user_id', res.data.id.toString())
-            localStorage.setItem('user_info', JSON.stringify(res.data))
+            if (credentials.remember) {
+              localStorage.setItem('current_user_id', res.data.id.toString())
+              localStorage.setItem('user_info', JSON.stringify(res.data))
+            } else {
+              // 未勾选"记住我"，使用 sessionStorage 保存用户信息
+              sessionStorage.setItem('current_user_id', res.data.id.toString())
+              sessionStorage.setItem('user_info', JSON.stringify(res.data))
+            }
           } catch (error) {
             console.error('保存用户数据失败:', error)
           }
@@ -135,20 +147,21 @@ export const useUserStore = defineStore('user', () => {
     user.value = null
     userId.value = null
     
-    // 完全清空浏览器本地存储中的所有登录相关数据
+    // 完全清空浏览器本地存储和会话存储中的所有登录相关数据
     try {
-      // 清除特定的用户相关存储项
+      // 清除localStorage中的用户相关存储项
       localStorage.removeItem('remembered_credentials')
       localStorage.removeItem('autoLogin')
       localStorage.removeItem('user_token')
       localStorage.removeItem('user_info')
       localStorage.removeItem('current_user_id')
       
-      // 清除会话存储中的用户相关项
+      // 清除sessionStorage中的用户相关项
       sessionStorage.removeItem('user_token')
       sessionStorage.removeItem('user_info')
+      sessionStorage.removeItem('current_user_id')
       
-      // 清除任何可能存储在localStorage中的用户认证相关数据
+      // 清除任何可能存储的用户认证相关数据
       // 这里可以根据需要添加更多特定的键名
     } catch (error) {
       console.error('清除本地存储失败:', error)
@@ -188,10 +201,24 @@ export const useUserStore = defineStore('user', () => {
         console.log('从本地存储加载的用户信息:', loadedUser)
         user.value = loadedUser
         userId.value = user.value.id
+        return
       }
     } catch (error) {
       console.error('从本地存储加载用户信息失败:', error)
-      // 如果本地存储加载失败，不要清理数据
+      // 如果本地存储加载失败，尝试从会话存储加载
+    }
+    // 如果本地存储没有，尝试从会话存储加载
+    try {
+      const sessionUserInfo = sessionStorage.getItem('user_info')
+      if (sessionUserInfo) {
+        const loadedUser = JSON.parse(sessionUserInfo) as User
+        console.log('从会话存储加载的用户信息:', loadedUser)
+        user.value = loadedUser
+        userId.value = user.value.id
+      }
+    } catch (error) {
+      console.error('从会话存储加载用户信息失败:', error)
+      // 如果会话存储加载失败，不要清理数据
     }
 
     // 调用/user/me接口获取最新用户信息（单独的try/catch，避免网络问题导致本地数据被清除）

@@ -81,6 +81,11 @@
           <div v-for="n in 12" :key="n" class="card skeleton"></div>
         </div>
 
+        <div v-else-if="store.error" class="error">
+          <i class="icon-error error-icon"></i>
+          <span class="error-text">{{ store.error }}</span>
+        </div>
+
         <div v-else-if="store.items.length" class="grid">
           <article v-for="it in store.items" :key="it.id" class="card">
             <router-link :to="getItemLink(it)" class="card-link">
@@ -733,6 +738,29 @@ async function handleVarietyShowSubmit(varietyShowData: VarietyShowSaveData) {
   .card .meta .rating-row { margin-top: 6px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
   .card .meta .rating-text { color: #6b7280; font-size: 12px; }
   .skeleton { height: 240px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: 12px; }
+  .error { 
+    color: #dc2626;
+    background: #fef2f2;
+    padding: 16px 24px;
+    border-radius: 12px;
+    border: 1px solid #fecaca;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 600px;
+    margin: 20px auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    line-height: 100px;
+    height: 100px;
+  }
+  .error-icon { 
+    font-size: 20px;
+    color: #dc2626;
+  }
+  .error-text { 
+    font-size: 14px;
+    font-weight: 500;
+  }
   .empty { 
     flex: 1; 
     display: flex; 

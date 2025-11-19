@@ -86,6 +86,11 @@
         </article>
       </div>
 
+      <div v-else-if="error" class="error">
+        <div class="error-icon">❌</div>
+        <p class="error-text">{{ error }}</p>
+      </div>
+      
       <div v-else class="empty">
         <div class="empty-icon">🎬</div>
         <p class="empty-text">暂无热门电影数据</p>
@@ -190,6 +195,7 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const jumpPage = ref(1)
+const error = ref('')
 const fallbackPoster = '/actor_avatar.png'
 
 // 计算总页数
@@ -240,6 +246,7 @@ const visiblePages = computed(() => {
 // 加载热门电影
 async function loadHotMovies() {
   loading.value = true
+  error.value = ''
   try {
     const response = await fetchHotMovies({
       page: currentPage.value,
@@ -260,10 +267,15 @@ async function loadHotMovies() {
         size: pageSize.value.toString()
       }
     })
-  } catch (error: any) {
-    console.error('加载热门电影失败:', error)
+  } catch (err: any) {
+    console.error('加载热门电影失败:', err)
     movies.value = []
     total.value = 0
+    if (err && err.code === 10005) {
+      error.value = '请先登录'
+    } else {
+      error.value = err?.message || '加载失败，请稍后重试'
+    }
   } finally {
     loading.value = false
   }

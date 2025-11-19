@@ -775,6 +775,90 @@ table {
   }
 }
 
+// 错误提示样式
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  background-color: #fffbeb;
+  border-radius: 16px;
+  margin: 40px 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.error-icon {
+  font-size: 6rem;
+  margin-bottom: 20px;
+  animation: bounce 1.5s infinite;
+}
+
+.error-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--error-color);
+  margin: 0;
+  line-height: 1.6;
+}
+
+// 空状态样式
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  background-color: #fefce8;
+  border-radius: 16px;
+  margin: 40px 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.empty-icon {
+  font-size: 6rem;
+  margin-bottom: 20px;
+  animation: bounce 1.5s infinite;
+}
+
+.empty-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+}
+
+.empty-hint {
+  font-size: 1rem;
+  color: var(--text-light);
+  margin: 0;
+}
+
+// 动画效果
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
 // 收藏列表样式
 .favorites-section {
   padding: 1rem 0;

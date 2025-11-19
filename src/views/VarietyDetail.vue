@@ -1,7 +1,10 @@
 <template>
   <div class="variety-detail-page">
     <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else-if="error" class="error">
+      <div class="error-icon">❌</div>
+      <p class="error-text">{{ error }}</p>
+    </div>
     <div v-else-if="detail">
       <div class="header">
         <div class="poster-wrapper">

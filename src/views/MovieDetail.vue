@@ -1,7 +1,10 @@
 <template>
   <div class="movie-detail-page" v-if="loaded">
     <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else-if="error" class="error">
+      <div class="error-icon">❌</div>
+      <p class="error-text">{{ error }}</p>
+    </div>
     <div v-else-if="detail">
       <div class="header">
         <div class="poster-wrapper">
@@ -1025,7 +1028,27 @@ onMounted(load)
 .page-size-select { padding: 6px 8px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; }
 .page-size-select:hover { border-color: var(--primary-color); }
 .loading, .error { text-align: center; padding: 40px; color: #6b7280; font-size: 16px; }
-.error { color: #ef4444; }
+.error { 
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 16px 24px;
+  border-radius: 12px;
+  border: 1px solid #fecaca;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 600px;
+  margin: 20px auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+.error-icon { 
+  font-size: 20px;
+  color: #dc2626;
+}
+.error-text { 
+  font-size: 14px;
+  font-weight: 500;
+}
 
 @media (max-width: 768px) {
   .movie-detail-page { 

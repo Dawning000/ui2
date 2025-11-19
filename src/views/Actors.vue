@@ -46,7 +46,10 @@
     </div>
 
     <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else-if="error" class="error">
+      <i class="icon-error error-icon"></i>
+      <span class="error-text">{{ error }}</span>
+    </div>
     <div v-else-if="actors.length === 0" class="empty-container">
       <div class="empty">暂无搜索结果</div>
       <div class="pagination-info">
@@ -281,10 +284,10 @@ async function load() {
     jumpPage.value = page.value
   } catch (err: any) {
     // 处理后端的业务错误码
-    if (err && err.message) {
+    if (err && err.code === 10005) {
+      error.value = '请先登录'
+    } else if (err && err.message) {
       error.value = err.message
-    } else if (err && err.code === 10005) {
-      error.value = '未经授权的操作！请先登录'
     } else {
       error.value = '加载失败，请稍后重试'
     }
@@ -714,11 +717,25 @@ onMounted(load)
   font-size: 16px;
 }
 .error { 
-  color: #ef4444;
+  color: #dc2626;
   background: #fef2f2;
-  padding: 20px;
+  padding: 16px 24px;
   border-radius: 12px;
   border: 1px solid #fecaca;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 600px;
+  margin: 20px auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+.error-icon { 
+  font-size: 20px;
+  color: #dc2626;
+}
+.error-text { 
+  font-size: 14px;
+  font-weight: 500;
 }
 
 /* 响应式设计 */

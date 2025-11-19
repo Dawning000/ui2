@@ -57,6 +57,11 @@
           <p>加载中...</p>
         </div>
         
+        <div v-else-if="error" class="error">
+          <div class="error-icon">❌</div>
+          <p class="error-text">{{ error }}</p>
+        </div>
+        
         <div v-else-if="!posts || posts.length === 0" class="empty-state">
           <i class="icon-empty"></i>
           <h3>暂无帖子</h3>
@@ -233,7 +238,7 @@
               <input 
                 type="text" 
                 v-model="newPost.tagsInput"
-                placeholder="用逗号分隔多个标签..."
+                placeholder="用英文逗号分隔多个标签..."
                 class="form-input"
               >
             </div>
@@ -282,6 +287,7 @@ interface ExtendedPost extends Post {
 // 响应式数据
 const loading = ref(false)
 const posts = ref<ExtendedPost[]>([])
+const error = ref('')
 const sortBy = ref('latest') // 固定为最新发布
 const searchQuery = ref('')
 const selectedCategory = ref('')
@@ -419,6 +425,7 @@ const formatTime = (date: string | undefined) => {
 
 const loadPosts = async () => {
   loading.value = true
+  error.value = ''
   try {
     // 优先使用选中的分类，如果没有则使用路由参数中的分类
     const category = selectedCategory.value || (route.params.category as string) || ''
@@ -475,8 +482,8 @@ const loadPosts = async () => {
     } else {
       throw new Error(response.message || '获取帖子列表失败')
     }
-  } catch (error) {
-    console.error('加载帖子失败:', error)
+  } catch (err: any) {
+    console.error('加载帖子失败:', err)
     posts.value = []
     pagination.value = {
       total: 0,
@@ -484,6 +491,11 @@ const loadPosts = async () => {
       size: postsPerPage.value,
       has_next: false
     }
+    if (err && err.code === 10005) {
+       error.value = '请先登录'
+     } else {
+       error.value = err?.message || '加载失败，请稍后重试'
+     }
   } finally {
     loading.value = false
   }

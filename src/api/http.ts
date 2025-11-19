@@ -18,14 +18,21 @@ export async function http<T>(path: string, init: RequestInit = {}): Promise<T> 
     headers,
     credentials: 'include'
   })
-  if (res.status === 401) throw new Error('UNAUTHORIZED')
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const ct = res.headers.get('content-type') || ''
   if (ct.includes('application/json')) {
     const json = await res.json() as any
-    // 直接返回json，不检查code
+    // 检查后端返回的错误代码
+    if (json.code && json.code !== 200) {
+      const error = new Error(json.message || `API Error (code: ${json.code})`)
+      // 将后端的错误代码附加到Error对象上
+      ;(error as any).code = json.code
+      throw error
+    }
     return json as Promise<T>
   }
+  // 如果不是JSON响应，则检查状态码
+  if (res.status === 401) throw new Error('UNAUTHORIZED')
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
   // @ts-expect-error allow unknown
   return res.text()
 }

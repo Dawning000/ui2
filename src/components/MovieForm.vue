@@ -40,11 +40,10 @@
           </div>
 
           <div class="form-group">
-            <label>时长（分钟） <span class="required">*</span></label>
+            <label>时长（分钟）</label>
             <input 
               v-model.number="form.duration" 
               type="number" 
-              required 
               placeholder="如：120"
               min="1"
             />
@@ -53,7 +52,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>国家 <span class="required">*</span></label>
+            <label>国家 </label>
             <input 
               v-model="form.country" 
               type="text" 
@@ -63,7 +62,7 @@
           </div>
 
           <div class="form-group">
-            <label>语言 <span class="required">*</span></label>
+            <label>语言 </label>
             <input 
               v-model="form.language" 
               type="text" 
@@ -74,7 +73,7 @@
         </div>
 
         <div class="form-group">
-          <label>标签 <span class="required">*</span></label>
+          <label>标签 </label>
           <div class="tags-input">
             <div v-if="form.tags.length > 0" class="tags-list">
               <span v-for="(tag, index) in form.tags" :key="index" class="tag-item">
@@ -96,7 +95,7 @@
         </div>
 
         <div class="form-group">
-          <label>导演 <span class="required">*</span></label>
+          <label>导演 </label>
           <div class="select-with-search">
             <input 
               v-model="directorSearch" 
@@ -105,7 +104,7 @@
               @input="searchDirector"
               class="search-input"
             />
-            <select v-model.number="form.director" required class="select-input">
+            <select v-model.number="form.director"  class="select-input">
               <option :value="0">请选择导演</option>
               <option v-for="actor in directorOptions" :key="actor.id" :value="actor.id">
                 {{ actor.name }}
@@ -115,7 +114,7 @@
         </div>
 
         <div class="form-group">
-          <label>演员列表 <span class="required">*</span></label>
+          <label>演员列表 </label>
           <div class="select-with-search">
             <input 
               v-model="actorSearch" 
@@ -143,7 +142,7 @@
                   </div>
                   <div class="actor-fields">
                     <div class="actor-field">
-                      <label>角色 <span class="required">*</span></label>
+                      <label>角色 </label>
                       <input 
                         v-model="actor.role" 
                         type="text" 
@@ -153,7 +152,7 @@
                       />
                     </div>
                     <div class="actor-field">
-                      <label>描述 <span class="required">*</span></label>
+                      <label>描述 </label>
                       <input 
                         v-model="actor.description" 
                         type="text" 
@@ -170,7 +169,7 @@
         </div>
 
         <div class="form-group">
-          <label>海报图URL <span class="required">*</span></label>
+          <label>海报图URL </label>
           <ImageUploader
             v-model="form.poster"
             placeholder="请点击上传海报图片"
@@ -182,7 +181,7 @@
         </div>
 
         <div class="form-group">
-          <label>简介 <span class="required">*</span></label>
+          <label>简介 </label>
           <textarea 
             v-model="form.summary" 
             required 
@@ -201,7 +200,7 @@
         </div>
 
         <div class="form-group">
-          <label>照片URL列表 <span class="required">*</span></label>
+          <label>照片URL列表 </label>
           <div class="photos-input">
             <div v-if="form.photos.length > 0" class="photos-list">
               <div v-for="(photo, index) in form.photos" :key="index" class="photo-item">

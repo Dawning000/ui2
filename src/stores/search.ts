@@ -199,7 +199,11 @@ export const useSearchStore = defineStore('search', () => {
       facets.value = res.facets
     } catch (e: any) {
       if (e?.name === 'AbortError') return
-      error.value = e?.message || '搜索失败'
+      if (e?.code === 10005) {
+        error.value = '请先登录'
+      } else {
+        error.value = e?.message || '搜索失败'
+      }
     } finally {
       loading.value = false
     }

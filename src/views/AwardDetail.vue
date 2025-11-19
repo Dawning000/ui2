@@ -1,7 +1,10 @@
 <template>
   <div class="award-detail-page" v-if="loaded">
     <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else-if="error" class="error">
+      <div class="error-icon">❌</div>
+      <p class="error-text">{{ error }}</p>
+    </div>
     <div v-else-if="detail">
       <div class="header">
         <div class="header-content">
@@ -398,9 +401,24 @@ onMounted(load)
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 .error { 
-  color: #ef4444;
+  color: #dc2626;
   background: #fef2f2;
   border: 1px solid #fecaca;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 16px 24px;
+}
+.error-icon { 
+  font-size: 20px;
+  color: #dc2626;
+}
+.error-text { 
+  font-size: 14px;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {

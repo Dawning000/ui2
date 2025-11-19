@@ -75,7 +75,7 @@
       <div class="footer-bottom">
         <div class="footer-bottom-content">
           <p class="copyright">
-            © 2024 影视论坛. 保留所有权利.
+            © 2025 影视论坛. 保留所有权利.
           </p>
           <div class="footer-stats">
             <span>在线用户: {{ onlineUsers }}</span>

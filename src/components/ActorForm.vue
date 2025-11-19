@@ -18,41 +18,41 @@
         </div>
 
         <div class="form-group">
-          <label>头像URL <span class="required">*</span></label>
+          <label>头像URL </label>
           <ImageUploader
             v-model="form.avatar"
             placeholder="请输入头像图片URL或点击上传"
             upload-type="avatar"
             button-text="上传头像"
-            required
+            
           />
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>出生日期 <span class="required">*</span></label>
+            <label>出生日期</label>
             <input 
               v-model="form.birthday" 
               type="date" 
-              required 
+            
               placeholder="yyyy-MM-dd"
             />
           </div>
 
           <div class="form-group">
-            <label>国籍 <span class="required">*</span></label>
+            <label>国籍 </label>
             <input 
               v-model="form.nationality" 
               type="text" 
-              required 
+              
               placeholder="如：中国、美国"
             />
           </div>
         </div>
 
         <div class="form-group">
-          <label>性别 <span class="required">*</span></label>
-          <select v-model="form.gender" required>
+          <label>性别 </label>
+          <select v-model="form.gender" >
             <option value="">请选择性别</option>
             <option value="男">男</option>
             <option value="女">女</option>
@@ -61,10 +61,10 @@
         </div>
 
         <div class="form-group">
-          <label>简介 <span class="required">*</span></label>
+          <label>简介 </label>
           <textarea 
             v-model="form.biography" 
-            required 
+         
             rows="4"
             placeholder="请输入演员/导演简介"
           ></textarea>
@@ -73,37 +73,68 @@
         <div class="form-group">
           <div class="awards-header">
             <label>获奖信息</label>
-            <button type="button" class="add-award-btn" @click="addAward">+ 添加奖项</button>
+            <div class="award-selector">
+              <input 
+                v-model="awardSearch"
+                type="text"
+                class="award-search-input"
+                placeholder="搜索奖项名称..."
+                @input="handleAwardSearch"
+              />
+              <select v-model.number="selectedAward" class="award-select">
+                <option :value="0">选择奖项后点击关联</option>
+                <option 
+                  v-for="award in awardOptions" 
+                  :key="award.id" 
+                  :value="award.id"
+                >
+                  {{ award.name }}
+                </option>
+              </select>
+              <button 
+                type="button" 
+                class="add-award-btn" 
+                @click="addSelectedAward"
+                :disabled="!selectedAward"
+              >
+                关联奖项
+              </button>
+            </div>
           </div>
           
           <div v-if="form.awards.length === 0" class="awards-empty">
-            暂无获奖信息，可点击上方按钮添加
+            暂无获奖信息，可通过上方搜索选择奖项后关联
           </div>
           
           <div v-else class="awards-list">
-            <div v-for="(award, index) in form.awards" :key="index" class="award-item">
+            <div v-for="(award, index) in form.awards" :key="award.id || index" class="award-item">
+              <div class="award-info-row">
+                <div class="award-meta">
+                  <span class="award-name">{{ getAwardName(award.id) }}</span>
+                  <span class="award-id">ID: {{ award.id }}</span>
+                </div>
+                <button type="button" class="remove-award-btn" @click="removeAward(index)">删除</button>
+              </div>
               <div class="award-row">
                 <input 
-                  v-model="award.year" 
+                  v-model.number="award.year" 
                   type="number" 
-                  required 
+                  
                   placeholder="年份"
                   min="1900"
                   max="2099"
                   class="award-input-year"
                 />
-                <select v-model="award.status" required class="award-input-status">
+                <select v-model="award.status"  class="award-input-status">
                   <option value="nominated">提名</option>
                   <option value="awarded">获奖</option>
                 </select>
                 <input 
                   v-model="award.note" 
                   type="text" 
-                  required 
-                  placeholder="奖项名称/备注"
+                  placeholder="备注（角色、作品等）"
                   class="award-input-note"
                 />
-                <button type="button" class="remove-award-btn" @click="removeAward(index)">删除</button>
               </div>
             </div>
           </div>
@@ -121,8 +152,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import type { ActorSaveData, ActorAward } from '@/types/actors'
+import { fetchAwardsList, type AwardListItem } from '@/api/awards'
 import ImageUploader from './ImageUploader.vue'
 
 interface Props {
@@ -142,6 +174,10 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const submitting = ref(false)
+const awardSearch = ref('')
+const selectedAward = ref(0)
+const awardOptions = ref<AwardListItem[]>([])
+let awardSearchTimer: ReturnType<typeof setTimeout> | null = null
 
 const form = reactive<ActorSaveData>({
   name: '',
@@ -162,24 +198,81 @@ if (props.initialData) {
     nationality: props.initialData.nationality || '',
     gender: props.initialData.gender || '',
     biography: props.initialData.biography || '',
-    awards: props.initialData.awards || []
+    awards: (props.initialData.awards || []).map((award: any) => ({
+      id: award.id || 0,
+      year: award.year || new Date().getFullYear(),
+      status: (award.status as ActorAward['status']) || 'awarded',
+      note: award.note || award.name || ''
+    }))
   })
 }
 
-// 添加奖项
-function addAward() {
-  const newAward: ActorAward = {
-    id: 0,
-    year: new Date().getFullYear(),
-    status: 'awarded',
-    note: ''
+// 搜索并加载演员类奖项
+async function loadAwards(keyword?: string) {
+  try {
+    const { awards } = await fetchAwardsList({
+      page: 1,
+      size: 20,
+      keyword: keyword?.trim() || undefined,
+      target_type: 'ACTOR'
+    })
+    awardOptions.value = awards || []
+    ensureInitialAwardOptions()
+  } catch (error) {
+    console.error('加载奖项列表失败:', error)
   }
+}
+
+function ensureInitialAwardOptions() {
+  if (!props.initialData?.awards?.length) return
+  props.initialData.awards.forEach((award: any) => {
+    if (!award?.id || !award?.name) return
+    if (awardOptions.value.some(option => option.id === award.id)) return
+    awardOptions.value.push({
+      id: award.id,
+      name: award.name,
+      organization: award.organization,
+      target_type: 'ACTOR',
+      description: award.description
+    })
+  })
+}
+
+function handleAwardSearch() {
+  if (awardSearchTimer) clearTimeout(awardSearchTimer)
+  awardSearchTimer = setTimeout(() => {
+    loadAwards(awardSearch.value)
+  }, 300)
+}
+
+function addSelectedAward() {
+  const awardId = selectedAward.value
+  if (!awardId) return
+  if (form.awards.find(award => award.id === awardId)) {
+    selectedAward.value = 0
+    return
+  }
+
+  const option = awardOptions.value.find(award => award.id === awardId)
+  const newAward: ActorAward = {
+    id: awardId,
+    year: option?.year || new Date().getFullYear(),
+    status: 'awarded',
+    note: option?.name || ''
+  }
+
   form.awards.push(newAward)
+  selectedAward.value = 0
 }
 
 // 删除奖项
 function removeAward(index: number) {
   form.awards.splice(index, 1)
+}
+
+function getAwardName(awardId: number) {
+  const award = awardOptions.value.find(option => option.id === awardId)
+  return award?.name || `ID: ${awardId}`
 }
 
 // 提交表单
@@ -191,7 +284,8 @@ async function handleSubmit() {
       ...form,
       awards: form.awards.map(award => ({
         ...award,
-        id: award.id || 0
+        id: Number(award.id) || 0,
+        year: Number(award.year) || new Date().getFullYear()
       }))
     }
     
@@ -210,6 +304,17 @@ async function handleSubmit() {
 function handleCancel() {
   emit('cancel')
 }
+
+onMounted(() => {
+  loadAwards()
+  ensureInitialAwardOptions()
+})
+
+onBeforeUnmount(() => {
+  if (awardSearchTimer) {
+    clearTimeout(awardSearchTimer)
+  }
+})
 </script>
 
 <style scoped>
@@ -326,6 +431,30 @@ function handleCancel() {
   margin-bottom: 12px;
 }
 
+.award-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.award-search-input,
+.award-select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.award-search-input {
+  min-width: 180px;
+}
+
+.award-select {
+  min-width: 200px;
+}
+
 .add-award-btn {
   padding: 6px 12px;
   background: var(--primary-color);
@@ -363,9 +492,32 @@ function handleCancel() {
   border-radius: 8px;
 }
 
+.award-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.award-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.award-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.award-id {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
 .award-row {
   display: grid;
-  grid-template-columns: 100px 120px 1fr auto;
+  grid-template-columns: 120px 140px 1fr;
   gap: 8px;
   align-items: center;
 }

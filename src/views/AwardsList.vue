@@ -81,29 +81,44 @@
             <p class="description">{{ awardDetail.description }}</p>
           </div>
 
-          <div class="winners-section" v-if="getWinners().length > 0">
+          <div class="winners-section" v-if="awardDetail">
             <h3 class="section-title">获奖记录</h3>
-            <div class="winners-list">
-              <div 
-                v-for="winner in getWinners()" 
-                :key="`${winner.id}-${winner.year}`"
-                class="winner-card"
-                @click="goToWinnerDetail(winner)"
-              >
-                <div class="winner-image" v-if="winner.picture">
-                  <img :src="winner.picture" :alt="winner.name" referrerpolicy="no-referrer" @error="handleImageError" />
-                </div>
-                <div class="winner-info">
-                  <h4 class="winner-name">{{ winner.name }}</h4>
-                  <div class="winner-meta">
-                    <span class="winner-year">{{ winner.year }}</span>
-                    <span class="winner-status" :class="winner.status === 'awarded' ? 'status-awarded' : 'status-nominated'">
-                      {{ winner.status === 'awarded' ? '获奖' : '提名' }}
-                    </span>
+            <template v-if="getWinners().length > 0">
+              <div class="winners-list">
+                <div 
+                  v-for="winner in getWinners()" 
+                  :key="`${winner.id}-${winner.year}`"
+                  class="winner-card"
+                  @click="goToWinnerDetail(winner)"
+                >
+                  <div class="winner-image" v-if="winner.picture">
+                    <img :src="winner.picture" :alt="winner.name" referrerpolicy="no-referrer" @error="handleImageError" />
                   </div>
-                  <p v-if="winner.note" class="winner-note">{{ winner.note }}</p>
+                  <div class="winner-info">
+                    <h4 class="winner-name">{{ winner.name }}</h4>
+                    <div class="winner-meta">
+                      <span class="winner-year">{{ winner.year }}</span>
+                      <span class="winner-status" :class="winner.status === 'awarded' ? 'status-awarded' : 'status-nominated'">
+                        {{ winner.status === 'awarded' ? '获奖' : '提名' }}
+                      </span>
+                    </div>
+                    <p v-if="winner.note" class="winner-note">{{ winner.note }}</p>
+                  </div>
                 </div>
               </div>
+            </template>
+            <div class="winners-empty" v-else>
+              <p>暂无关联的获奖记录。</p>
+              <p v-if="awardDetail.target_type === 'ACTOR'">
+                可在“演员与导演”页面中新建或编辑演员时，在“获奖信息”区域关联该奖项。
+              </p>
+              <button 
+                v-if="awardDetail.target_type === 'ACTOR' && isAdmin" 
+                class="manage-actors-btn" 
+                @click="goManageActors"
+              >
+                前往演员管理
+              </button>
             </div>
           </div>
         </div>
@@ -114,7 +129,10 @@
     </div>
 
     <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else-if="error" class="error">
+      <div class="error-icon">❌</div>
+      <p class="error-text">{{ error }}</p>
+    </div>
     <div v-else-if="awards.length === 0" class="empty-container">
       <div class="empty">暂无奖项记录</div>
     </div>
@@ -352,10 +370,10 @@ async function load() {
     // 同步jumpPage与当前页码
     jumpPage.value = page.value
   } catch (err: any) {
-    if (err && err.message) {
+    if (err && err.code === 10005) {
+      error.value = '请先登录'
+    } else if (err && err.message) {
       error.value = err.message
-    } else if (err && err.code === 10005) {
-      error.value = '未经授权的操作！请先登录'
     } else {
       error.value = '加载失败，请稍后重试'
     }
@@ -475,6 +493,11 @@ function goToWinnerDetail(winner: AwardWinner) {
   } else if (awardDetail.value.target_type === 'VARIETY') {
     router.push({ name: 'VarietyDetail', params: { id: winner.id } })
   }
+}
+
+function goManageActors() {
+  closeDetailModal()
+  router.push({ name: 'Actors' })
 }
 
 function handleImageError(event: Event) {
@@ -957,6 +980,35 @@ onMounted(load)
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 16px;
+}
+
+.winners-empty {
+  padding: 24px;
+  border: 1px dashed #e5e7eb;
+  border-radius: 10px;
+  background: #f9fafb;
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.manage-actors-btn {
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #fb923c 100%);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.manage-actors-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.25);
 }
 
 .winner-card {
