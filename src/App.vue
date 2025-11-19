@@ -39,17 +39,16 @@ const userStore = useUserStore()
 
 // 应用启动时尝试自动登录
 onMounted(async () => {
-  // 如果用户已登录，则无需自动登录
-  if (userStore.isLoggedIn) {
-    return
-  }
-  
-  // 尝试使用保存的账号密码自动登录
+  // 进入主页时先同步最新登录状态（会调用 /user/me）
+  await userStore.loadUserFromStorage()
+  if (userStore.isLoggedIn) return
+
+  // 如果还未登录，再尝试自动登录
   const autoLoginSuccess = await userStore.autoLogin()
   
-  // 如果自动登录失败，尝试从后端恢复登录状态（通过 session cookie）
+  // 自动登录失败则保持未登录状态
   if (!autoLoginSuccess) {
-    await userStore.loadUserFromStorage()
+    console.log('自动登录失败，保持未登录状态')
   }
 })
 </script>
