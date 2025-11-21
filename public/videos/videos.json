@@ -1,0 +1,13 @@
+[
+  {
+    "name": "demo1.mp4",
+    "displayName": "平台特色演示",
+    "thumbnail": "thumbnails/demo1.jpg"
+  },
+  {
+    "name": "demo2.mp4",
+    "displayName": "功能亮点介绍",
+    "thumbnail": "thumbnails/demo2.jpg"
+  }
+]
+

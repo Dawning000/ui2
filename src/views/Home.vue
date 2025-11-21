@@ -60,7 +60,7 @@
           </ul>
         </div>
         <div class="hero-showcase">
-          <div class="showcase-frame">
+          <router-link to="/videos" class="showcase-frame showcase-clickable">
             <div class="showcase-halo"></div>
             <div class="showcase-radar"></div>
             <div class="floating-cards">
@@ -73,11 +73,16 @@
                 </div>
               </div>
             </div>
-            <div class="showcase-label">
-              <span class="label-title">今日精选</span>
-              <p>实时刷新 · 高能推荐</p>
+            <div class="showcase-video-hint">
+              <div class="hint-icon">
+                <i class="icon-film"></i>
+              </div>
+              <div class="hint-text">
+                <span class="hint-title">我们的特色视频</span>
+                <span class="hint-subtitle">点击查看精彩演示</span>
+              </div>
             </div>
-          </div>
+          </router-link>
           <div class="hero-marquee">
             <div class="marquee-track">
               <span v-for="movie in featuredMovies" :key="`marquee-${movie.id}`">
@@ -749,6 +754,25 @@ onUnmounted(() => {
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
   overflow: hidden;
   isolation: isolate;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+.showcase-clickable {
+  cursor: pointer;
+  
+  &:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
+    border-color: rgba(255, 153, 43, 0.5);
+    
+    .showcase-video-hint {
+      background: rgba(0, 0, 0, 0.85);
+      border-color: rgba(255, 153, 43, 0.6);
+    }
+  }
 }
 
 .showcase-halo,
@@ -827,24 +851,60 @@ onUnmounted(() => {
   }
 }
 
-.showcase-label {
+.showcase-video-hint {
   position: absolute;
   bottom: 24px;
   left: 24px;
-  padding: 14px 20px;
+  right: 24px;
+  padding: 16px 20px;
   border-radius: 16px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 153, 43, 0.4);
   backdrop-filter: blur(10px);
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.4s ease, transform 0.4s ease, background 0.4s ease, border-color 0.4s ease;
+  z-index: 10;
 }
 
-.showcase-label .label-title {
-  display: block;
+.hint-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff8a00, #ff5100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(255, 140, 0, 0.3);
+  
+  i {
+    font-size: 24px;
+    color: white;
+  }
+}
+
+.hint-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hint-title {
+  font-size: 0.95rem;
   font-weight: 700;
   color: #ffae42;
+  letter-spacing: 0.05em;
+}
+
+.hint-subtitle {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.02em;
 }
 
 .hero-marquee {
