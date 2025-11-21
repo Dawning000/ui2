@@ -32,9 +32,14 @@
             一起在这里收藏每一次心动的电影瞬间。
           </p>
           <div class="hero-badges">
-            <span v-for="badge in heroBadges" :key="badge" class="hero-badge">
-              <i class="icon-sparkles"></i>{{ badge }}
-            </span>
+            <router-link 
+              v-for="badge in heroBadges" 
+              :key="badge.tab" 
+              :to="badge.to"
+              class="hero-badge"
+            >
+              <i class="icon-sparkles"></i>{{ badge.label }}
+            </router-link>
           </div>
           <div class="hero-actions">
             <router-link to="/forum" class="btn btn-primary btn-lg">
@@ -194,20 +199,15 @@
           >
             <div class="movie-poster">
               <img :src="movie.poster" :alt="movie.title" referrerpolicy="no-referrer" />
-              <div class="movie-overlay">
-                <button class="play-btn">
-                  <i class="icon-play"></i>
-                </button>
-                <div class="movie-rating">
-                  <i class="icon-star"></i>
-                  <span>{{ movie.rating }}</span>
-                </div>
+              <div class="movie-rating" v-if="movie.rating > 0">
+                <i class="icon-star"></i>
+                <span>{{ movie.rating }}</span>
               </div>
             </div>
             <div class="movie-info">
               <h4 class="movie-title">{{ movie.title }}</h4>
-              <p class="movie-genre">{{ movie.genre }}</p>
-              <p class="movie-year">{{ movie.year }}</p>
+              <p class="movie-genre" v-if="movie.genre">{{ movie.genre }}</p>
+              <p class="movie-year" v-if="movie.year">{{ movie.year }}</p>
             </div>
           </div>
         </div>
@@ -244,12 +244,14 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import Carousel from '../components/Carousel.vue'
 import { fetchMovies } from '@/api/movies'
 import { fetchRandomPosts, getCategoryName, extractExcerpt } from '@/api/posts'
 
 // 响应式数据
 const router = useRouter()
+const userStore = useUserStore()
 
 const featuredMovies = ref([])
 
@@ -297,11 +299,23 @@ const stats = ref({
   onlineUsers: 1234
 })
 
-const heroBadges = ref([
-  '沉浸式观影日志',
-  '实时热聊',
-  '全景级美学'
-])
+const heroBadges = computed(() => {
+  const userId = userStore.user?.id
+  if (!userId) {
+    // 如果用户未登录，跳转到登录页面
+    return [
+      { label: '影帖创作', tab: 'posts', to: '/login' },
+      { label: '珍影收藏', tab: 'favorites', to: '/login' },
+      { label: '影人关注', tab: 'following', to: '/login' }
+    ]
+  }
+  // 如果用户已登录，跳转到个人中心对应的 tab
+  return [
+    { label: '影帖创作', tab: 'posts', to: `/user/${userId}?tab=posts` },
+    { label: '珍影收藏', tab: 'favorites', to: `/user/${userId}?tab=favorites` },
+    { label: '影人关注', tab: 'following', to: `/user/${userId}?tab=following` }
+  ]
+})
 
 const heroSparkles = ref(
   Array.from({ length: 12 }).map((_, index) => ({
@@ -406,22 +420,56 @@ async function loadMovies() {
     poster: m.poster,
     rating: m.rating || 0
   }))
+}
 
-  // 最新电影推荐：取第一页 12 条
-  const data2 = await fetchMovies({ page: 1, size: 12 })
-  const items2 = Array.isArray(data2?.movies) ? data2.movies : []
-  latestMovies.value = items2.map(m => ({
-    id: m.id,
-    title: m.title,
-    poster: m.poster,
-    genre: Array.isArray(m.tag) ? m.tag.join(',') : (m.tag || ''),
-    year: String(m.year || ''),
-    rating: m.rating || 0
-  }))
+/**
+ * 加载猫眼电影数据
+ */
+async function loadMaoyanMovies() {
+  try {
+    const response = await fetch('https://apis.netstart.cn/maoyan/index/movieOnInfoList')
+    const data = await response.json()
+    
+    if (data?.movieList && Array.isArray(data.movieList)) {
+      latestMovies.value = data.movieList.slice(0, 12).map(movie => {
+        // 从上映日期提取年份
+        let year = ''
+        if (movie.rt) {
+          const dateParts = movie.rt.split('-')
+          if (dateParts.length > 0) {
+            year = dateParts[0]
+          }
+        }
+        
+        return {
+          id: movie.id,
+          title: movie.nm || '未知电影',
+          poster: movie.img || '',
+          genre: movie.star || '', // 使用演员信息作为genre显示
+          year: year,
+          rating: movie.sc || 0 // 评分
+        }
+      })
+    }
+  } catch (error) {
+    console.error('加载猫眼电影数据失败:', error)
+    // 如果API调用失败，使用原来的方法作为后备
+    const data2 = await fetchMovies({ page: 1, size: 12 })
+    const items2 = Array.isArray(data2?.movies) ? data2.movies : []
+    latestMovies.value = items2.map(m => ({
+      id: m.id,
+      title: m.title,
+      poster: m.poster,
+      genre: Array.isArray(m.tag) ? m.tag.join(',') : (m.tag || ''),
+      year: String(m.year || ''),
+      rating: m.rating || 0
+    }))
+  }
 }
 
 onMounted(() => {
   loadMovies()
+  loadMaoyanMovies()
   loadRandomPosts()
 
   observer = new IntersectionObserver(
@@ -1470,48 +1518,6 @@ onUnmounted(() => {
   
   &:hover img {
     transform: scale(1.05);
-  }
-}
-
-.movie-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s;
-  
-  .movie-item:hover & {
-    opacity: 1;
-  }
-}
-
-.play-btn {
-  width: 60px;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  
-  &:hover {
-    background: white;
-    transform: scale(1.1);
-  }
-  
-  i {
-    font-size: 20px;
-    color: #1f2937;
-    margin-left: 3px;
   }
 }
 
