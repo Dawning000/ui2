@@ -72,14 +72,26 @@
         </div>
         
         <div v-else class="posts-list">
-          <div v-for="post in sortedPosts" :key="post.id" class="post-item">
+          <div 
+            v-for="post in sortedPosts" 
+            :key="post.id" 
+            class="post-item"
+            @click="goToPost(post.id)"
+            role="button"
+            tabindex="0"
+            @keyup.enter="goToPost(post.id)"
+          >
             
             <div class="post-content">
               <div class="post-header">
                 <div class="post-meta">
                   <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" referrerpolicy="no-referrer" @error="(e: Event) => { const target = e.target as HTMLImageElement; if (target) target.src = '/avatar.png' }" />
                   <div class="author-info">
-                    <router-link :to="`/user/${post.author.id}`" class="author-name">
+                    <router-link 
+                      :to="`/user/${post.author.id}`" 
+                      class="author-name"
+                      @click.stop
+                    >
                       {{ post.author.nickname }}
                     </router-link>
                     <span class="post-time">{{ formatTime(post.createdAt || post.createTime) }}</span>
@@ -90,9 +102,9 @@
                 </div>
               </div>
               
-              <router-link :to="`/post/${post.id}`" class="post-title">
+              <div class="post-title">
                 {{ post.title }}
-              </router-link>
+              </div>
               
               <p class="post-excerpt">{{ post.excerpt }}</p>
               
@@ -112,7 +124,7 @@
                   </span>
                 </div>
                 <div class="post-actions">
-                  <button class="action-btn" @click="handleShare(post)">
+                  <button class="action-btn" @click.stop="handleShare(post)">
                     <i class="icon-share"></i>
                   </button>
                 </div>
@@ -622,6 +634,11 @@ const handleJump = () => {
   }
 }
 
+const goToPost = (postId: number) => {
+  if (!postId) return
+  router.push(`/post/${postId}`)
+}
+
 const handleShare = (post: ExtendedPost) => {
   // 实现分享功能
   if (navigator.share) {
@@ -887,8 +904,32 @@ onMounted(() => {
 <style lang="scss" scoped>
 .forum {
   min-height: 100vh;
-  background: #f9fafb;
+  background: linear-gradient(180deg, 
+    #f8f9fa 0%, 
+    #ffffff 50%, 
+    #f8f9fa 100%
+  );
   padding: 40px 0;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 20%, rgba(249, 115, 22, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(251, 191, 36, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .container {
+    position: relative;
+    z-index: 1;
+  }
 }
 
 .container {
@@ -899,41 +940,88 @@ onMounted(() => {
 
 // 页面头部
 .forum-header {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 40px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 50px;
+  padding: 60px 30px 40px;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 50%, #fed7aa 100%);
+  border-radius: 0 0 32px 32px;
+  overflow: hidden;
+  
+  // 添加背景装饰
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -5%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
 }
 
 .header-content {
+  position: relative;
+  z-index: 2;
+  
   .page-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 10px;
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
     gap: 15px;
     
     i {
-      color: #3b82f6;
+      color: var(--primary-color);
+      animation: pulse 2s ease-in-out infinite;
     }
   }
   
   .page-subtitle {
     color: #6b7280;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     margin: 0;
   }
 }
 
 .header-actions {
+  position: relative;
+  z-index: 2;
+  
   .btn {
     display: flex;
     align-items: center;
     gap: 8px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3), 0 2px 4px rgba(249, 115, 22, 0.2);
+    transition: all 0.3s ease;
+    font-weight: 600;
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4), 0 2px 6px rgba(249, 115, 22, 0.3);
+    }
   }
 }
 
@@ -945,10 +1033,16 @@ onMounted(() => {
   justify-content: space-between;
   margin-bottom: 30px;
   padding: 24px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.1);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 12px 40px rgba(249, 115, 22, 0.12);
+  }
 }
 
 .filter-group {
@@ -978,12 +1072,12 @@ onMounted(() => {
     padding: 12px 16px;
     border: 2px solid #e2e8f0;
     border-radius: 10px;
-    background: white;
+    background: rgba(255, 255, 255, 0.9);
     font-size: 14px;
     font-weight: 500;
     color: #1e293b;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -991,14 +1085,16 @@ onMounted(() => {
     padding-right: 36px;
     
     &:hover {
-      border-color: #cbd5e1;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      background: rgba(255, 255, 255, 1);
+      border-color: rgba(249, 115, 22, 0.3);
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+      transform: translateY(-1px);
     }
     
     &:focus {
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
     }
     
     option {
@@ -1013,16 +1109,19 @@ onMounted(() => {
   align-items: center;
   flex: 1;
   max-width: 700px;
-  background: white;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
   border-radius: 12px;
-  border: 2px solid #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   overflow: hidden;
   transition: all 0.3s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   
   &:focus-within {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(249, 115, 22, 0.5);
+    box-shadow: 0 8px 32px rgba(249, 115, 22, 0.2);
+    transform: translateY(-2px);
   }
   
   .search-icon-wrapper {
@@ -1031,12 +1130,18 @@ onMounted(() => {
     justify-content: center;
     padding: 0 16px;
     color: #94a3b8;
-    background: #f8fafc;
-    border-right: 1px solid #e2e8f0;
+    background: rgba(248, 250, 252, 0.8);
+    border-right: 1px solid rgba(226, 232, 240, 0.5);
+    transition: all 0.3s ease;
     
     i {
       font-size: 18px;
     }
+  }
+  
+  &:focus-within .search-icon-wrapper {
+    color: var(--primary-color);
+    background: rgba(249, 115, 22, 0.1);
   }
   
   .search-input {
@@ -1046,7 +1151,6 @@ onMounted(() => {
     background: transparent;
     font-size: 15px;
     color: #1e293b;
-    
     
     &::placeholder {
       color: #94a3b8;
@@ -1059,7 +1163,7 @@ onMounted(() => {
   
   .search-btn {
     padding: 14px 24px;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     border: none;
     color: white;
     font-weight: 600;
@@ -1068,13 +1172,30 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s;
+    }
     
     &:hover {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+      
+      &::before {
+        left: 100%;
+      }
     }
     
     &:active {
@@ -1085,16 +1206,20 @@ onMounted(() => {
       display: flex;
       align-items: center;
       gap: 6px;
+      position: relative;
+      z-index: 1;
     }
   }
 }
 
 // 帖子列表
 .posts-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  border: 1px solid rgba(249, 115, 22, 0.1);
 }
 
 .loading {
@@ -1141,18 +1266,50 @@ onMounted(() => {
 }
 
 .posts-list {
+  padding: 20px;
+  
   .post-item {
     display: flex;
-    padding: 25px;
-    border-bottom: 1px solid #f3f4f6;
-    transition: background 0.2s;
+    padding: 28px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.6s ease-out backwards;
+    cursor: pointer;
     
-    &:hover {
-      background: #f9fafb;
+    // 添加左侧装饰条
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      opacity: 0;
+      transition: opacity 0.3s;
     }
     
-    &:last-child {
-      border-bottom: none;
+    &:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 20px 40px rgba(249, 115, 22, 0.15);
+      border-color: rgba(249, 115, 22, 0.3);
+      background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
+      
+      &::before {
+        opacity: 1;
+      }
+    }
+    
+    @for $i from 1 through 10 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{$i * 0.1}s;
+      }
     }
   }
 }
@@ -1224,6 +1381,14 @@ onMounted(() => {
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  
+  .post-item:hover & {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.3);
+  }
 }
 
 .author-info {
@@ -1248,43 +1413,72 @@ onMounted(() => {
 }
 
 .category-tag {
-  padding: 4px 12px;
+  padding: 6px 14px;
   border-radius: 16px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+  }
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    
+    &::before {
+      left: 100%;
+    }
+  }
   
   &.category-movie {
-    background: #fef3c7;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     color: #d97706;
   }
   
   &.category-tv {
-    background: #dbeafe;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     color: #2563eb;
   }
   
   &.category-anime {
-    background: #f3e8ff;
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
     color: #7c3aed;
   }
   
   &.category-variety {
-    background: #fce7f3;
+    background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
     color: #be185d;
   }
 }
 
 .post-title {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.35rem;
+  font-weight: 700;
   color: #1f2937;
   text-decoration: none;
   display: block;
   margin-bottom: 10px;
   line-height: 1.4;
+  transition: all 0.3s ease;
   
   &:hover {
-    color: #3b82f6;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transform: translateX(4px);
   }
 }
 
@@ -1330,6 +1524,25 @@ onMounted(() => {
     gap: 5px;
     color: #9ca3af;
     font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    background: rgba(249, 115, 22, 0.05);
+    transition: all 0.3s ease;
+    
+    i {
+      color: var(--primary-color);
+      transition: transform 0.3s ease;
+    }
+    
+    &:hover {
+      background: rgba(249, 115, 22, 0.1);
+      transform: translateY(-2px);
+      color: var(--primary-color);
+      
+      i {
+        transform: scale(1.2);
+      }
+    }
   }
 }
 
@@ -1396,37 +1609,66 @@ onMounted(() => {
   gap: 8px;
   flex-wrap: wrap;
   padding: 30px;
-  background: #f9fafb;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .pagination-btn {
   padding: 8px 12px;
   border: 1px solid #e5e7eb;
   background: #fff;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   color: #374151;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   min-width: 36px;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination-btn.active {
-  background: var(--primary-color);
-  color: #fff;
-  border-color: var(--primary-color);
-  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(249, 115, 22, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+  }
+  
+  &:hover:not(:disabled) {
+    background: rgba(249, 115, 22, 0.05);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+    
+    &::before {
+      width: 100px;
+      height: 100px;
+    }
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  &.active {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: #fff;
+    border-color: transparent;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+    
+    &::before {
+      display: none;
+    }
+  }
 }
 
 .page-number {
@@ -1757,11 +1999,14 @@ onMounted(() => {
   gap: 8px;
   
   &.btn-primary {
-    background: #3b82f6;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     color: white;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
     
     &:hover:not(:disabled) {
-      background: #2563eb;
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+      box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4);
+      transform: translateY(-2px);
     }
     
     &:disabled {
@@ -1788,9 +2033,15 @@ onMounted(() => {
     flex-direction: column;
     align-items: flex-start;
     gap: 20px;
+    padding: 40px 20px 30px;
+    
+    &::before,
+    &::after {
+      display: none;
+    }
   }
   
-  .page-title {
+  .header-content .page-title {
     font-size: 2rem;
   }
   
@@ -1827,9 +2078,13 @@ onMounted(() => {
     }
   }
   
-  .post-item {
-    flex-direction: column;
-    gap: 15px;
+  .posts-list .post-item {
+    padding: 20px;
+    margin-bottom: 16px;
+    
+    &:hover {
+      transform: translateY(-2px) scale(1);
+    }
   }
   
   .post-votes {
@@ -1854,6 +2109,7 @@ onMounted(() => {
   .pagination {
     flex-wrap: wrap;
     gap: 5px;
+    padding: 20px;
   }
   
   .page-numbers {
@@ -1877,6 +2133,39 @@ onMounted(() => {
   .modal-header,
   .modal-body {
     padding: 20px;
+  }
+  
+  .forum-header {
+    padding: 40px 20px 30px;
+    
+    .page-title {
+      font-size: 2rem;
+    }
+    
+    .page-subtitle {
+      font-size: 1rem;
+    }
+  }
+}
+
+// 动画效果
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
   }
 }
 </style>

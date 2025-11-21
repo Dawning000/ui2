@@ -770,19 +770,19 @@ onMounted(() => {
 }
 
 .tag.tag-1 {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
 }
 
 .tag.tag-2 {
-  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+  background: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
 }
 
 .tag.tag-3 {
-  background: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
 }
 
 .tag.tag-4 {
-  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%);
 }
 
 .tag.tag-5 {
