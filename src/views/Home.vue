@@ -5,34 +5,79 @@
     
     <!-- 英雄区域 -->
     <section class="hero">
-      <div class="hero-content">
-        <div class="hero-header">
-          <span class="hero-icon">🍊</span>
-          <h1 class="hero-title">橘橙影志</h1>
-        </div>
-        <h2 class="hero-subtitle">橘橙暖时光，影志话悠长</h2>
-        <p class="hero-description">
-          在这个温暖的橘橙色调中，我们一起分享电影的美好时光，记录每一个动人的瞬间
-        </p>
-        <div class="hero-actions">
-          <router-link to="/forum" class="btn btn-primary btn-lg">
-            <span class="btn-icon">🍊</span>
-            开始探索
-          </router-link>
-          <router-link to="/register" class="btn btn-outline btn-lg">
-            <span class="btn-icon">✨</span>
-            立即加入
-          </router-link>
-        </div>
+      <div class="hero-bg">
+        <span class="hero-glow glow-1"></span>
+        <span class="hero-glow glow-2"></span>
+        <span class="hero-gradient gradient-1"></span>
+        <span class="hero-gradient gradient-2"></span>
+        <span 
+          v-for="spark in heroSparkles" 
+          :key="`spark-${spark.id}`" 
+          class="hero-spark"
+          :style="{ animationDelay: spark.delay, left: spark.left, top: spark.top }"
+        ></span>
       </div>
-      <div class="hero-image">
-        <div class="floating-cards">
-          <div class="movie-card" v-for="(movie, index) in featuredMovies" :key="movie.id" 
-               :style="{ animationDelay: `${index * 0.2}s` }">
-            <img :src="movie.poster" :alt="movie.title" referrerpolicy="no-referrer" />
-            <div class="card-overlay">
-              <h4>{{ movie.title }}</h4>
-              <p>{{ movie.rating }}分</p>
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="hero-header">
+            <span class="hero-icon">🍊</span>
+            <div>
+              <p class="hero-tagline">给影迷的橘色乌托邦</p>
+              <h1 class="hero-title">橘橙影志</h1>
+            </div>
+          </div>
+          <h2 class="hero-subtitle">橘橙暖时光，影志话悠长</h2>
+          <p class="hero-description">
+            在梦幻的橙色光晕中穿梭，邂逅热烈的影像、真挚的交流与呼吸感十足的沉浸体验。
+            一起在这里收藏每一次心动的电影瞬间。
+          </p>
+          <div class="hero-badges">
+            <span v-for="badge in heroBadges" :key="badge" class="hero-badge">
+              <i class="icon-sparkles"></i>{{ badge }}
+            </span>
+          </div>
+          <div class="hero-actions">
+            <router-link to="/forum" class="btn btn-primary btn-lg">
+              <span class="btn-icon">🍊</span>
+              开始探索
+            </router-link>
+            <router-link to="/register" class="btn btn-outline btn-lg">
+              <span class="btn-icon">✨</span>
+              立即加入
+            </router-link>
+          </div>
+          <ul class="hero-metrics">
+            <li v-for="metric in heroStats" :key="metric.label" class="metric-item">
+              <span class="metric-value">{{ metric.value }}</span>
+              <span class="metric-label">{{ metric.label }}</span>
+              <span class="metric-desc">{{ metric.description }}</span>
+            </li>
+          </ul>
+        </div>
+        <div class="hero-showcase">
+          <div class="showcase-frame">
+            <div class="showcase-halo"></div>
+            <div class="showcase-radar"></div>
+            <div class="floating-cards">
+              <div class="movie-card" v-for="(movie, index) in featuredMovies" :key="movie.id" 
+                   :style="{ animationDelay: `${index * 0.2}s` }">
+                <img :src="movie.poster" :alt="movie.title" referrerpolicy="no-referrer" />
+                <div class="card-overlay">
+                  <h4>{{ movie.title }}</h4>
+                  <p>{{ movie.rating }}分</p>
+                </div>
+              </div>
+            </div>
+            <div class="showcase-label">
+              <span class="label-title">今日精选</span>
+              <p>实时刷新 · 高能推荐</p>
+            </div>
+          </div>
+          <div class="hero-marquee">
+            <div class="marquee-track">
+              <span v-for="movie in featuredMovies" :key="`marquee-${movie.id}`">
+                {{ movie.title }} · {{ movie.rating }}分
+              </span>
             </div>
           </div>
         </div>
@@ -40,20 +85,33 @@
     </section>
 
     <!-- 热门分类 -->
-    <section class="categories">
+    <section class="categories reveal" :ref="registerSection">
       <div class="container">
         <h2 class="section-title">热门分类</h2>
         <p class="section-subtitle">浏览你感兴趣的内容，发现精彩影视作品</p>
         <div class="categories-grid">
           <router-link 
-            v-for="category in categories" 
+            v-for="(category, index) in categories" 
             :key="category.id"
             :to="{ name: 'Search', query: { type: category.slug } }"
             class="category-card"
+            :style="{ 
+              '--card-delay': `${index * 80}ms`,
+              '--accent-start': category.gradient[0],
+              '--accent-end': category.gradient[1]
+            }"
           >
+            <div class="category-ornament">
+              <span class="ornament-ring"></span>
+              <span class="ornament-glow"></span>
+              <span class="ornament-beam"></span>
+            </div>
             <div class="category-icon">
+              <span class="icon-glow"></span>
+              <span class="icon-ring"></span>
               <i :class="category.icon"></i>
             </div>
+            <span class="category-chip">臻选主题</span>
             <h3>{{ category.name }}</h3>
             <p>{{ category.description }}</p>
             <div class="category-stats">
@@ -66,14 +124,19 @@
     </section>
 
     <!-- 热门帖子 -->
-    <section class="hot-posts">
+    <section class="hot-posts reveal" :ref="registerSection">
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">热门讨论</h2>
           <router-link to="/forum" class="view-all-link">查看全部</router-link>
         </div>
         <div class="posts-grid">
-          <div v-for="post in hotPosts.slice(0, 3)" :key="post.id" class="post-card">
+          <div 
+            v-for="(post, index) in hotPosts.slice(0, 3)" 
+            :key="post.id" 
+            class="post-card"
+            :style="{ '--card-delay': `${index * 120}ms` }"
+          >
             <div class="post-header">
               <div class="post-meta">
                 <img :src="post.author?.avatar || '/avatar.png'" :alt="post.author?.username || '未知用户'" class="author-avatar" referrerpolicy="no-referrer" @error="e => e.target.src = '/avatar.png'" />
@@ -115,11 +178,16 @@
     </section>
 
     <!-- 最新电影推荐 -->
-    <section class="movie-recommendations">
+    <section class="movie-recommendations reveal" :ref="registerSection">
       <div class="container">
         <h2 class="section-title">最新电影推荐</h2>
         <div class="movies-slider">
-          <div class="movie-item" v-for="movie in latestMovies" :key="movie.id">
+          <div 
+            class="movie-item" 
+            v-for="(movie, index) in latestMovies" 
+            :key="movie.id"
+            :style="{ '--card-delay': `${index * 60}ms` }"
+          >
             <div class="movie-poster">
               <img :src="movie.poster" :alt="movie.title" referrerpolicy="no-referrer" />
               <div class="movie-overlay">
@@ -143,7 +211,7 @@
     </section>
 
     <!-- 统计数据 -->
-    <section class="stats">
+    <section class="stats reveal" :ref="registerSection">
       <div class="container">
         <div class="stats-grid">
           <div class="stat-item">
@@ -170,7 +238,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import Carousel from '../components/Carousel.vue'
 import { fetchMovies } from '@/api/movies'
 import { fetchRandomPosts, getCategoryName, extractExcerpt } from '@/api/posts'
@@ -185,7 +253,8 @@ const categories = ref([
     slug: 'movie',
     icon: 'icon-film',
     description: '最新电影作品',
-    postsCount: 1234
+    postsCount: 1234,
+    gradient: ['#ff8a00', '#ff5100']
   },
   {
     id: 2,
@@ -193,7 +262,8 @@ const categories = ref([
     slug: 'tv',
     icon: 'icon-tv',
     description: '热播剧集推荐',
-    postsCount: 856
+    postsCount: 856,
+    gradient: ['#ff6b1a', '#f43f5e']
   },
   {
     id: 3,
@@ -201,7 +271,8 @@ const categories = ref([
     slug: 'variety',
     icon: 'icon-variety',
     description: '热门综艺节目',
-    postsCount: 432
+    postsCount: 432,
+    gradient: ['#ffa62e', '#f97316']
   }
 ])
 
@@ -215,6 +286,51 @@ const stats = ref({
   totalComments: 234567,
   onlineUsers: 1234
 })
+
+const heroBadges = ref([
+  '沉浸式观影日志',
+  '实时热聊',
+  '全景级美学'
+])
+
+const heroSparkles = ref(
+  Array.from({ length: 12 }).map((_, index) => ({
+    id: index,
+    left: `${10 + Math.random() * 80}%`,
+    top: `${5 + Math.random() * 90}%`,
+    delay: `${index * 0.4}s`
+  }))
+)
+
+const heroStats = computed(() => [
+  {
+    label: '影迷社群',
+    value: `${stats.value.totalUsers.toLocaleString()}+`,
+    description: '一起发掘私藏佳片'
+  },
+  {
+    label: '热度帖子',
+    value: `${stats.value.totalPosts.toLocaleString()}+`,
+    description: '多元观点即刻抵达'
+  },
+  {
+    label: '互动火花',
+    value: `${stats.value.totalComments.toLocaleString()}+`,
+    description: '灵感碰撞实时发生'
+  }
+])
+
+const animatedSections = ref([])
+let observer
+
+const registerSection = (el) => {
+  if (el && !animatedSections.value.includes(el)) {
+    animatedSections.value.push(el)
+    if (observer) {
+      observer.observe(el)
+    }
+  }
+}
 
 // 方法
 const formatTime = (dateStr) => {
@@ -292,6 +408,25 @@ async function loadMovies() {
 onMounted(() => {
   loadMovies()
   loadRandomPosts()
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view')
+        }
+      })
+    },
+    { threshold: 0.2 }
+  )
+
+  animatedSections.value.forEach(section => observer.observe(section))
+})
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect()
+  }
 })
 </script>
 
@@ -306,28 +441,113 @@ onMounted(() => {
   padding: 0 20px;
 }
 
+.reveal {
+  opacity: 0;
+  transform: translateY(60px) scale(0.98);
+  filter: blur(8px);
+  transition: opacity 0.8s ease, transform 0.8s ease, filter 0.8s ease;
+}
+
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+
 // 英雄区域
 .hero {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  color: white;
-  padding: 80px 0;
-  display: flex;
-  align-items: center;
-  min-height: 500px;
   position: relative;
+  color: white;
+  padding: 110px 0 120px;
+  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 149, 41, 0.4), transparent 46%),
+              radial-gradient(circle at 80% 10%, rgba(255, 98, 0, 0.38), transparent 52%),
+              linear-gradient(135deg, #210800 0%, #120200 35%, #1f0800 100%);
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+  opacity: 0.2;
+  mix-blend-mode: screen;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
 }
 
-.hero-content {
+.hero-glow {
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(255, 140, 0, 0.6) 0%, rgba(255, 140, 0, 0) 60%);
+  filter: blur(12px);
+  opacity: 0.6;
+  animation: pulse 6s ease-in-out infinite;
+}
+
+.glow-1 {
+  top: -120px;
+  left: -80px;
+}
+
+.glow-2 {
+  bottom: -160px;
+  right: -100px;
+  animation-delay: 1.5s;
+}
+
+.hero-gradient {
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  opacity: 0.2;
+  mix-blend-mode: screen;
+  filter: blur(10px);
+}
+
+.gradient-1 {
+  background: conic-gradient(from 120deg, rgba(255, 115, 29, 0), rgba(255, 115, 29, 0.6), rgba(255, 115, 29, 0));
+  animation: rotate 24s linear infinite;
+}
+
+.gradient-2 {
+  background: conic-gradient(from 240deg, rgba(255, 186, 73, 0), rgba(255, 186, 73, 0.45), rgba(255, 186, 73, 0));
+  animation: rotateReverse 30s linear infinite;
+}
+
+.hero-spark {
+  position: absolute;
+  width: 2px;
+  height: 50px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 186, 73, 0.8), rgba(255, 255, 255, 0));
+  animation: sparkle 6s linear infinite;
+  pointer-events: none;
+}
+
+.hero-spark:nth-child(odd) {
+  transform: rotate(40deg);
+}
+
+.hero-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 60px;
+  align-items: center;
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 60px;
-  align-items: center;
   z-index: 2;
+}
+
+.hero-content {
   position: relative;
+  z-index: 2;
 }
 
 .hero-header {
@@ -340,6 +560,14 @@ onMounted(() => {
     font-size: 4rem;
     animation: bounce 2s infinite;
   }
+}
+
+.hero-tagline {
+  font-size: 0.95rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 8px;
 }
 
 .hero-title {
@@ -369,6 +597,27 @@ onMounted(() => {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.hero-badge {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
 .hero-actions {
   display: flex;
   gap: 20px;
@@ -384,38 +633,106 @@ onMounted(() => {
   }
 }
 
-.hero-image {
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 40px;
+  margin-bottom: 0;
+  padding: 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  list-style: none;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ffb347;
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.metric-desc {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.hero-showcase {
   position: relative;
-  height: 400px;
+  padding: 20px;
+}
+
+.showcase-frame {
+  position: relative;
+  border-radius: 36px;
+  padding: 45px;
+  background: rgba(12, 4, 0, 0.6);
+  border: 1px solid rgba(255, 153, 43, 0.3);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.showcase-halo,
+.showcase-radar {
+  position: absolute;
+  inset: 15%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: pulse 12s ease-in-out infinite;
+}
+
+.showcase-radar {
+  animation-duration: 18s;
+  border-color: rgba(255, 115, 29, 0.35);
 }
 
 .floating-cards {
   position: relative;
-  height: 100%;
+  height: 320px;
 }
 
 .movie-card {
   position: absolute;
-  width: 120px;
-  height: 180px;
-  border-radius: 12px;
+  width: 140px;
+  height: 210px;
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
   animation: float 6s ease-in-out infinite;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   
   &:nth-child(1) {
-    top: 20px;
+    top: 10px;
     left: 20px;
+    transform: rotate(-6deg);
   }
   
   &:nth-child(2) {
-    top: 60px;
-    right: 40px;
+    top: 40px;
+    right: 30px;
+    transform: rotate(8deg);
   }
   
   &:nth-child(3) {
-    bottom: 40px;
-    left: 60px;
+    bottom: 10px;
+    left: 110px;
+    transform: rotate(-2deg);
   }
   
   img {
@@ -429,12 +746,12 @@ onMounted(() => {
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-    padding: 15px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    padding: 18px;
     color: white;
     
     h4 {
-      font-size: 12px;
+      font-size: 13px;
       margin: 0 0 5px 0;
       font-weight: 600;
     }
@@ -447,14 +764,65 @@ onMounted(() => {
   }
 }
 
+.showcase-label {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+}
+
+.showcase-label .label-title {
+  display: block;
+  font-weight: 700;
+  color: #ffae42;
+}
+
+.hero-marquee {
+  margin-top: 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.marquee-track {
+  display: flex;
+  gap: 32px;
+  padding: 12px 0;
+  animation: marquee 18s linear infinite;
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
 @keyframes float {
   0%, 100% {
-    transform: translateY(0px);
+    transform: translateY(0px) rotate(var(--rotation, 0deg));
   }
   50% {
-    transform: translateY(-20px);
+    transform: translateY(-18px) rotate(var(--rotation, 0deg));
   }
 }
+.categories {
+  padding: 110px 0;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 300px at 20% 0%, rgba(255, 186, 73, 0.18), transparent 60%),
+    radial-gradient(1200px 300px at 80% 0%, rgba(255, 115, 29, 0.16), transparent 60%),
+    var(--bg-secondary);
+}
+
 
 // 通用样式
 .section-title {
@@ -531,56 +899,51 @@ onMounted(() => {
 }
 
 .category-card {
-  background: white;
+  background: radial-gradient(circle at 30% 0%, rgba(255, 184, 120, 0.28), rgba(255, 255, 255, 0.9) 60%),
+              #ffffff;
   padding: 42px 30px;
-  border-radius: 16px;
+  border-radius: 24px;
   text-align: center;
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
-  transition: transform .3s ease, box-shadow .3s ease;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+  transition: transform .4s ease, box-shadow .4s ease;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(239, 108, 0, 0.18);
+  animation: floatUp 0.9s ease var(--card-delay, 0ms) both;
+  isolation: isolate;
   
-  &:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 30px 60px rgba(15, 23, 42, 0.12);
-  }
-  
-  &::after{
+  &::before {
     content: '';
     position: absolute;
-    inset: 0;
-    background: radial-gradient(320px 140px at 70% -10%, rgba(251,191,36,.24), transparent 62%);
+    inset: 1px;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
   }
   
-  .category-icon {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #ff8a00, #ff5e00);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
+  &:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 40px 80px rgba(15, 23, 42, 0.14);
     
-    i {
-      font-size: 32px;
-      color: white;
+    &::before {
+      opacity: 1;
     }
   }
   
   h3 {
     font-size: 1.5rem;
     font-weight: 600;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     color: #1f2937;
   }
   
   p {
     color: #6b7280;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
     line-height: 1.5;
   }
   
@@ -589,9 +952,110 @@ onMounted(() => {
   .category-stats .suffix { color:#9ca3af; font-size:12px; }
 }
 
+.category-ornament {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.ornament-ring,
+.ornament-glow,
+.ornament-beam {
+  position: absolute;
+  inset: 20%;
+  border-radius: 50%;
+}
+
+.ornament-ring {
+  border: 1px solid rgba(255, 149, 41, 0.3);
+  animation: orbit 14s linear infinite;
+}
+
+.ornament-glow {
+  background: radial-gradient(circle, rgba(255, 162, 88, 0.25) 0%, rgba(255, 162, 88, 0) 70%);
+  filter: blur(10px);
+  transform: scale(1.2);
+}
+
+.ornament-beam {
+  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.9) 40%, transparent 70%);
+  transform: rotate(15deg);
+  opacity: 0.3;
+  animation: beamSweep 6s ease-in-out infinite;
+}
+
+.category-icon {
+  position: relative;
+  margin: 0 auto 24px;
+  width: 110px;
+  height: 110px;
+  border-radius: 32px;
+  background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+  box-shadow: 0 18px 38px rgba(247, 147, 30, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.category-icon i {
+  font-size: 42px;
+  color: #fffaf2;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+}
+
+.icon-glow,
+.icon-ring {
+  position: absolute;
+  inset: 10px;
+  border-radius: 26px;
+}
+
+.icon-glow {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.35), transparent 68%);
+  filter: blur(4px);
+  animation: pulse 6s ease-in-out infinite;
+}
+
+.icon-ring {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  opacity: 0.7;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 164, 81, 0.4);
+  color: #b45309;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
+}
+
 // 热门帖子
 .hot-posts {
   padding: 80px 0;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 244, 235, 0.9) 0%, rgba(255, 255, 255, 1) 100%);
+}
+
+.hot-posts::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(255, 186, 73, 0.15), transparent 50%);
+  z-index: 0;
 }
 
 .posts-grid {
@@ -602,14 +1066,31 @@ onMounted(() => {
 
 .post-card {
   background: white;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   transition: all 0.3s;
+  border: 1px solid rgba(249, 115, 22, 0.08);
+  position: relative;
+  overflow: hidden;
+  animation: floatUp 0.9s ease var(--card-delay, 0ms) both;
   
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(255, 186, 73, 0.12), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  &:hover::after {
+    opacity: 1;
   }
 }
 
@@ -727,6 +1208,31 @@ onMounted(() => {
 .movie-recommendations {
   padding: 80px 0;
   background: var(--bg-secondary);
+  position: relative;
+  overflow: hidden;
+}
+
+.movie-recommendations::before,
+.movie-recommendations::after {
+  content: '';
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: rgba(255, 145, 72, 0.2);
+  filter: blur(60px);
+  animation: drift 12s ease-in-out infinite;
+}
+
+.movie-recommendations::before {
+  top: -80px;
+  left: -40px;
+}
+
+.movie-recommendations::after {
+  bottom: -100px;
+  right: -60px;
+  animation-delay: 4s;
 }
 
 .movies-slider {
@@ -737,14 +1243,16 @@ onMounted(() => {
 
 .movie-item {
   background: white;
-  border-radius: 12px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
   transition: all 0.3s;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  animation: floatUp 0.8s ease var(--card-delay, 0ms) both;
   
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12);
   }
 }
 
@@ -850,9 +1358,22 @@ onMounted(() => {
 
 // 统计数据
 .stats {
-  padding: 80px 0;
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+  padding: 100px 0;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 150, 61, 0.5), transparent 46%),
+              linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
   color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.stats::before {
+  content: '';
+  position: absolute;
+  inset: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 32px;
+  opacity: 0.4;
+  animation: glowPulse 6s ease-in-out infinite;
 }
 
 .stats-grid {
@@ -918,10 +1439,23 @@ onMounted(() => {
 
 // 响应式设计
 @media (max-width: 768px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    text-align: center;
+  }
+  
   .hero-content {
+    text-align: center;
+  }
+  
+  .hero-badges {
+    justify-content: center;
+  }
+  
+  .hero-metrics {
     grid-template-columns: 1fr;
     text-align: center;
-    gap: 40px;
   }
   
   .hero-title {
@@ -982,6 +1516,109 @@ onMounted(() => {
 }
 
 // 动画效果
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rotateReverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes sparkle {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-20px) scaleY(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scaleY(0.8);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes beamSweep {
+  0% {
+    transform: rotate(10deg) translateX(-10%);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.4;
+  }
+  60% {
+    opacity: 0.1;
+  }
+  100% {
+    transform: rotate(25deg) translateX(20%);
+    opacity: 0;
+  }
+}
+
+@keyframes drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(40px, -30px) scale(1.1);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
 @keyframes bounce {
   0%, 20%, 50%, 80%, 100% {
     transform: translateY(0);
