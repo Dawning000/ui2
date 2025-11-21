@@ -111,7 +111,7 @@
               <span class="icon-ring"></span>
               <i :class="category.icon"></i>
             </div>
-            <span class="category-chip">臻选主题</span>
+            <span class="category-chip">{{ category.chipText }}</span>
             <h3>{{ category.name }}</h3>
             <p>{{ category.description }}</p>
             <div class="category-stats">
@@ -252,7 +252,8 @@ const categories = ref([
     name: '电影',
     slug: 'movie',
     icon: 'icon-film',
-    description: '最新电影作品',
+    chipText: '光影臻藏',
+    description: '最新院线大片/冷门佳片合集',
     postsCount: 1234,
     gradient: ['#ff8a00', '#ff5100']
   },
@@ -261,7 +262,8 @@ const categories = ref([
     name: '电视剧',
     slug: 'tv',
     icon: 'icon-tv',
-    description: '热播剧集推荐',
+    chipText: '剧荒救星',
+    description: '热播剧集/经典老剧/海外剧集',
     postsCount: 856,
     gradient: ['#ff6b1a', '#f43f5e']
   },
@@ -270,7 +272,8 @@ const categories = ref([
     name: '综艺',
     slug: 'variety',
     icon: 'icon-variety',
-    description: '热门综艺节目',
+    chipText: '综娱盛宴',
+    description: '热门综艺节目/脱口秀/选秀/音乐节目',
     postsCount: 432,
     gradient: ['#ffa62e', '#f97316']
   }

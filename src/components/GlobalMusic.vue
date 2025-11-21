@@ -10,12 +10,17 @@
     ></audio>
 
     <transition name="music-fade">
-      <div class="music-tip" v-if="showMusicTip">
+      <div class="music-tip" v-if="showMusicTip && !isMinimized">
         浏览器阻止了自动播放，请点击下方按钮开启音乐
       </div>
     </transition>
 
-    <div class="music-panel">
+    <div class="music-panel" v-if="!isMinimized">
+      <div class="panel-header">
+        <button class="panel-minimize" type="button" aria-label="最小化音乐面板" @click="toggleMinimize">
+          –
+        </button>
+      </div>
       <button class="music-toggle" type="button" @click="toggleMusic">
         <span class="music-icon">🎵</span>
         <span>{{ isMusicPlaying ? '暂停音乐' : '播放音乐' }}</span>
@@ -33,6 +38,19 @@
         />
       </label>
     </div>
+
+    <div
+      v-else
+      class="music-mini"
+      :style="{ left: `${position.x}px`, top: `${position.y}px` }"
+      @pointerdown.prevent="startDragging"
+      @click="restoreFromMini"
+    >
+      <div class="mini-content">
+        <span class="mini-note" :class="{ 'is-playing': isMusicPlaying }">🎵</span>
+        <span v-if="!isMusicPlaying" class="mini-slash"></span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -43,9 +61,65 @@ const bgmSrc = '/bgm.mp3'
 const bgmRef = ref<HTMLAudioElement | null>(null)
 const isMusicPlaying = ref(false)
 const showMusicTip = ref(false)
+const isMinimized = ref(false)
 const storedVolume = Number(localStorage.getItem('global-bgm-volume') ?? '60')
 const volume = ref(Number.isFinite(storedVolume) ? Math.min(Math.max(storedVolume / 100, 0), 1) : 0.6)
 let autoPlayTried = false
+const position = ref({ x: 0, y: 0 })
+let dragStartOffset = { x: 0, y: 0 }
+let isDragging = false
+let draggedInSession = false
+const resizeHandler = () => {
+  updatePosition(position.value.x, position.value.y)
+}
+
+function clampPosition(x: number, y: number) {
+  const radius = 32
+  const maxX = window.innerWidth - radius * 2 - 16
+  const maxY = window.innerHeight - radius * 2 - 16
+  return {
+    x: Math.min(Math.max(16, x), Math.max(16, maxX)),
+    y: Math.min(Math.max(16, y), Math.max(16, maxY)),
+  }
+}
+
+function updatePosition(x: number, y: number) {
+  position.value = clampPosition(x, y)
+}
+
+function handlePointerMove(event: PointerEvent) {
+  if (!isDragging) return
+  draggedInSession = true
+  updatePosition(event.clientX - dragStartOffset.x, event.clientY - dragStartOffset.y)
+}
+
+function stopDragging() {
+  if (!isDragging) return
+  isDragging = false
+  window.removeEventListener('pointermove', handlePointerMove)
+  window.removeEventListener('pointerup', stopDragging)
+}
+
+function startDragging(event: PointerEvent) {
+  isDragging = true
+  draggedInSession = false
+  dragStartOffset = {
+    x: event.clientX - position.value.x,
+    y: event.clientY - position.value.y,
+  }
+  window.addEventListener('pointermove', handlePointerMove)
+  window.addEventListener('pointerup', stopDragging)
+}
+
+function toggleMinimize() {
+  isMinimized.value = !isMinimized.value
+}
+
+function restoreFromMini() {
+  if (draggedInSession) return
+  isMinimized.value = false
+  draggedInSession = false
+}
 
 async function tryPlayMusic() {
   if (!bgmRef.value || autoPlayTried) return
@@ -104,7 +178,11 @@ function handleVisibilityChange() {
 onMounted(() => {
   tryPlayMusic()
   applyVolume()
+  const defaultX = window.innerWidth - 200
+  const defaultY = window.innerHeight - 180
+  updatePosition(defaultX, defaultY)
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('resize', resizeHandler)
 })
 
 onBeforeUnmount(() => {
@@ -112,6 +190,8 @@ onBeforeUnmount(() => {
     bgmRef.value.pause()
   }
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('resize', resizeHandler)
+  stopDragging()
 })
 </script>
 
@@ -142,6 +222,32 @@ onBeforeUnmount(() => {
 .music-panel:hover,
 .music-panel:focus-within {
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: -4px;
+}
+
+.panel-minimize {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(15, 23, 42, 0.12);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(15, 23, 42, 0.24);
+  }
 }
 
 .music-toggle {
@@ -214,6 +320,64 @@ onBeforeUnmount(() => {
 .music-fade-enter-from,
 .music-fade-leave-to {
   opacity: 0;
+}
+
+.music-mini {
+  position: fixed;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fde68a, #fcd34d);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+  z-index: 1000;
+  padding: 6px;
+}
+
+.music-mini:active {
+  cursor: grabbing;
+}
+
+.mini-content {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.mini-note {
+  font-size: 1.5rem;
+}
+
+.mini-note.is-playing {
+  animation: note-spin 3s linear infinite;
+}
+
+.mini-slash {
+  position: absolute;
+  width: 44px;
+  height: 4px;
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 999px;
+  transform: rotate(-45deg);
+  box-shadow: 0 0 8px rgba(15, 23, 42, 0.25);
+}
+
+@keyframes note-spin {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {
