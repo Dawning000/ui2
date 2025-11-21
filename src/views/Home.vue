@@ -73,12 +73,12 @@
           <router-link to="/forum" class="view-all-link">查看全部</router-link>
         </div>
         <div class="posts-grid">
-          <div v-for="post in hotPosts" :key="post.id" class="post-card">
+          <div v-for="post in hotPosts.slice(0, 3)" :key="post.id" class="post-card">
             <div class="post-header">
               <div class="post-meta">
-                <img :src="post.author.avatar || '/avatar.png'" :alt="post.author.username" class="author-avatar" referrerpolicy="no-referrer" @error="e => e.target.src = '/avatar.png'" />
+                <img :src="post.author?.avatar || '/avatar.png'" :alt="post.author?.username || '未知用户'" class="author-avatar" referrerpolicy="no-referrer" @error="e => e.target.src = '/avatar.png'" />
                 <div class="author-info">
-                  <span class="author-name">{{ post.author.username }}</span>
+                  <span class="author-name">{{ post.author?.nickname || post.author?.username || '未知用户' }}</span>
                   <span class="post-time">{{ formatTime(post.createTime) }}</span>
                 </div>
               </div>
@@ -173,6 +173,7 @@
 import { ref, onMounted } from 'vue'
 import Carousel from '../components/Carousel.vue'
 import { fetchMovies } from '@/api/movies'
+import { fetchRandomPosts, getCategoryName, extractExcerpt } from '@/api/posts'
 
 // 响应式数据
 const featuredMovies = ref([])
@@ -204,53 +205,7 @@ const categories = ref([
   }
 ])
 
-const hotPosts = ref([
-  {
-    id: 1,
-    title: '《流浪地球2》深度解析：中国科幻电影的里程碑',
-    excerpt: '作为《流浪地球》的续作，这部电影在视觉效果和故事深度上都有了显著提升...',
-    author: {
-      username: '科幻迷小王',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'
-    },
-    category: 'movie',
-    categoryName: '电影',
-    views: 1234,
-    comments: 89,
-    likes: 156,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
-  },
-  {
-    id: 2,
-    title: '《狂飙》为什么这么火？从剧情到演技全面分析',
-    excerpt: '这部扫黑除恶题材的电视剧能够成为现象级作品，背后有哪些成功因素...',
-    author: {
-      username: '剧评达人',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face'
-    },
-    category: 'tv',
-    categoryName: '电视剧',
-    views: 2156,
-    comments: 134,
-    likes: 289,
-    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000)
-  },
-  {
-    id: 3,
-    title: '《鬼灭之刃》剧场版观后感：热血与感动的完美结合',
-    excerpt: '作为鬼灭之刃的忠实粉丝，看完剧场版后内心久久不能平静...',
-    author: {
-      username: '动漫爱好者',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face'
-    },
-    category: 'anime',
-    categoryName: '动漫',
-    views: 987,
-    comments: 67,
-    likes: 123,
-    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000)
-  }
-])
+const hotPosts = ref([])
 
 const latestMovies = ref([])
 
@@ -262,8 +217,9 @@ const stats = ref({
 })
 
 // 方法
-const formatTime = (date) => {
+const formatTime = (dateStr) => {
   const now = new Date()
+  const date = new Date(dateStr)
   const diff = now - date
   const hours = Math.floor(diff / (1000 * 60 * 60))
   const minutes = Math.floor(diff / (1000 * 60))
@@ -274,6 +230,32 @@ const formatTime = (date) => {
     return `${hours}小时前`
   } else {
     return `${minutes}分钟前`
+  }
+}
+
+/**
+ * 加载随机帖子数据
+ */
+async function loadRandomPosts() {
+  try {
+    const response = await fetchRandomPosts(3);
+    if (response?.data?.posts && Array.isArray(response.data.posts)) {
+      hotPosts.value = response.data.posts.map(post => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        excerpt: extractExcerpt(post.content),
+        author: post.author,
+        category: post.category,
+        categoryName: getCategoryName(post.category),
+        createTime: post.createTime,
+        views: post.views,
+        likes: post.likes,
+        comments: post.commentsCount
+      }));
+    }
+  } catch (error) {
+    console.error('加载随机帖子失败:', error);
   }
 }
 
@@ -309,6 +291,7 @@ async function loadMovies() {
 
 onMounted(() => {
   loadMovies()
+  loadRandomPosts()
 })
 </script>
 

@@ -1,5 +1,14 @@
 import { http, jsonBody } from './http';
 
+/**
+ * 获取随机帖子列表
+ * @param count 要获取的帖子数量
+ * @returns 随机帖子列表
+ */
+export const fetchRandomPosts = async (count: number = 3): Promise<{posts: any[]}> => {
+  return await http<{posts: any[]}>(`/posts/random?count=${count}`);
+};
+
 // 评论类型定义
 export interface Comment {
   id: number;
@@ -291,4 +300,32 @@ export const postApi = {
   getPostPermission: async (id: number): Promise<PostPermissionResponse> => {
     return await http<PostPermissionResponse>(`/posts/${id}/permission`);
   }
+};
+
+/**
+ * 根据分类获取分类名称
+ * @param category 分类标识
+ * @returns 分类名称
+ */
+export const getCategoryName = (category: string): string => {
+  const categoryMap: {[key: string]: string} = {
+    'movie': '电影',
+    'tv': '电视剧',
+    'variety': '综艺',
+    'anime': '动漫'
+  };
+  return categoryMap[category] || category;
+};
+
+/**
+ * 从内容中提取摘要
+ * @param content 完整内容
+ * @param maxLength 摘要最大长度
+ * @returns 提取的摘要
+ */
+export const extractExcerpt = (content: string, maxLength: number = 100): string => {
+  if (!content) return '';
+  // 移除HTML标签
+  const plainText = content.replace(/<[^>]*>/g, '');
+  return plainText.length > maxLength ? plainText.substring(0, maxLength) + '...' : plainText;
 };

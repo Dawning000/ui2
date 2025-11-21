@@ -11,24 +11,52 @@ function buildQuery(params: Record<string, unknown>): string {
 }
 
 export async function fetchMovies(params: MoviesListQuery = {}, signal?: AbortSignal): Promise<MoviesListResponse> {
-  const query = buildQuery({
-    page: params.page,
-    size: params.size,
-    tag: params.genre, // 后端参数名是tag
-    year: params.year,
-    rating: params.rating,
-    actor: params.actor,
-    award: params.award
-  })
-  // 后端接口: GET /api/movies
-  const res = await http<{ code: number; data: any }>(`/movies${query ? `?${query}` : ''}`, { signal })
-  const data = res.data
-  // 转换后端格式到前端格式
-  return {
-    movies: data.movies || [],
-    total: data.pagination?.total || 0,
-    page: data.pagination?.page || params.page || 1,
-    size: data.pagination?.size || params.size || 10
+  try {
+    const query = buildQuery({
+      page: params.page,
+      size: params.size,
+      tag: params.genre, // 后端参数名是tag
+      year: params.year,
+      rating: params.rating,
+      actor: params.actor,
+      award: params.award
+    })
+    // 后端接口: GET /api/movies
+    const res = await http<{ code: number; data: any }>(`/movies${query ? `?${query}` : ''}`, { signal })
+    
+    // 更健壮地处理响应数据
+    const data = res?.data || {};
+    
+    // 检查数据结构，适应不同的返回格式
+    let movies = [];
+    let pagination = {};
+    
+    // 处理嵌套data结构
+    if (data.data) {
+      movies = data.data.movies || [];
+      pagination = data.data.pagination || {};
+    } else {
+      // 处理直接在data下的数据
+      movies = data.movies || [];
+      pagination = data.pagination || {};
+    }
+    
+    // 转换后端格式到前端格式
+    return {
+      movies: Array.isArray(movies) ? movies : [],
+      total: pagination.total || 0,
+      page: pagination.page || params.page || 1,
+      size: pagination.size || params.size || 10
+    };
+  } catch (error) {
+    console.error('获取电影列表失败:', error);
+    // 返回默认数据，避免页面崩溃
+    return {
+      movies: [],
+      total: 0,
+      page: params.page || 1,
+      size: params.size || 10
+    };
   }
 }
 

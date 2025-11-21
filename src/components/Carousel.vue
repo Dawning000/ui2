@@ -60,7 +60,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
-import { fetchTopRatedMovies } from '@/api/movies'
+import { fetchHotMovies } from '@/api/movies'
+import { useRouter } from 'vue-router'
 
 // 响应式数据
 const currentIndex = ref(0) // 从0开始
@@ -72,6 +73,9 @@ const loading = ref(false)
 const isTransitioning = ref(true)
 const cardWidth = ref(600) // 卡片宽度（包含间距，550px卡片 + 50px间距）
 const visibleCards = ref(3) // 可见卡片数量
+
+// 获取路由实例
+const router = useRouter()
 
 // 获取全局通知服务
 const instance = getCurrentInstance();
@@ -90,25 +94,28 @@ const slides = ref([])
 
 // 加载热映电影数据
 const loadTopRatedMovies = async () => {
+  if (loading.value) return
   loading.value = true
   try {
-    const response = await fetchTopRatedMovies()
-    
-    if (response && response.movieList && response.movieList.length > 0) {
-      // 将 API 返回的电影数据转换为轮播图格式
-      const movieSlides = response.movieList.map((movie) => ({
-        id: movie.movieId,
-        title: movie.name,
-        subtitle: `评分 ${movie.score}`,
-        image: movie.poster,
-        link: `/movie/${movie.movieId}`,
-
+    // 调用fetchHotMovies接口并传入size参数
+    const response = await fetchHotMovies({ size: 10 })
+    // 添加健壮的错误检查，确保response和response.movies存在
+    if (response && response.movies && Array.isArray(response.movies)) {
+      // 调整数据转换逻辑，确保字段名匹配模板中的使用
+      slides.value = response.movies.map(movie => ({
+        id: movie.id,
+        image: movie.poster || '',
+        title: movie.title,
+        subtitle: movie.rating ? `评分 ${movie.rating}` : '评分 0.0',
+        description: movie.summary || '',
+        link: `/movie/${movie.id}`
       }))
-      
-      // 将电影数据设置为轮播图内容
-      slides.value = movieSlides
-      
       // 重置当前索引到第一个
+      currentIndex.value = 0
+    } else {
+      // 如果数据结构不正确，使用空数组
+      console.warn('电影数据结构不正确，使用空数据')
+      slides.value = []
       currentIndex.value = 0
     }
   } catch (error) {
@@ -150,7 +157,13 @@ const prevSlide = () => {
 
 const goToMovie = (slide) => {
   // 点击卡片跳转到电影详情页
-  // 这里可以添加路由跳转逻辑，如果需要的话
+  if (slide && slide.link) {
+    // 使用Vue Router进行路由跳转
+    router.push(slide.link)
+  } else if (slide && slide.id) {
+    // 兜底方案：如果没有link属性，使用id构建默认路径
+    router.push(`/movie/${slide.id}`)
+  }
 }
 
 const goToSlide = (index) => {
