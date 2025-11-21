@@ -136,6 +136,10 @@
             :key="post.id" 
             class="post-card"
             :style="{ '--card-delay': `${index * 120}ms` }"
+            @click="goToPost(post.id)"
+            role="button"
+            tabindex="0"
+            @keyup.enter="goToPost(post.id)"
           >
             <div class="post-header">
               <div class="post-meta">
@@ -239,11 +243,14 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import Carousel from '../components/Carousel.vue'
 import { fetchMovies } from '@/api/movies'
 import { fetchRandomPosts, getCategoryName, extractExcerpt } from '@/api/posts'
 
 // 响应式数据
+const router = useRouter()
+
 const featuredMovies = ref([])
 
 const categories = ref([
@@ -376,6 +383,11 @@ async function loadRandomPosts() {
   } catch (error) {
     console.error('加载随机帖子失败:', error);
   }
+}
+
+const goToPost = (postId) => {
+  if (!postId) return
+  router.push(`/post/${postId}`)
 }
 
 function avgRating(ratings) {
