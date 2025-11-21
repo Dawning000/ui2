@@ -478,7 +478,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, getCurrentInstance, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import ImageUploader from '@/components/ImageUploader.vue'
 import { userApi } from '@/api/users'
@@ -490,6 +490,7 @@ import notificationService from '@/utils/notification'
 const notify = notificationService
 
 const route = useRoute()
+const router = useRouter()
 
 // 响应式数据
 const loading = ref(true)
@@ -497,7 +498,8 @@ import type { User } from '../types/user'
 const user = ref<User | null>(null)
 import type { Post } from '../api/posts'
 const userPosts = ref<Post[]>([]);
-const activeTab = ref('posts')
+type TabId = 'posts' | 'favorites' | 'following'
+const activeTab = ref<TabId>('posts')
 const isFollowing = ref(false)
 
 // 关注列表相关数据
@@ -575,13 +577,32 @@ const activeFavoritesType = ref<keyof FavoritesPagination>('movies')
 // 定义收藏类型数组，用于类型安全的循环遍历
 const favoriteTypes: Array<keyof FavoritesPagination> = ['movies', 'tvshows', 'varieties']
 
-const tabs = [
+const tabs: Array<{ id: TabId; label: string; icon: string }> = [
   { id: 'posts', label: '帖子', icon: 'icon-edit' },
   { id: 'favorites', label: '收藏', icon: 'icon-star' },
   { id: 'following', label: '关注', icon: 'icon-users' }
 ]
+const availableTabIds = tabs.map(tab => tab.id)
 
 // 修改密码功能已迁移到账号设置页面
+
+const getValidTabFromQuery = (tabValue: unknown): TabId | null => {
+  const value = Array.isArray(tabValue) ? tabValue[0] : tabValue
+  return typeof value === 'string' && availableTabIds.includes(value as TabId)
+    ? (value as TabId)
+    : null
+}
+
+const updateTabQuery = (tab: TabId) => {
+  const currentTab = getValidTabFromQuery(route.query.tab)
+  if (currentTab === tab) return
+  router.replace({
+    query: {
+      ...route.query,
+      tab
+    }
+  })
+}
 
 // 方法
 const formatDate = (date: Date | string) => {
@@ -592,8 +613,22 @@ const formatDate = (date: Date | string) => {
   })
 }
 
+watch(
+  () => route.query.tab,
+  (tabValue) => {
+    const nextTab = getValidTabFromQuery(tabValue)
+    if (nextTab && nextTab !== activeTab.value) {
+      activeTab.value = nextTab
+    } else if (!nextTab && tabValue !== undefined && tabValue !== null) {
+      activeTab.value = 'posts'
+    }
+  },
+  { immediate: true }
+)
+
 // 监听activeTab变化
 watch(activeTab, (newTab) => {
+  updateTabQuery(newTab)
   if (newTab === 'favorites') {
     // 切换到收藏影片标签时，加载电影分类的收藏数据
     loadUserFavorites(activeFavoritesType.value, 1, favoritesPageSize.value)
@@ -607,7 +642,7 @@ watch(activeTab, (newTab) => {
 watch(() => route.params.id, (newId, oldId) => {
   if (newId && newId !== oldId) {
     // 重置状态
-    activeTab.value = 'posts'
+    activeTab.value = getValidTabFromQuery(route.query.tab) || 'posts'
     followingPage.value = 1
     followingPageSize.value = 10
     followingJumpPage.value = 1

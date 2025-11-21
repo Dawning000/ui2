@@ -916,18 +916,25 @@ onUnmounted(() => {
 .category-card {
   background: radial-gradient(circle at 30% 0%, rgba(255, 184, 120, 0.28), rgba(255, 255, 255, 0.9) 60%),
               #ffffff;
+  background-size: 160% 160%;
   padding: 42px 30px;
   border-radius: 24px;
   text-align: center;
   text-decoration: none;
   color: inherit;
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
-  transition: transform .4s ease, box-shadow .4s ease;
+  transition: transform 0.65s cubic-bezier(.22,.61,.36,1),
+              box-shadow 0.65s ease,
+              background-position 0.9s ease,
+              border-color 0.45s ease;
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(239, 108, 0, 0.18);
   animation: floatUp 0.9s ease var(--card-delay, 0ms) both;
   isolation: isolate;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
   
   &::before {
     content: '';
@@ -937,15 +944,40 @@ onUnmounted(() => {
     border: 1px solid rgba(255, 255, 255, 0.6);
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity 0.35s ease;
+    z-index: 1;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -40%;
+    background: conic-gradient(from 120deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0));
+    mix-blend-mode: screen;
+    opacity: 0;
+    transform: scale(0.7) rotate(0deg);
+    filter: blur(0);
+    transition: opacity 0.5s ease, transform 0.6s ease, filter 0.6s ease;
+    animation: holographicSweep 8s linear infinite;
+    animation-play-state: paused;
+    z-index: 0;
   }
   
   &:hover {
-    transform: translateY(-10px) scale(1.02);
-    box-shadow: 0 40px 80px rgba(15, 23, 42, 0.14);
+    transform: translateY(-14px) scale(1.03) rotateX(4deg);
+    box-shadow: 0 45px 90px rgba(15, 23, 42, 0.18);
+    background-position: 100% 100%;
+    border-color: rgba(255, 255, 255, 0.4);
     
     &::before {
       opacity: 1;
+    }
+    
+    &::after {
+      opacity: 0.55;
+      transform: scale(1.05) rotate(12deg);
+      filter: blur(18px);
+      animation-play-state: running;
     }
   }
   
@@ -962,9 +994,28 @@ onUnmounted(() => {
     line-height: 1.5;
   }
   
-  .category-stats { display:flex; justify-content:center; align-items:baseline; gap:6px; }
-  .category-stats .count { color:#ef6c00; font-size:18px; font-weight:700; }
-  .category-stats .suffix { color:#9ca3af; font-size:12px; }
+  .category-stats { display:flex; justify-content:center; align-items:baseline; gap:6px; transition: transform 0.45s ease, opacity 0.45s ease; }
+  .category-stats .count { color:#ef6c00; font-size:18px; font-weight:700; transition: color 0.45s ease, text-shadow 0.45s ease; }
+  .category-stats .suffix { color:#9ca3af; font-size:12px; transition: color 0.45s ease; }
+  
+  &:hover {
+    .category-stats {
+      transform: translateY(-4px);
+    }
+    
+    .category-stats .count {
+      color: #ff7a18;
+      text-shadow: 0 6px 14px rgba(255, 122, 24, 0.35);
+    }
+    
+    .category-stats .suffix {
+      color: #f97316;
+    }
+  }
+}
+.category-card > * {
+  position: relative;
+  z-index: 2;
 }
 
 .category-ornament {
@@ -972,6 +1023,24 @@ onUnmounted(() => {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+
+  .ornament-ring,
+  .ornament-beam {
+    transition: opacity 0.4s ease, filter 0.4s ease;
+  }
+}
+
+.category-card:hover .category-ornament {
+  .ornament-ring {
+    animation-duration: 8s;
+    opacity: 0.7;
+    filter: drop-shadow(0 0 12px rgba(255, 184, 120, 0.35));
+  }
+  
+  .ornament-beam {
+    opacity: 0.45;
+    animation-duration: 3.6s;
+  }
 }
 
 .ornament-ring,
@@ -1013,6 +1082,27 @@ onUnmounted(() => {
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
+  transition: transform 0.55s ease, box-shadow 0.55s ease, opacity 0.45s ease;
+
+  .icon-glow,
+  .icon-ring {
+    transition: opacity 0.4s ease, transform 0.5s ease;
+  }
+}
+
+.category-card:hover .category-icon {
+  transform: translateY(-6px) scale(1.06) rotateX(6deg);
+  box-shadow: 0 25px 45px rgba(247, 147, 30, 0.45);
+}
+
+.category-card:hover .icon-glow {
+  opacity: 0.8;
+  animation: glowLift 2.4s ease-in-out infinite;
+}
+
+.category-card:hover .icon-ring {
+  opacity: 1;
+  animation: ringOrbitFlash 1.8s linear infinite;
 }
 
 .category-icon i {
@@ -1055,6 +1145,14 @@ onUnmounted(() => {
   margin-bottom: 18px;
   position: relative;
   z-index: 1;
+  transition: transform 0.35s ease, background 0.35s ease, letter-spacing 0.35s ease, box-shadow 0.35s ease;
+}
+
+.category-card:hover .category-chip {
+  transform: translateY(-2px) scale(1.04);
+  letter-spacing: 0.18em;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.35);
 }
 
 // 热门帖子
@@ -1080,32 +1178,62 @@ onUnmounted(() => {
 }
 
 .post-card {
-  background: white;
-  border-radius: 20px;
-  padding: 28px;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
-  transition: all 0.3s;
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(255, 245, 237, 0.98));
+  border-radius: 26px;
+  padding: 32px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.08);
+  transition: transform 0.6s cubic-bezier(.22,.61,.36,1),
+              box-shadow 0.6s ease,
+              border-color 0.5s ease,
+              background 0.6s ease;
   border: 1px solid rgba(249, 115, 22, 0.08);
   position: relative;
   overflow: hidden;
   animation: floatUp 0.9s ease var(--card-delay, 0ms) both;
+  isolation: isolate;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
   
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: 1;
   }
   
   &::after {
     content: '';
     position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, rgba(255, 186, 73, 0.12), transparent);
+    inset: -40% 0;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.45) 50%, rgba(255, 255, 255, 0) 70%);
     opacity: 0;
-    transition: opacity 0.3s;
+    transform: translateX(-30%);
+    transition: opacity 0.45s ease, transform 0.7s ease;
+    mix-blend-mode: screen;
+    animation: cardSheen 6s linear infinite;
+    animation-play-state: paused;
+    z-index: 0;
   }
   
-  &:hover::after {
-    opacity: 1;
+  &:hover {
+    transform: translateY(-14px) scale(1.01) rotateX(2deg);
+    box-shadow: 0 42px 90px rgba(15, 23, 42, 0.16);
+    border-color: rgba(249, 115, 22, 0.25);
+    
+    &::before {
+      opacity: 1;
+    }
+    
+    &::after {
+      opacity: 1;
+      transform: translateX(25%);
+      animation-play-state: running;
+    }
   }
 }
 
@@ -1114,6 +1242,8 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 20px;
+  position: relative;
+  z-index: 2;
 }
 
 .post-meta {
@@ -1127,6 +1257,9 @@ onUnmounted(() => {
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid rgba(249, 115, 22, 0.12);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  transition: transform 0.45s ease, box-shadow 0.45s ease;
 }
 
 .author-info {
@@ -1145,11 +1278,16 @@ onUnmounted(() => {
   }
 }
 
+.post-category {
+  display: flex;
+}
+
 .category-tag {
   padding: 4px 12px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 500;
+  transition: transform 0.4s ease, background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
   
   &.category-movie {
     background: #fef3c7;
@@ -1164,6 +1302,53 @@ onUnmounted(() => {
   &.category-anime {
     background: #f3e8ff;
     color: #7c3aed;
+  }
+}
+
+.post-card {
+  .post-category,
+  .post-content,
+  .post-footer {
+    position: relative;
+    z-index: 2;
+  }
+}
+
+.post-title,
+.post-excerpt,
+.post-stats .stat,
+.read-more {
+  transition: color 0.4s ease, transform 0.4s ease, text-shadow 0.4s ease;
+}
+
+.post-card:hover {
+  .post-title {
+    color: #f97316;
+    text-shadow: 0 6px 14px rgba(249, 115, 22, 0.25);
+  }
+  
+  .post-excerpt {
+    color: #6b7280;
+  }
+  
+  .category-tag {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(249, 115, 22, 0.18);
+  }
+  
+  .post-stats .stat {
+    color: #ea580c;
+    transform: translateY(-2px);
+  }
+  
+  .read-more {
+    color: #2563eb;
+    transform: translateX(4px);
+  }
+  
+  .author-avatar {
+    transform: translateY(-4px) scale(1.04);
+    box-shadow: 0 16px 26px rgba(15, 23, 42, 0.16);
   }
 }
 
@@ -1531,6 +1716,50 @@ onUnmounted(() => {
 }
 
 // 动画效果
+@keyframes cardSheen {
+  0% {
+    transform: translateX(-40%);
+  }
+  100% {
+    transform: translateX(40%);
+  }
+}
+
+@keyframes holographicSweep {
+  0% {
+    transform: scale(0.7) rotate(0deg);
+  }
+  50% {
+    transform: scale(0.9) rotate(180deg);
+  }
+  100% {
+    transform: scale(0.7) rotate(360deg);
+  }
+}
+
+@keyframes ringOrbitFlash {
+  from {
+    transform: rotate(0deg);
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  to {
+    transform: rotate(360deg);
+    opacity: 0.9;
+  }
+}
+
+@keyframes glowLift {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 @keyframes pulse {
   0%, 100% {
     transform: scale(0.9);
