@@ -240,6 +240,13 @@
             <div class="stat-label">在线用户</div>
           </div>
         </div>
+        <div class="stats-action">
+          <router-link to="/data-visualization" class="stats-btn">
+            <span class="stats-btn-icon">📊</span>
+            <span class="stats-btn-text">查看数据可视化</span>
+            <span class="stats-btn-arrow">→</span>
+          </router-link>
+        </div>
       </div>
     </section>
 
@@ -1678,6 +1685,7 @@ onUnmounted(() => {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 40px;
   text-align: center;
+  margin-bottom: 50px;
 }
 
 .stat-item {
@@ -1693,6 +1701,73 @@ onUnmounted(() => {
     font-size: 1.1rem;
     color: rgba(255, 255, 255, 0.9);
     transition: color 0.3s ease;
+  }
+}
+
+.stats-action {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
+}
+
+.stats-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 32px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50px;
+  color: white;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+
+    &::before {
+      opacity: 1;
+    }
+
+    .stats-btn-arrow {
+      transform: translateX(5px);
+    }
+  }
+
+  .stats-btn-icon {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  }
+
+  .stats-btn-text {
+    position: relative;
+    z-index: 1;
+  }
+
+  .stats-btn-arrow {
+    font-size: 1.3rem;
+    transition: transform 0.3s ease;
+    position: relative;
+    z-index: 1;
   }
 }
 
@@ -1790,6 +1865,11 @@ onUnmounted(() => {
   
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-btn {
+    padding: 14px 24px;
+    font-size: 1rem;
   }
 }
 

@@ -102,7 +102,7 @@
             </div>
           </div>
           
-          <div v-if="form.awards.length === 0" class="awards-empty">
+          <div v-if="!form.awards || form.awards.length === 0" class="awards-empty">
             暂无获奖信息，可通过上方搜索选择奖项后关联
           </div>
           
@@ -179,7 +179,7 @@ const selectedAward = ref(0)
 const awardOptions = ref<AwardListItem[]>([])
 let awardSearchTimer: ReturnType<typeof setTimeout> | null = null
 
-const form = reactive<ActorSaveData>({
+const form = reactive<ActorSaveData & { avatar: string; awards: ActorAward[] }>({
   name: '',
   avatar: '',
   birthday: '',
@@ -247,6 +247,7 @@ function handleAwardSearch() {
 function addSelectedAward() {
   const awardId = selectedAward.value
   if (!awardId) return
+  if (!form.awards) form.awards = []
   if (form.awards.find(award => award.id === awardId)) {
     selectedAward.value = 0
     return
@@ -266,6 +267,7 @@ function addSelectedAward() {
 
 // 删除奖项
 function removeAward(index: number) {
+  if (!form.awards) return
   form.awards.splice(index, 1)
 }
 
@@ -281,7 +283,7 @@ async function handleSubmit() {
     // 转换数据格式
     const submitData: ActorSaveData = {
       ...form,
-      awards: form.awards.map(award => ({
+      awards: (form.awards || []).map(award => ({
         ...award,
         id: Number(award.id) || 0,
         year: Number(award.year) || new Date().getFullYear()

@@ -29,7 +29,7 @@ export async function fetchMovies(params: MoviesListQuery = {}, signal?: AbortSi
     
     // 检查数据结构，适应不同的返回格式
     let movies = [];
-    let pagination = {};
+    let pagination: { total?: number; page?: number; size?: number } = {};
     
     // 处理嵌套data结构
     if (data.data) {

@@ -79,11 +79,11 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { saveActor } from '@/api/actors'
-import type { SaveActorPayload, AwardStatus } from '@/types/actors'
+import type { ActorSaveData, ActorAward } from '@/types/actors'
 
 const router = useRouter()
 
-const form = reactive<SaveActorPayload>({
+const form = reactive<ActorSaveData & { avatar: string; awards: ActorAward[] }>({
   name: '',
   avatar: '',
   birthday: '',
@@ -111,7 +111,7 @@ async function onSubmit() {
   }
   submitting.value = true
   try {
-    const payload: SaveActorPayload = {
+    const payload: ActorSaveData = {
       name: form.name,
       birthday: form.birthday,
       nationality: form.nationality,

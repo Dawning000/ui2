@@ -20,6 +20,7 @@ import TvDetail from '../views/TvDetail.vue'
 import VarietyDetail from '../views/VarietyDetail.vue'
 import HotMovies from '../views/HotMovies.vue'
 import Videos from '../views/Videos.vue'
+import DataVisualization from '../views/DataVisualization.vue'
 
 const routes: AppRouteRecord[] = [
   {
@@ -69,6 +70,11 @@ const routes: AppRouteRecord[] = [
     path: '/videos',
     name: 'Videos',
     component: Videos
+  },
+  {
+    path: '/data-visualization',
+    name: 'DataVisualization',
+    component: DataVisualization
   },
   {
     path: '/tv/:id',

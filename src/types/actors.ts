@@ -69,11 +69,11 @@ export interface ActorAward {
 export interface ActorSaveData {
   id?: number; // 只在修改时添加此字段
   name: string;
-  avatar: string;
+  avatar?: string; // 可选
   birthday: string; // yyyy-MM-dd
   nationality: string;
   gender: string;
   biography: string;
-  awards: ActorAward[];
+  awards?: ActorAward[]; // 可选
 }
 
