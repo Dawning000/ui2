@@ -339,9 +339,11 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { postApi, CreatePostParams } from '../api/posts'
 import { notificationService as notify } from '../utils/notification'
+import { useUserStore } from '../stores/user'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 import type { Post } from '../api/posts'
 
@@ -661,6 +663,12 @@ const updateEditorContent = (content = '') => {
 }
 
 const openCreatePost = () => {
+  // 检查是否已登录
+  if (!userStore.isLoggedIn) {
+    notify.warning('请先登录后才能发帖子')
+    return
+  }
+  
   showCreatePost.value = true
   nextTick(() => {
     updateEditorContent(newPost.value.content)
