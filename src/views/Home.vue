@@ -953,7 +953,8 @@ onUnmounted(() => {
   font-weight: 700;
   text-align: center;
   margin-bottom: 50px;
-  color: #1f2937;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .section-header {
@@ -964,13 +965,13 @@ onUnmounted(() => {
 }
 
 .view-all-link {
-  color: #3b82f6;
+  color: var(--primary-color);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s;
   
   &:hover {
-    color: #2563eb;
+    color: var(--primary-dark);
   }
 }
 
@@ -1012,7 +1013,8 @@ onUnmounted(() => {
   text-align: center;
   margin-top: -30px;
   margin-bottom: 40px;
-  color: #6b7280;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .categories-grid {
@@ -1022,19 +1024,20 @@ onUnmounted(() => {
 }
 
 .category-card {
-  background: radial-gradient(circle at 30% 0%, rgba(255, 184, 120, 0.28), rgba(255, 255, 255, 0.9) 60%),
-              #ffffff;
+  background: radial-gradient(circle at 30% 0%, rgba(255, 184, 120, 0.28), var(--bg-card) 60%),
+              var(--bg-card);
   background-size: 160% 160%;
   padding: 42px 30px;
   border-radius: 24px;
   text-align: center;
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 60px var(--shadow-color);
   transition: transform 0.65s cubic-bezier(.22,.61,.36,1),
               box-shadow 0.65s ease,
               background-position 0.9s ease,
-              border-color 0.45s ease;
+              border-color 0.45s ease,
+              background 0.3s ease;
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(239, 108, 0, 0.18);
@@ -1093,13 +1096,15 @@ onUnmounted(() => {
     font-size: 1.5rem;
     font-weight: 600;
     margin-bottom: 12px;
-    color: #1f2937;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
   }
   
   p {
-    color: #6b7280;
+    color: var(--text-secondary);
     margin-bottom: 22px;
     line-height: 1.5;
+    transition: color 0.3s ease;
   }
   
   .category-stats { display:flex; justify-content:center; align-items:baseline; gap:6px; transition: transform 0.45s ease, opacity 0.45s ease; }
@@ -1268,7 +1273,12 @@ onUnmounted(() => {
   padding: 80px 0;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(255, 244, 235, 0.9) 0%, rgba(255, 255, 255, 1) 100%);
+  background: linear-gradient(180deg, rgba(255, 244, 235, 0.9) 0%, var(--bg-card) 100%);
+  transition: background 0.3s ease;
+}
+
+:root.dark .hot-posts {
+  background: linear-gradient(180deg, rgba(31, 41, 55, 0.9) 0%, var(--bg-card) 100%);
 }
 
 .hot-posts::before {
@@ -1286,10 +1296,10 @@ onUnmounted(() => {
 }
 
 .post-card {
-  background: linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(255, 245, 237, 0.98));
+  background: linear-gradient(140deg, var(--bg-card), var(--bg-secondary));
   border-radius: 26px;
   padding: 32px;
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 24px 64px var(--shadow-color);
   transition: transform 0.6s cubic-bezier(.22,.61,.36,1),
               box-shadow 0.6s ease,
               border-color 0.5s ease,
@@ -1376,13 +1386,15 @@ onUnmounted(() => {
   
   .author-name {
     font-weight: 600;
-    color: #1f2937;
+    color: var(--text-primary);
     font-size: 14px;
+    transition: color 0.3s ease;
   }
   
   .post-time {
-    color: #9ca3af;
+    color: var(--text-light);
     font-size: 12px;
+    transition: color 0.3s ease;
   }
 }
 
@@ -1466,19 +1478,21 @@ onUnmounted(() => {
   .post-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--text-primary);
     margin-bottom: 10px;
     line-height: 1.4;
+    transition: color 0.3s ease;
   }
   
   .post-excerpt {
-    color: #6b7280;
+    color: var(--text-secondary);
     line-height: 1.6;
     display: -webkit-box;
     line-clamp: 3;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    transition: color 0.3s ease;
   }
 }
 
@@ -1496,19 +1510,21 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: 5px;
-    color: #9ca3af;
+    color: var(--text-light);
     font-size: 14px;
+    transition: color 0.3s ease;
   }
 }
 
 .read-more {
-  color: #3b82f6;
+  color: var(--primary-color);
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
+  transition: color 0.3s ease;
   
   &:hover {
-    color: #2563eb;
+    color: var(--primary-dark);
   }
 }
 
@@ -1550,17 +1566,17 @@ onUnmounted(() => {
 }
 
 .movie-item {
-  background: white;
+  background: var(--bg-card);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 45px var(--shadow-color);
   transition: all 0.3s;
-  border: 1px solid rgba(15, 23, 42, 0.04);
+  border: 1px solid var(--border-color);
   animation: floatUp 0.8s ease var(--card-delay, 0ms) both;
   
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 25px 60px var(--shadow-color);
   }
 }
 
@@ -1606,19 +1622,22 @@ onUnmounted(() => {
   .movie-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--text-primary);
     margin-bottom: 5px;
+    transition: color 0.3s ease;
   }
   
   .movie-genre {
-    color: #6b7280;
+    color: var(--text-secondary);
     font-size: 14px;
     margin-bottom: 5px;
+    transition: color 0.3s ease;
   }
   
   .movie-year {
-    color: #9ca3af;
+    color: var(--text-light);
     font-size: 14px;
+    transition: color 0.3s ease;
   }
 }
 
@@ -1630,6 +1649,12 @@ onUnmounted(() => {
   color: white;
   position: relative;
   overflow: hidden;
+  transition: background 0.3s ease;
+}
+
+:root.dark .stats {
+  background: radial-gradient(circle at 20% 20%, rgba(255, 150, 61, 0.3), transparent 46%),
+              linear-gradient(135deg, #1a0a00 0%, #2d0f00 50%, #1a0a00 100%);
 }
 
 .stats::before {
@@ -1640,6 +1665,12 @@ onUnmounted(() => {
   border-radius: 32px;
   opacity: 0.4;
   animation: glowPulse 6s ease-in-out infinite;
+  transition: border-color 0.3s ease, opacity 0.3s ease;
+}
+
+:root.dark .stats::before {
+  border-color: rgba(255, 186, 73, 0.2);
+  opacity: 0.3;
 }
 
 .stats-grid {
@@ -1655,11 +1686,19 @@ onUnmounted(() => {
     font-weight: 800;
     color: var(--secondary-color);
     margin-bottom: 10px;
+    transition: color 0.3s ease;
   }
   
   .stat-label {
     font-size: 1.1rem;
-    color: #d1d5db;
+    color: rgba(255, 255, 255, 0.9);
+    transition: color 0.3s ease;
+  }
+}
+
+:root.dark .stat-item {
+  .stat-label {
+    color: rgba(255, 255, 255, 0.8);
   }
 }
 

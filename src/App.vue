@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" :class="{ dark: themeStore.isDark }">
     <NavBar />
     <main class="main-content">
       <div class="router-view-wrapper">
@@ -33,9 +33,11 @@ import Notification from './components/Notification.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import GlobalMusic from './components/GlobalMusic.vue'
 import { useUserStore } from './stores/user'
+import { useThemeStore } from './stores/theme'
 import { confirmService, confirmConfig } from './utils/confirm'
 
 const userStore = useUserStore()
+const themeStore = useThemeStore()
 
 // 应用启动时尝试自动登录
 onMounted(async () => {

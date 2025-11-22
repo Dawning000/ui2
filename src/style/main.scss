@@ -19,8 +19,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #1f2937;
-  background-color: #ffffff;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 // 链接样式
@@ -73,16 +74,30 @@ table {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--border-color);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--text-secondary);
+}
+
+:root.dark {
+  ::-webkit-scrollbar-track {
+    background: #1f2937;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+  }
 }
 
 // 橙色与黄色系配色方案
@@ -105,6 +120,28 @@ table {
   --bg-card: #ffffff;            // 白色卡片
   --border-color: #fde68a;       // 浅黄色边框
   --shadow-color: rgba(249, 115, 22, 0.1); // 橙色阴影
+}
+
+// 暗色模式配色方案
+:root.dark {
+  --primary-color: #fb923c;      // 浅橙色（暗色模式下更亮）
+  --primary-light: #fdba74;      // 更浅的橙色
+  --primary-dark: #f97316;       // 标准橙色
+  --secondary-color: #fde047;     // 浅黄色
+  --secondary-light: #fef08a;    // 更浅的黄色
+  --secondary-dark: #fbbf24;     // 标准黄色
+  --accent-color: #fbbf24;       // 琥珀色
+  --success-color: #4ade80;      // 更亮的绿色
+  --warning-color: #facc15;      // 更亮的黄色警告
+  --error-color: #f87171;        // 更亮的红色
+  --text-primary: #f9fafb;       // 浅色文字
+  --text-secondary: #d1d5db;     // 中灰色文字
+  --text-light: #9ca3af;         // 浅灰色文字
+  --bg-primary: #111827;         // 深色背景
+  --bg-secondary: #1f2937;       // 深灰色背景
+  --bg-card: #374151;            // 深灰色卡片
+  --border-color: #4b5563;       // 深灰色边框
+  --shadow-color: rgba(0, 0, 0, 0.3); // 深色阴影
 }
 
 // 选择文本样式

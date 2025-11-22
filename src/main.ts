@@ -8,6 +8,8 @@ import './style/main.scss'
 import Notification from './components/Notification.vue'
 // 导入通知服务并挂载到全局属性
 import notificationService from './utils/notification'
+// 导入主题store并初始化
+import { useThemeStore } from './stores/theme'
 
 const app: VueApp = createApp(App)
 const pinia = createPinia()
@@ -19,5 +21,9 @@ app.config.globalProperties.$notification = notificationService
 
 app.use(pinia)
 app.use(router)
+
+// 初始化主题
+const themeStore = useThemeStore()
+themeStore.loadTheme()
 
 app.mount('#app')

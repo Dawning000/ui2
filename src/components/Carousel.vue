@@ -256,6 +256,7 @@ onUnmounted(() => {
   padding: 40px 0;
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%);
   overflow: hidden;
+  transition: background 0.3s ease;
   
   &::before {
     content: '';
@@ -268,6 +269,18 @@ onUnmounted(() => {
       radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
       radial-gradient(circle at 80% 70%, rgba(249, 115, 22, 0.08) 0%, transparent 50%);
     pointer-events: none;
+    transition: background 0.3s ease;
+  }
+}
+
+// 暗色模式下的背景
+:root.dark .carousel-container {
+  background: linear-gradient(135deg, #4a4538 0%, #5a5548 50%, #4a4538 100%);
+  
+  &::before {
+    background: 
+      radial-gradient(circle at 20% 30%, rgba(251, 191, 36, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(249, 115, 22, 0.08) 0%, transparent 50%);
   }
 }
 

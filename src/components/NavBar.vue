@@ -100,6 +100,11 @@
 
       <!-- 用户区域 -->
       <div class="navbar-user">
+        <!-- 暗色模式切换按钮 -->
+        <button class="theme-toggle-btn" @click="toggleTheme" :title="themeStore.isDark ? '切换到浅色模式' : '切换到暗色模式'">
+          <i :class="themeStore.isDark ? 'icon-sun' : 'icon-moon'"></i>
+        </button>
+        
         <div v-if="!isLoggedIn" class="auth-section">
           <router-link to="/login" class="auth-btn login-btn">
             <i class="icon-user"></i>
@@ -178,11 +183,13 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { useThemeStore } from '../stores/theme'
 import { notificationApi } from '../api/notifications'
 import NotificationPanel from './NotificationPanel.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const themeStore = useThemeStore()
 
 // 常量
 const hotTags = ['剧情', '喜剧', '动作', '爱情', '科幻', '悬疑', '惊悚', '犯罪']
@@ -271,6 +278,10 @@ const handleLogout = () => {
   unreadCount.value = 0
 }
 
+const toggleTheme = () => {
+  themeStore.toggleTheme()
+}
+
 // 监听登录状态变化，登录后获取通知数量
 watch(isLoggedIn, (newValue) => {
   if (newValue) {
@@ -295,11 +306,11 @@ onMounted(() => {
   top: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card) 100%);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid rgba(249, 115, 22, 0.08);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(249, 115, 22, 0.06);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px var(--shadow-color), 0 4px 12px var(--shadow-color);
   z-index: 1000;
   height: 72px;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -332,12 +343,12 @@ onMounted(() => {
   display: block;
   visibility: visible;
   
-  .brand-link {
+    .brand-link {
     display: flex;
     align-items: center;
     gap: 14px;
     text-decoration: none;
-    color: #1f2937;
+    color: var(--text-primary);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 4px;
     border-radius: 14px;
@@ -403,10 +414,10 @@ onMounted(() => {
         font-weight: 700;
         font-size: 21px;
         line-height: 1.2;
-        color: #1f2937;
+        color: var(--text-primary);
         letter-spacing: -0.3px;
         transition: color 0.3s ease;
-        background: linear-gradient(135deg, #1f2937 0%, var(--primary-color) 100%);
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-color) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -414,12 +425,13 @@ onMounted(() => {
       
       .brand-tagline {
         font-size: 11px;
-        color: #9ca3af;
+        color: var(--text-light);
         font-weight: 500;
         letter-spacing: 0.8px;
         text-transform: uppercase;
         margin-top: 1px;
         opacity: 0.8;
+        transition: color 0.3s ease;
       }
     }
   }
@@ -433,17 +445,17 @@ onMounted(() => {
   display: block;
   visibility: visible;
   
-  .search-container {
+    .search-container {
     position: relative;
     display: flex;
     align-items: center;
-    background: #f8fafc;
+    background: var(--bg-secondary);
     border: 2px solid transparent;
     border-radius: 12px;
     transition: all 0.3s ease;
     
     &:focus-within {
-      background: white;
+      background: var(--bg-card);
       border-color: var(--primary-color);
       box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
     }
@@ -454,11 +466,12 @@ onMounted(() => {
       border: none;
       background: transparent;
       font-size: 14px;
-      color: #374151;
+      color: var(--text-primary);
       outline: none;
+      transition: color 0.3s ease;
       
       &::placeholder {
-        color: #9ca3af;
+        color: var(--text-light);
       }
     }
     
@@ -497,7 +510,7 @@ onMounted(() => {
     gap: 8px;
     padding: 12px 18px;
     text-decoration: none;
-    color: #64748b;
+    color: var(--text-secondary);
     border-radius: 12px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 15px;
@@ -596,18 +609,17 @@ onMounted(() => {
     }
   }
   
-  .dropdown-menu {
+    .dropdown-menu {
     position: absolute;
     top: calc(100% + 12px);
     left: 0;
-    background: rgba(255, 255, 255, 0.98);
+    background: var(--bg-card);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(249, 115, 22, 0.12);
+    border: 1px solid var(--border-color);
     border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12),
-                0 8px 24px rgba(249, 115, 22, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    box-shadow: 0 20px 60px var(--shadow-color),
+                0 8px 24px var(--shadow-color);
     min-width: 340px;
     opacity: 0;
     visibility: hidden;
@@ -633,15 +645,16 @@ onMounted(() => {
         margin-bottom: 0;
       }
       
-      .section-title {
+        .section-title {
         font-size: 11px;
         font-weight: 700;
-        color: #94a3b8;
+        color: var(--text-light);
         text-transform: uppercase;
         letter-spacing: 1px;
         margin: 0 0 14px 0;
         padding-bottom: 8px;
-        border-bottom: 1px solid rgba(249, 115, 22, 0.1);
+        border-bottom: 1px solid var(--border-color);
+        transition: color 0.3s ease;
       }
     }
     
@@ -656,10 +669,10 @@ onMounted(() => {
         gap: 12px;
         padding: 14px 16px;
         text-decoration: none;
-        color: #475569;
+        color: var(--text-primary);
         border-radius: 12px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: #f8fafc;
+        background: var(--bg-secondary);
         border: 1px solid transparent;
         font-weight: 500;
         
@@ -690,14 +703,14 @@ onMounted(() => {
       
       .tag-item {
         padding: 8px 16px;
-        background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-        color: #64748b;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
         text-decoration: none;
         border-radius: 24px;
         font-size: 13px;
         font-weight: 500;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid transparent;
+        border: 1px solid var(--border-color);
         
         &:hover {
           background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -726,11 +739,41 @@ onMounted(() => {
   flex-shrink: 0;
   visibility: visible;
   
+  .theme-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-secondary);
+    font-size: 18px;
+    
+    &:hover {
+      background: var(--primary-color);
+      color: white;
+      transform: translateY(-2px) rotate(15deg);
+      box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+    }
+    
+    i {
+      transition: transform 0.3s ease;
+    }
+    
+    &:hover i {
+      transform: scale(1.1);
+    }
+  }
+  
     .auth-section {
     display: flex;
     gap: 12px;
     
-    .auth-btn {
+      .auth-btn {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -742,8 +785,8 @@ onMounted(() => {
       transition: all 0.3s ease;
       
       &.login-btn {
-        color: #6b7280;
-        background: #f8fafc;
+        color: var(--text-secondary);
+        background: var(--bg-secondary);
         
         &:hover {
           color: var(--primary-color);
@@ -776,7 +819,7 @@ onMounted(() => {
         width: 40px;
         height: 40px;
         border: none;
-        background: #f8fafc;
+        background: var(--bg-secondary);
         border-radius: 10px;
         display: flex;
         align-items: center;
@@ -824,8 +867,8 @@ onMounted(() => {
         align-items: center;
         gap: 12px;
         padding: 6px 10px 6px 6px;
-        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-        border: 1px solid rgba(148, 163, 184, 0.15);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
         cursor: pointer;
         border-radius: 14px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -861,7 +904,7 @@ onMounted(() => {
           .username {
             font-size: 14px;
             font-weight: 600;
-            color: #1f2937;
+            color: var(--text-primary);
             line-height: 1.2;
             transition: color 0.3s ease;
           }
@@ -883,7 +926,7 @@ onMounted(() => {
         
         .user-arrow {
           font-size: 12px;
-          color: #94a3b8;
+          color: var(--text-light);
           transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           margin-left: 4px;
           
@@ -897,14 +940,13 @@ onMounted(() => {
         position: absolute;
         top: calc(100% + 12px);
         right: 0;
-        background: rgba(255, 255, 255, 0.98);
+        background: var(--bg-card);
         backdrop-filter: blur(20px) saturate(180%);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(249, 115, 22, 0.12);
+        border: 1px solid var(--border-color);
         border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12),
-                    0 8px 24px rgba(249, 115, 22, 0.08),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        box-shadow: 0 20px 60px var(--shadow-color),
+                    0 8px 24px var(--shadow-color);
         min-width: 300px;
         opacity: 0;
         visibility: hidden;
@@ -979,7 +1021,7 @@ onMounted(() => {
             gap: 14px;
             padding: 14px 24px;
             text-decoration: none;
-            color: #475569;
+            color: var(--text-primary);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: none;
             background: none;
