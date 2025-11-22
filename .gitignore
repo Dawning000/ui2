@@ -13,6 +13,7 @@ pnpm-lock.yaml
 logs/
 *.log
 
+
 # 环境变量文件（敏感信息，绝不提交）
 .env
 .env.local

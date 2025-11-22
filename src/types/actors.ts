@@ -56,6 +56,7 @@ export interface ActorDetail {
   awards?: AwardItem[];
 }
 
+//
 // 奖项保存模型
 export interface ActorAward {
   id: number;
