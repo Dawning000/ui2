@@ -307,6 +307,11 @@ const handleQQLogin = () => {
   align-items: center;
   justify-content: center;
   padding: 20px;
+  
+  // 暗色模式下的背景
+  :root.dark & {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 40%, #1f1f1f 100%);
+  }
 }
 
 .register-container {
@@ -319,6 +324,12 @@ const handleQQLogin = () => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 700px;
+  
+  // 暗色模式下的容器样式
+  :root.dark & {
+    background: var(--bg-card);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  }
 }
 
 .register-form {
@@ -337,11 +348,21 @@ const handleQQLogin = () => {
     font-weight: 700;
     color: #1f2937;
     margin-bottom: 10px;
+    
+    // 暗色模式下的标题颜色
+    :root.dark & {
+      color: var(--text-primary);
+    }
   }
   
   p {
     color: #6b7280;
     font-size: 1rem;
+    
+    // 暗色模式下的副标题颜色
+    :root.dark & {
+      color: var(--text-secondary);
+    }
   }
 }
 
@@ -360,6 +381,11 @@ const handleQQLogin = () => {
     color: #374151;
     margin-bottom: 8px;
     font-size: 14px;
+    
+    // 暗色模式下的标签颜色
+    :root.dark & {
+      color: var(--text-secondary);
+    }
   }
 }
 
@@ -370,6 +396,8 @@ const handleQQLogin = () => {
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.2s;
+  background: white;
+  color: var(--text-primary);
   
   &:focus {
     outline: none;
@@ -382,6 +410,17 @@ const handleQQLogin = () => {
     
     &:focus {
       box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+  }
+  
+  // 暗色模式下的输入框样式
+  :root.dark & {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    
+    &::placeholder {
+      color: var(--text-light);
     }
   }
 }
@@ -402,6 +441,33 @@ const handleQQLogin = () => {
     
     &:hover {
       color: #6b7280;
+    }
+    
+    // 暗色模式下的眼睛图标颜色
+    :root.dark & {
+      color: var(--text-light);
+      
+      &:hover {
+        color: var(--text-secondary);
+      }
+    }
+  }
+  
+  // 暗色模式下增强密码点可见性
+  :root.dark & input[type="password"] {
+    letter-spacing: 2px;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-primary);
+    
+    // 使用更明显的密码点
+    -webkit-text-security: disc;
+    text-security: disc;
+    
+    // 确保密码点在暗色背景下清晰可见
+    &::placeholder {
+      color: var(--text-light);
+      opacity: 0.6;
     }
   }
 }
@@ -433,6 +499,21 @@ const handleQQLogin = () => {
     border-color: var(--secondary-dark);
   }
   
+  // 暗色模式下的兴趣项样式
+  :root.dark & {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    
+    &:hover {
+      border-color: var(--text-light);
+    }
+    
+    &:has(input:checked) {
+      border-color: var(--primary-color);
+      background: rgba(251, 146, 60, 0.15);
+    }
+  }
+  
   input[type="checkbox"] {
     display: none;
   }
@@ -457,6 +538,11 @@ const handleQQLogin = () => {
   font-size: 14px;
   color: #6b7280;
   transition: all 0.2s;
+  
+  // 暗色模式下的标签颜色
+  :root.dark & {
+    color: var(--text-secondary);
+  }
 }
 
 .form-options {
@@ -470,6 +556,11 @@ const handleQQLogin = () => {
   font-size: 14px;
   color: #6b7280;
   line-height: 1.5;
+  
+  // 暗色模式下的文字颜色
+  :root.dark & {
+    color: var(--text-secondary);
+  }
   
   input[type="checkbox"] {
     display: none;
@@ -485,6 +576,11 @@ const handleQQLogin = () => {
     position: relative;
     transition: all 0.2s;
     flex-shrink: 0;
+    
+    // 暗色模式下的复选框边框
+    :root.dark & {
+      border-color: var(--border-color);
+    }
     
     &::after {
       content: '';
@@ -571,6 +667,11 @@ const handleQQLogin = () => {
     color: #6b7280;
     font-size: 14px;
     margin: 0;
+    
+    // 暗色模式下的文字颜色
+    :root.dark & {
+      color: var(--text-secondary);
+    }
   }
   
   .link {
@@ -580,6 +681,15 @@ const handleQQLogin = () => {
     
     &:hover {
       color: #2563eb;
+    }
+    
+    // 暗色模式下的链接颜色
+    :root.dark & {
+      color: var(--primary-light);
+      
+      &:hover {
+        color: var(--primary-color);
+      }
     }
   }
 }
@@ -597,6 +707,11 @@ const handleQQLogin = () => {
     right: 0;
     height: 1px;
     background: var(--secondary-light);
+    
+    // 暗色模式下的分割线颜色
+    :root.dark & {
+      background: var(--border-color);
+    }
   }
   
   span {
@@ -604,6 +719,12 @@ const handleQQLogin = () => {
     padding: 0 20px;
     color: #9ca3af;
     font-size: 14px;
+    
+    // 暗色模式下的文字和背景
+    :root.dark & {
+      background: var(--bg-card);
+      color: var(--text-light);
+    }
   }
 }
 
@@ -632,12 +753,31 @@ const handleQQLogin = () => {
     transform: translateY(-1px);
   }
   
+  // 暗色模式下的社交按钮样式
+  :root.dark & {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    
+    &:hover {
+      border-color: var(--text-light);
+      background: var(--bg-primary);
+    }
+  }
+  
   &.wechat {
     color: #1aad19;
     
     &:hover {
       border-color: #1aad19;
       background: #f0f9f0;
+    }
+    
+    // 暗色模式下的微信按钮
+    :root.dark & {
+      &:hover {
+        background: rgba(26, 173, 25, 0.1);
+        border-color: #1aad19;
+      }
     }
   }
   
@@ -647,6 +787,14 @@ const handleQQLogin = () => {
     &:hover {
       border-color: #12b7f5;
       background: #f0f9ff;
+    }
+    
+    // 暗色模式下的QQ按钮
+    :root.dark & {
+      &:hover {
+        background: rgba(18, 183, 245, 0.1);
+        border-color: #12b7f5;
+      }
     }
   }
 }
@@ -658,6 +806,12 @@ const handleQQLogin = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  // 暗色模式下的右侧区域背景
+  :root.dark & {
+    background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 50%, #2d2d2d 100%);
+    border-left: 1px solid var(--border-color);
+  }
 }
 
 .image-content {
