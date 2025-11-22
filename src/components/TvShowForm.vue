@@ -657,7 +657,7 @@ function handleCancel() {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .movie-form-overlay {
   position: fixed;
   top: 0;
@@ -1031,6 +1031,139 @@ function handleCancel() {
   .award-fields,
   .season-fields {
     grid-template-columns: 1fr;
+  }
+}
+
+// 暗色模式支持
+:root.dark {
+  .movie-form-modal {
+    background: var(--bg-card);
+    color: var(--text-primary);
+  }
+
+  .modal-header {
+    background: var(--bg-card);
+    border-bottom-color: var(--border-color);
+    
+    h2 {
+      color: var(--text-primary);
+    }
+  }
+
+  .close-btn {
+    color: var(--text-secondary);
+    
+    &:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+  }
+
+  .form-group {
+    label {
+      color: var(--text-primary);
+    }
+  }
+
+  .form-group input[type="text"],
+  .form-group input[type="number"],
+  .form-group select,
+  .form-group textarea {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    
+    &:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+    }
+  }
+
+  .tag {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .tag-remove {
+    color: var(--text-secondary);
+    
+    &:hover {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+  }
+
+  .add-tag-btn {
+    background: var(--primary-color);
+    
+    &:hover {
+      background: var(--primary-dark);
+    }
+  }
+
+  .actors-list,
+  .selected-list {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+
+  .actor-item,
+  .selected-item,
+  .award-item,
+  .season-item,
+  .photo-item {
+    background: var(--bg-secondary);
+  }
+
+  .actor-name,
+  .selected-item {
+    color: var(--text-primary);
+  }
+
+  .item-remove {
+    color: var(--text-secondary);
+    
+    &:hover {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+  }
+
+  .actor-field label,
+  .award-field label,
+  .season-field label {
+    color: var(--text-secondary);
+  }
+
+  .actor-input,
+  .award-input,
+  .season-input,
+  .award-select {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+  }
+
+  .form-actions {
+    border-top-color: var(--border-color);
+  }
+
+  .cancel-btn {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    
+    &:hover {
+      background: var(--bg-primary);
+    }
+  }
+
+  .submit-btn {
+    background: var(--primary-color);
+    
+    &:hover:not(:disabled) {
+      background: var(--primary-dark);
+    }
   }
 }
 </style>

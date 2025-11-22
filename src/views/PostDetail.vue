@@ -1017,25 +1017,7 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-// 主题色变量
-$primary-color: #f97316;
-$primary-dark: #ea580c;
-$primary-light: #fb923c;
-$secondary-color: #fbbf24;
-$success-color: #22c55e;
-$danger-color: #ef4444;
-$warning-color: #f59e0b;
-$text-primary: #1f2937;
-$text-secondary: #6b7280;
-$text-tertiary: #9ca3af;
-$bg-primary: #ffffff;
-$bg-secondary: #f9fafb;
-$bg-tertiary: #f3f4f6;
-$border-color: #e5e7eb;
-$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+// 使用 CSS 变量支持暗色模式
 
 // 模态框样式
 .modal-overlay {
@@ -1055,15 +1037,16 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 }
 
 .modal-content {
-  background: $bg-primary;
+  background: var(--bg-card);
   border-radius: 16px;
   width: 100%;
   max-width: 650px;
   max-height: 90vh;
   overflow-y: auto;
   animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: $shadow-xl;
-  border: 1px solid $border-color;
+  box-shadow: var(--shadow-color);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .modal-header {
@@ -1071,37 +1054,39 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   justify-content: space-between;
   align-items: center;
   padding: 24px 28px;
-  border-bottom: 1px solid $border-color;
-  background: linear-gradient(135deg, $bg-secondary 0%, $bg-primary 100%);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-card);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
   
   h3 {
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
-    color: $text-primary;
-    background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
+    color: var(--text-primary);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    transition: color 0.3s ease;
   }
   
   .close-btn {
     width: 36px;
     height: 36px;
     border: none;
-    background: $bg-tertiary;
+    background: var(--bg-secondary);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
-    color: $text-secondary;
+    color: var(--text-secondary);
     
     &:hover {
-      background: $border-color;
+      background: var(--border-color);
       transform: rotate(90deg);
-      color: $text-primary;
+      color: var(--text-primary);
     }
   }
 }
@@ -1117,9 +1102,10 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   label {
     display: block;
     font-weight: 600;
-    color: $text-primary;
+    color: var(--text-primary);
     margin-bottom: 10px;
     font-size: 14px;
+    transition: color 0.3s ease;
   }
 }
 
@@ -1128,22 +1114,22 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 .form-textarea {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid $border-color;
+  border: 2px solid var(--border-color);
   border-radius: 10px;
   font-size: 14px;
   transition: all 0.2s;
-  background: $bg-primary;
-  color: $text-primary;
+  background: var(--bg-card);
+  color: var(--text-primary);
   
   &:focus {
     outline: none;
-    border-color: $primary-color;
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
     transform: translateY(-1px);
   }
   
   &::placeholder {
-    color: $text-tertiary;
+    color: var(--text-light);
   }
 }
 
@@ -1160,7 +1146,8 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   gap: 12px;
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 1px solid $border-color;
+  border-top: 1px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 // 动画效果
@@ -1186,9 +1173,10 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 
 .post-detail {
   min-height: 100vh;
-  background: linear-gradient(135deg, #fef3e7 0%, #f9fafb 50%, #f3f4f6 100%);
+  background: var(--bg-primary);
   padding: 60px 0 80px;
   position: relative;
+  transition: background-color 0.3s ease;
   
   &::before {
     content: '';
@@ -1199,6 +1187,7 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
     height: 200px;
     background: linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, rgba(251, 191, 36, 0.03) 100%);
     pointer-events: none;
+    opacity: 0.5;
   }
 }
 
@@ -1213,13 +1202,14 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 .loading {
   text-align: center;
   padding: 100px 20px;
-  color: $text-secondary;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
   
   .loading-spinner {
     width: 50px;
     height: 50px;
-    border: 4px solid $bg-tertiary;
-    border-top: 4px solid $primary-color;
+    border: 4px solid var(--border-color);
+    border-top: 4px solid var(--primary-color);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     margin: 0 auto 24px;
@@ -1238,16 +1228,17 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 }
 
 .post-content {
-  background: $bg-primary;
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 48px;
   margin-bottom: 32px;
-  box-shadow: $shadow-lg;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-color);
+  border: 1px solid var(--border-color);
   backdrop-filter: blur(10px);
   animation: slideUp 0.5s ease-out;
   position: relative;
   overflow: hidden;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   
   &::before {
     content: '';
@@ -1256,7 +1247,7 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, $primary-color 0%, $secondary-color 100%);
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   }
 }
 
@@ -1277,7 +1268,8 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   align-items: flex-start;
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 2px solid $bg-tertiary;
+  border-bottom: 2px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 .post-meta {
@@ -1291,14 +1283,14 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   height: 56px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid $bg-tertiary;
-  box-shadow: $shadow-sm;
+  border: 3px solid var(--border-color);
+  box-shadow: var(--shadow-color);
   transition: all 0.3s ease;
   
   &:hover {
     transform: scale(1.05);
-    box-shadow: $shadow-md;
-    border-color: $primary-light;
+    box-shadow: var(--shadow-color);
+    border-color: var(--primary-light);
   }
 }
 
@@ -1309,23 +1301,24 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   
   .author-name {
     font-weight: 700;
-    color: $text-primary;
+    color: var(--text-primary);
     text-decoration: none;
     font-size: 17px;
     transition: all 0.2s;
     
     &:hover {
-      color: $primary-color;
+      color: var(--primary-color);
       transform: translateX(2px);
     }
   }
   
   .post-time {
-    color: $text-tertiary;
+    color: var(--text-light);
     font-size: 13px;
     display: flex;
     align-items: center;
     gap: 6px;
+    transition: color 0.3s ease;
     
     &::before {
       content: '🕐';
@@ -1345,21 +1338,21 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   align-items: center;
   gap: 6px;
   padding: 10px 18px;
-  border: 2px solid $border-color;
-  background: $bg-primary;
+  border: 2px solid var(--border-color);
+  background: var(--bg-card);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 14px;
   font-weight: 500;
-  color: $text-secondary;
+  color: var(--text-secondary);
   
   &:hover {
-    background: $bg-tertiary;
-    border-color: $primary-light;
-    color: $primary-color;
+    background: var(--bg-secondary);
+    border-color: var(--primary-light);
+    color: var(--primary-color);
     transform: translateY(-2px);
-    box-shadow: $shadow-md;
+    box-shadow: var(--shadow-color);
   }
   
   &:active {
@@ -1371,13 +1364,13 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   }
   
   &.delete-btn {
-    color: $danger-color;
+    color: var(--error-color);
     border-color: rgba(239, 68, 68, 0.2);
     
     &:hover {
       background: rgba(239, 68, 68, 0.1);
-      border-color: $danger-color;
-      color: $danger-color;
+      border-color: var(--error-color);
+      color: var(--error-color);
     }
   }
 }
@@ -1389,14 +1382,15 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 .post-title {
   font-size: 2.5rem;
   font-weight: 800;
-  color: $text-primary;
+  color: var(--text-primary);
   margin-bottom: 24px;
   line-height: 1.2;
   letter-spacing: -0.5px;
-  background: linear-gradient(135deg, $text-primary 0%, $primary-color 100%);
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-color) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  transition: color 0.3s ease;
 }
 
 .post-tags {
@@ -1409,21 +1403,21 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
     display: inline-flex;
     align-items: center;
     padding: 8px 16px;
-    background: linear-gradient(135deg, $bg-tertiary 0%, $bg-secondary 100%);
-    color: $text-secondary;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
     border-radius: 20px;
     font-size: 13px;
     font-weight: 500;
-    border: 1px solid $border-color;
+    border: 1px solid var(--border-color);
     transition: all 0.2s;
     cursor: pointer;
     
     &:hover {
-      background: linear-gradient(135deg, $primary-light 0%, $primary-color 100%);
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
       color: white;
-      border-color: $primary-color;
+      border-color: var(--primary-color);
       transform: translateY(-2px);
-      box-shadow: $shadow-md;
+      box-shadow: var(--shadow-color);
     }
   }
 }
@@ -1431,8 +1425,9 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 .post-text {
   font-size: 17px;
   line-height: 1.9;
-  color: $text-primary;
+  color: var(--text-primary);
   word-break: break-word;
+  transition: color 0.3s ease;
   
   :deep(br) {
     margin-bottom: 12px;
@@ -1443,13 +1438,13 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   }
   
   :deep(a) {
-    color: $primary-color;
+    color: var(--primary-color);
     text-decoration: none;
     border-bottom: 1px solid transparent;
     transition: all 0.2s;
     
     &:hover {
-      border-bottom-color: $primary-color;
+      border-bottom-color: var(--primary-color);
     }
   }
 }
@@ -1459,30 +1454,31 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   gap: 40px;
   margin-bottom: 32px;
   padding: 24px 0;
-  border-top: 2px solid $bg-tertiary;
-  border-bottom: 2px solid $bg-tertiary;
+  border-top: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 .stat-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: $text-secondary;
+  color: var(--text-secondary);
   font-size: 15px;
   font-weight: 500;
   padding: 8px 16px;
   border-radius: 10px;
-  background: $bg-secondary;
+  background: var(--bg-secondary);
   transition: all 0.2s;
   
   &:hover {
-    background: $bg-tertiary;
-    color: $primary-color;
+    background: var(--bg-primary);
+    color: var(--primary-color);
     transform: translateY(-2px);
   }
   
   i {
-    color: $primary-color;
+    color: var(--primary-color);
     font-size: 18px;
   }
 }
@@ -1493,8 +1489,9 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   justify-content: center;
   padding: 28px 0;
   margin: 32px 0;
-  background: linear-gradient(135deg, $bg-secondary 0%, $bg-tertiary 100%);
+  background: var(--bg-secondary);
   border-radius: 16px;
+  transition: background-color 0.3s ease;
 }
 
 .vote-btn {
@@ -1502,21 +1499,21 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   align-items: center;
   gap: 10px;
   padding: 14px 28px;
-  border: 2px solid $border-color;
-  background: $bg-primary;
+  border: 2px solid var(--border-color);
+  background: var(--bg-card);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 15px;
   font-weight: 600;
-  color: $text-secondary;
-  box-shadow: $shadow-sm;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-color);
   
   &:hover {
-    background: $bg-tertiary;
-    border-color: $primary-light;
+    background: var(--bg-secondary);
+    border-color: var(--primary-light);
     transform: translateY(-3px);
-    box-shadow: $shadow-md;
+    box-shadow: var(--shadow-color);
   }
   
   &:active {
@@ -1524,9 +1521,9 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   }
   
   &.active {
-    background: linear-gradient(135deg, $success-color 0%, #16a34a 100%);
+    background: linear-gradient(135deg, var(--success-color) 0%, #16a34a 100%);
     color: white;
-    border-color: $success-color;
+    border-color: var(--success-color);
     box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
     
     &:hover {
@@ -1543,12 +1540,13 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 
 // 评论区
 .comments-section {
-  background: $bg-primary;
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 40px;
-  box-shadow: $shadow-lg;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-color);
+  border: 1px solid var(--border-color);
   animation: slideUp 0.5s ease-out 0.1s both;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .comments-header {
@@ -1557,16 +1555,17 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   align-items: center;
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 2px solid $bg-tertiary;
+  border-bottom: 2px solid var(--border-color);
   
   h3 {
     margin: 0;
     font-size: 1.75rem;
     font-weight: 700;
-    color: $text-primary;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 12px;
+    transition: color 0.3s ease;
     
     &::before {
       content: '💬';
@@ -1578,13 +1577,13 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 .comment-form {
   margin-bottom: 32px;
   padding: 24px;
-  background: linear-gradient(135deg, $bg-secondary 0%, $bg-tertiary 100%);
+  background: var(--bg-secondary);
   border-radius: 16px;
-  border: 2px solid $border-color;
+  border: 2px solid var(--border-color);
   transition: all 0.3s;
   
   &:focus-within {
-    border-color: $primary-color;
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
   }
 }
@@ -1592,24 +1591,24 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 .comment-textarea {
   width: 100%;
   padding: 16px;
-  border: 2px solid $border-color;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 15px;
   resize: vertical;
-  background: $bg-primary;
-  color: $text-primary;
+  background: var(--bg-card);
+  color: var(--text-primary);
   transition: all 0.2s;
   font-family: inherit;
   line-height: 1.6;
   
   &:focus {
     outline: none;
-    border-color: $primary-color;
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
   }
   
   &::placeholder {
-    color: $text-tertiary;
+    color: var(--text-light);
   }
 }
 
@@ -1617,12 +1616,12 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   margin-top: 32px;
   
   .comment-item {
-    background: $bg-primary;
+    background: var(--bg-card);
     border-radius: 16px;
     padding: 24px;
     margin-bottom: 20px;
-    box-shadow: $shadow-sm;
-    border: 2px solid $bg-tertiary;
+    box-shadow: var(--shadow-color);
+    border: 2px solid var(--border-color);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -1634,14 +1633,14 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
       top: 0;
       bottom: 0;
       width: 4px;
-      background: linear-gradient(180deg, $primary-color 0%, $secondary-color 100%);
+      background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
       opacity: 0;
       transition: opacity 0.3s;
     }
 
     &:hover {
-      box-shadow: $shadow-md;
-      border-color: $primary-light;
+      box-shadow: var(--shadow-color);
+      border-color: var(--primary-light);
       transform: translateX(4px);
       
       &::before {
@@ -1650,14 +1649,14 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
     }
 
     &.comment-highlight {
-      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-      border: 2px solid $warning-color;
-      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2), $shadow-lg;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+      border: 2px solid var(--warning-color);
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2), var(--shadow-color);
       animation: highlightPulse 0.6s ease-out;
       
       &::before {
         opacity: 1;
-        background: $warning-color;
+        background: var(--warning-color);
       }
     }
   }
@@ -1679,19 +1678,21 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 .reply-form {
   margin-top: 20px;
   padding: 20px;
-  background: linear-gradient(135deg, $bg-secondary 0%, $bg-tertiary 100%);
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border-left: 4px solid $primary-color;
-  box-shadow: $shadow-sm;
+  border-left: 4px solid var(--primary-color);
+  box-shadow: var(--shadow-color);
+  transition: background-color 0.3s ease;
 }
 
 /* 回复列表样式 */
 .replies-list {
   margin-top: 20px;
   margin-left: 60px;
-  border-left: 3px solid $border-color;
+  border-left: 3px solid var(--border-color);
   padding-left: 24px;
   position: relative;
+  transition: border-color 0.3s ease;
   
   &::before {
     content: '';
@@ -1700,29 +1701,29 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
     top: 0;
     bottom: 0;
     width: 3px;
-    background: linear-gradient(180deg, $primary-light 0%, $primary-color 100%);
+    background: linear-gradient(180deg, var(--primary-light) 0%, var(--primary-color) 100%);
     border-radius: 0 3px 3px 0;
   }
 }
 
 .reply-item {
-  background: $bg-secondary;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 18px;
   margin-bottom: 16px;
   transition: all 0.3s ease;
-  border: 1px solid $border-color;
+  border: 1px solid var(--border-color);
   position: relative;
 
   &:hover {
-    background: $bg-tertiary;
-    box-shadow: $shadow-sm;
+    background: var(--bg-primary);
+    box-shadow: var(--shadow-color);
     transform: translateX(4px);
   }
 
   &.comment-highlight {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    border: 2px solid $warning-color;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+    border: 2px solid var(--warning-color);
     box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
     animation: highlightPulse 0.6s ease-out;
   }
@@ -1746,14 +1747,14 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   height: 44px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid $bg-tertiary;
-  box-shadow: $shadow-sm;
+  border: 2px solid var(--border-color);
+  box-shadow: var(--shadow-color);
   flex-shrink: 0;
   transition: all 0.2s;
   
   &:hover {
     transform: scale(1.1);
-    border-color: $primary-light;
+    border-color: var(--primary-light);
   }
 }
 
@@ -1765,16 +1766,18 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   
   .comment-author {
     font-weight: 700;
-    color: $text-primary;
+    color: var(--text-primary);
     font-size: 15px;
+    transition: color 0.3s ease;
   }
   
   .comment-time {
-    color: $text-tertiary;
+    color: var(--text-light);
     font-size: 12px;
     display: flex;
     align-items: center;
     gap: 6px;
+    transition: color 0.3s ease;
   }
 }
 
@@ -1787,17 +1790,19 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 .comment-content {
   margin-bottom: 16px;
   line-height: 1.7;
-  color: $text-primary;
+  color: var(--text-primary);
   font-size: 15px;
   word-break: break-word;
+  transition: color 0.3s ease;
 }
 
 .comment-edit-form {
   margin-top: 16px;
   padding: 20px;
-  background: $bg-secondary;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 2px solid $border-color;
+  border: 2px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 // 按钮样式
@@ -1816,14 +1821,14 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   font-size: 14px;
   
   &.btn-primary {
-    background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     color: white;
-    box-shadow: $shadow-md;
+    box-shadow: var(--shadow-color);
     
     &:hover:not(:disabled) {
-      background: linear-gradient(135deg, $primary-dark 0%, #c2410c 100%);
+      background: linear-gradient(135deg, var(--primary-dark) 0%, #c2410c 100%);
       transform: translateY(-2px);
-      box-shadow: $shadow-lg;
+      box-shadow: var(--shadow-color);
     }
     
     &:active:not(:disabled) {
@@ -1839,13 +1844,14 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   
   &.btn-outline {
     background: transparent;
-    color: $text-secondary;
-    border-color: $border-color;
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+    transition: all 0.3s ease;
     
     &:hover {
-      background: $bg-tertiary;
-      color: $text-primary;
-      border-color: $primary-light;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-color: var(--primary-light);
     }
   }
 }

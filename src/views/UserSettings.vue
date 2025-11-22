@@ -581,6 +581,8 @@ const handleChangePassword = async () => {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  background: var(--bg-primary);
+  transition: background-color 0.3s ease;
 }
 
 .settings-header {
@@ -590,27 +592,31 @@ const handleChangePassword = async () => {
 
 .settings-header h1 {
   font-size: 2em;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 10px;
+  transition: color 0.3s ease;
 }
 
 .settings-header p {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 1.1em;
+  transition: color 0.3s ease;
 }
 
 .settings-container {
   display: flex;
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-color);
   overflow: hidden;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .settings-tabs {
   width: 200px;
-  background: #f8f9fa;
-  border-right: 1px solid #e9ecef;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .tab-item {
@@ -618,16 +624,17 @@ const handleChangePassword = async () => {
   align-items: center;
   padding: 16px 20px;
   cursor: pointer;
-  transition: background-color 0.3s;
-  color: #606266;
+  transition: all 0.3s ease;
+  color: var(--text-secondary);
 }
 
 .tab-item:hover {
-  background: #e6f7ff;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .tab-item.active {
-  background: #409eff;
+  background: var(--primary-color);
   color: white;
 }
 
@@ -641,14 +648,17 @@ const handleChangePassword = async () => {
   padding: 30px;
   width: 500px;
   height: 1000px;
+  background: var(--bg-card);
+  transition: background-color 0.3s ease;
 }
 
 .settings-content h2 {
   margin-bottom: 20px;
-  color: #303133;
+  color: var(--text-primary);
   font-size: 1.5em;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--border-color);
   padding-bottom: 10px;
+  transition: color 0.3s ease, border-color 0.3s ease;
 }
 
 .profile-form-container,
@@ -663,8 +673,9 @@ const handleChangePassword = async () => {
 
 .profile-form-wrapper {
   padding: 20px;
-  background: #fafafa;
+  background: var(--bg-secondary);
   border-radius: 8px;
+  transition: background-color 0.3s ease;
 }
 
 .form-row {
@@ -685,11 +696,12 @@ const handleChangePassword = async () => {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .required {
-  color: #ff4d4f;
+  color: var(--error-color);
   margin-left: 4px;
 }
 
@@ -697,22 +709,24 @@ const handleChangePassword = async () => {
 .form-textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
-  transition: border-color 0.2s ease;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
 }
 
 .form-input:focus,
 .form-textarea:focus {
-  border-color: #40a9ff;
+  border-color: var(--primary-color);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
 }
 
 .form-input:disabled {
-  background: #f5f5f5;
-  color: #bfbfbf;
+  background: var(--bg-secondary);
+  color: var(--text-light);
   cursor: not-allowed;
 }
 
@@ -723,8 +737,9 @@ const handleChangePassword = async () => {
 
 .form-hint {
   margin-top: 5px;
-  color: #999;
+  color: var(--text-light);
   font-size: 12px;
+  transition: color 0.3s ease;
 }
 
 .form-actions {
@@ -744,7 +759,8 @@ const handleChangePassword = async () => {
   display: block;
   margin-bottom: 15px;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .avatar-container {
@@ -758,25 +774,25 @@ const handleChangePassword = async () => {
   height: 100px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 3px solid var(--bg-card);
+  box-shadow: 0 2px 4px var(--shadow-color);
   transition: all 0.3s ease;
 }
 
 .user-avatar:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px var(--shadow-color);
 }
 
 .avatar-upload-hint {
   margin-top: 10px;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   transition: color 0.2s ease;
 }
 
 .avatar-container:hover .avatar-upload-hint {
-  color: #1890ff;
+  color: var(--primary-color);
 }
 
 /* 按钮样式 */
@@ -792,28 +808,31 @@ const handleChangePassword = async () => {
 }
 
 .btn-primary {
-  background: #1890ff;
+  background: var(--primary-color);
   color: white;
+  transition: background-color 0.3s ease;
 }
 
 .btn-primary:hover {
-  background: #40a9ff;
+  background: var(--primary-dark);
 }
 
 .btn-primary:disabled {
-  background: #d9d9d9;
+  background: var(--text-light);
   cursor: not-allowed;
 }
 
 .btn-secondary {
-  background: #fff;
-  border: 1px solid #d9d9d9;
-  color: #666;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
 }
 
 .btn-secondary:hover {
-  border-color: #40a9ff;
-  color: #40a9ff;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: var(--bg-secondary);
 }
 
 /* 模态框样式 */
@@ -831,12 +850,13 @@ const handleChangePassword = async () => {
 }
 
 .modal-container {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
+  transition: background-color 0.3s ease;
 }
 
 .modal-header {
@@ -844,20 +864,22 @@ const handleChangePassword = async () => {
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 .modal-title {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .close-btn {
   background: none;
   border: none;
   font-size: 24px;
-  color: #999;
+  color: var(--text-light);
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -870,8 +892,8 @@ const handleChangePassword = async () => {
 }
 
 .close-btn:hover {
-  background: #f5f5f5;
-  color: #333;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .modal-body {
@@ -883,7 +905,8 @@ const handleChangePassword = async () => {
   justify-content: flex-end;
   gap: 10px;
   padding: 16px 24px;
-  border-top: 1px solid #e8e8e8;
+  border-top: 1px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 /* 头像上传模态框样式 */
@@ -897,7 +920,8 @@ const handleChangePassword = async () => {
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 20px;
-  border: 3px solid #f0f0f0;
+  border: 3px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 .uploader-container {
@@ -917,9 +941,10 @@ const handleChangePassword = async () => {
 }
 
 .form-description {
-  color: #606266;
+  color: var(--text-secondary);
   margin-bottom: 20px;
   font-size: 14px;
+  transition: color 0.3s ease;
 }
 
 .password-form .form-group {
@@ -930,29 +955,32 @@ const handleChangePassword = async () => {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #303133;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .password-form .form-input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #dcdfe6;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 14px;
-  transition: border-color 0.3s;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
 }
 
 .password-form .form-input:focus {
   outline: none;
-  border-color: #409eff;
+  border-color: var(--primary-color);
 }
 
 .password-form .form-input.error {
-  border-color: #f56c6c;
+  border-color: var(--error-color);
 }
 
 .error-message {
-  color: #f56c6c;
+  color: var(--error-color);
   font-size: 12px;
   margin-top: 4px;
   display: block;
@@ -960,8 +988,9 @@ const handleChangePassword = async () => {
 
 .password-hint {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-light);
   margin-top: 5px;
+  transition: color 0.3s ease;
 }
 
 .form-actions {
@@ -984,16 +1013,17 @@ const handleChangePassword = async () => {
 }
 
 .btn-primary {
-  background-color: #409eff;
+  background-color: var(--primary-color);
   color: white;
+  transition: background-color 0.3s ease;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #66b1ff;
+  background-color: var(--primary-dark);
 }
 
 .btn-primary:disabled {
-  background-color: #c0c4cc;
+  background-color: var(--text-light);
   cursor: not-allowed;
 }
 
@@ -1031,8 +1061,9 @@ const handleChangePassword = async () => {
     overflow-x: auto;
     white-space: nowrap;
     border-right: none;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--border-color);
     flex-direction: column;
+    transition: border-color 0.3s ease;
   }
   
   .tab-item {

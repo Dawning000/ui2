@@ -345,17 +345,19 @@ onMounted(load)
   width: 100%;
   max-width: 1600px;
   margin: 80px auto 40px;
-  background: linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%);
+  background: var(--bg-primary);
   min-height: calc(100vh - 80px);
+  transition: background-color 0.3s ease;
 }
 .header { 
   margin-bottom: 40px; 
   padding: 0;
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 6px var(--shadow-color);
+  border: 1px solid var(--border-color);
   overflow: hidden;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .header-content {
   display: flex;
@@ -363,7 +365,8 @@ onMounted(load)
 }
 .name-section {
   padding: 24px 32px 20px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 .name-row {
   display: flex;
@@ -374,10 +377,11 @@ onMounted(load)
 .actor-name {
   font-size: 32px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
   margin: 0;
   line-height: 1.3;
   flex: 1;
+  transition: color 0.3s ease;
 }
 .header-body {
   display: flex;
@@ -391,8 +395,9 @@ onMounted(load)
   height: 280px;
   border-radius: 12px;
   overflow: hidden;
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 12px var(--shadow-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 .avatar { 
   width: 100%;
@@ -420,16 +425,18 @@ onMounted(load)
   line-height: 1.6;
 }
 .info-label {
-  color: #f97316;
+  color: var(--primary-color);
   font-weight: 500;
   min-width: 60px;
+  transition: color 0.3s ease;
 }
 .info-value {
-  color: #111827;
+  color: var(--text-primary);
   font-weight: 400;
+  transition: color 0.3s ease;
 }
 .delete-btn {
-  background-color: #ef4444;
+  background-color: var(--error-color);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -447,7 +454,7 @@ onMounted(load)
 .edit-link-btn {
   background: none;
   border: none;
-  color: #9ca3af;
+  color: var(--text-light);
   font-size: 14px;
   cursor: pointer;
   padding: 0;
@@ -463,45 +470,50 @@ onMounted(load)
 .bio-section {
   margin-bottom: 40px;
   padding: 32px;
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 6px var(--shadow-color);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .bio-title {
   font-size: 24px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
   margin: 0 0 16px 0;
   padding-bottom: 12px;
   border-bottom: 2px solid var(--primary-color);
+  transition: color 0.3s ease;
 }
 .bio {
-  color: #374151;
+  color: var(--text-secondary);
   line-height: 1.8;
   font-size: 15px;
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  transition: color 0.3s ease;
 }
 .section { 
   margin-top: 40px;
   padding: 32px;
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 6px var(--shadow-color);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .section h2 { 
   font-size: 28px; 
   font-weight: 700; 
-  color: #111827; 
+  color: var(--text-primary); 
   margin-bottom: 24px; 
   padding-bottom: 12px; 
   border-bottom: 3px solid var(--primary-color);
   display: flex;
   align-items: center;
   gap: 12px;
+  transition: color 0.3s ease;
 }
 .cards { 
   display: grid; 
@@ -517,8 +529,8 @@ onMounted(load)
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 12px;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
 }
 .card:hover { 
   transform: translateY(-6px);
@@ -530,24 +542,26 @@ onMounted(load)
   height: 240px; 
   object-fit: cover; 
   border-radius: 12px 12px 0 0;
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  transition: transform 0.3s ease;
+  background: var(--bg-secondary);
+  transition: transform 0.3s ease, background-color 0.3s ease;
 }
 .card:hover img {
   transform: scale(1.05);
 }
 .title { 
   font-weight: 600; 
-  color: #111827; 
+  color: var(--text-primary); 
   font-size: 15px; 
   line-height: 1.5;
   padding: 0 12px;
   margin-top: 8px;
+  transition: color 0.3s ease;
 }
 .sub { 
   font-size: 13px; 
-  color: #6b7280;
+  color: var(--text-secondary);
   padding: 0 12px 12px;
+  transition: color 0.3s ease;
 }
 .awards { 
   padding-left: 24px; 
@@ -557,10 +571,10 @@ onMounted(load)
   gap: 12px;
 }
 .awards li { 
-  color: #374151; 
+  color: var(--text-secondary); 
   line-height: 1.8; 
   padding: 12px 16px;
-  background: #f9fafb;
+  background: var(--bg-secondary);
   border-radius: 10px;
   border-left: 4px solid var(--primary-color);
   transition: all 0.2s;
@@ -581,22 +595,23 @@ onMounted(load)
 .loading, .error { 
   text-align: center; 
   padding: 60px 40px; 
-  color: #6b7280; 
+  color: var(--text-secondary); 
   font-size: 16px;
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px var(--shadow-color);
+  transition: all 0.3s ease;
 }
 .error { 
-  color: #ef4444;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  color: var(--error-color);
+  background: var(--bg-card);
+  border: 1px solid var(--error-color);
 }
 .save-error { 
   position: fixed; 
   top: 80px; 
   right: 24px; 
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--error-color) 0%, #dc2626 100%);
   color: white; 
   padding: 16px 20px; 
   border-radius: 12px; 
@@ -607,6 +622,7 @@ onMounted(load)
   z-index: 2000; 
   max-width: 400px;
   animation: slideInRight 0.3s ease;
+  transition: background 0.3s ease;
 }
 .close-error-btn { 
   background: none; 
@@ -655,25 +671,28 @@ onMounted(load)
 }
 
 .confirm-dialog {
-  background: white;
+  background: var(--bg-card);
   border-radius: 16px;
   width: 90%;
   max-width: 480px;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 48px var(--shadow-color);
   overflow: hidden;
   animation: dialogSlideIn 0.3s ease-out;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .confirm-dialog-header {
   padding: 20px 24px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 .confirm-dialog-header h3 {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .confirm-dialog-content {
@@ -687,15 +706,17 @@ onMounted(load)
   display: flex;
   justify-content: center;
   font-size: 48px;
-  color: #f59e0b;
+  color: var(--warning-color);
+  transition: color 0.3s ease;
 }
 
 .confirm-dialog-content p {
   margin: 0;
   text-align: center;
-  color: #374151;
+  color: var(--text-secondary);
   line-height: 1.6;
   font-size: 15px;
+  transition: color 0.3s ease;
 }
 
 .confirm-dialog-footer {
@@ -703,7 +724,8 @@ onMounted(load)
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 .confirm-dialog-cancel,
@@ -718,24 +740,26 @@ onMounted(load)
 }
 
 .confirm-dialog-cancel {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
 }
 
 .confirm-dialog-cancel:hover {
-  background: #e5e7eb;
+  background: var(--border-color);
   transform: translateY(-1px);
 }
 
 .confirm-dialog-confirm {
-  background: #ef4444;
+  background: var(--error-color);
   color: white;
+  transition: background-color 0.3s ease;
 }
 
 .confirm-dialog-confirm:hover {
   background: #dc2626;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow-color);
 }
 
 /* 对话框动画 */

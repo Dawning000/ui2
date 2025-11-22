@@ -552,7 +552,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .movie-form-overlay {
   position: fixed;
   top: 0;
@@ -931,6 +931,151 @@ onMounted(() => {
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+// 暗色模式支持
+:root.dark {
+  .movie-form-modal {
+    background: var(--bg-card);
+    color: var(--text-primary);
+  }
+
+  .modal-header {
+    background: var(--bg-card);
+    border-bottom-color: var(--border-color);
+    
+    h2 {
+      color: var(--text-primary);
+    }
+  }
+
+  .close-btn {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    
+    &:hover {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+  }
+
+  .form-group {
+    label {
+      color: var(--text-primary);
+    }
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    
+    &:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+    }
+  }
+
+  .tags-input {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+
+  .tag-item {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  .tag-remove {
+    color: var(--primary-color);
+  }
+
+  .search-input {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+  }
+
+  .select-input {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    
+    &:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+    }
+  }
+
+  .selected-list {
+    background: var(--bg-secondary);
+  }
+
+  .selected-item {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+  }
+
+  .actors-list {
+    background: var(--bg-secondary);
+  }
+
+  .actor-item {
+    background: var(--bg-primary);
+    border-color: var(--border-color);
+  }
+
+  .actor-name {
+    color: var(--text-primary);
+  }
+
+  .item-remove {
+    color: var(--text-secondary);
+  }
+
+  .actor-field label {
+    color: var(--text-secondary);
+  }
+
+  .actor-input {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    
+    &:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+    }
+  }
+
+  .photos-input {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+
+  .form-actions {
+    border-top-color: var(--border-color);
+  }
+
+  .cancel-btn {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    
+    &:hover {
+      background: var(--bg-primary);
+    }
+  }
+
+  .submit-btn {
+    background: var(--primary-color);
+    
+    &:hover:not(:disabled) {
+      background: var(--primary-dark);
+    }
+  }
 }
 </style>
 
