@@ -83,7 +83,7 @@
               <input 
                 v-model="newTag" 
                 type="text" 
-                placeholder="输入标签后按回车添加"
+                placeholder="输入标签"
                 @keyup.enter="addTag"
                 class="tag-input"
               />
@@ -168,10 +168,9 @@
           <label>海报图URL</label>
           <ImageUploader
             v-model="form.poster"
-            placeholder="请点击上传海报图片"
+            placeholder="请点击上传海报图片或输入URL"
             upload-type="image"
             button-text="上传海报"
-            :disable-url-input="true"
           />
         </div>
 
@@ -200,10 +199,9 @@
               <div v-for="(photo, index) in form.photos" :key="index" class="photo-item">
                 <ImageUploader
                   v-model="form.photos[index]"
-                  placeholder="请点击上传照片"
+                  placeholder="请点击上传照片或输入URL"
                   upload-type="image"
                   button-text="上传照片"
-                  :disable-url-input="true"
                 />
                 <button type="button" @click="removePhoto(index)" class="photo-remove">删除</button>
               </div>

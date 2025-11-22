@@ -32,7 +32,6 @@
             <input 
               v-model.number="form.year" 
               type="number" 
-              required 
               placeholder="如：2024"
               min="1900"
               max="2099"
@@ -45,7 +44,7 @@
               v-model.number="form.duration" 
               type="number" 
               placeholder="如：120"
-              min="1"
+              
             />
           </div>
         </div>
@@ -56,7 +55,7 @@
             <input 
               v-model="form.country" 
               type="text" 
-              required 
+             
               placeholder="如：中国、美国"
             />
           </div>
@@ -66,7 +65,7 @@
             <input 
               v-model="form.language" 
               type="text" 
-              required 
+            
               placeholder="如：中文、英语"
             />
           </div>
@@ -85,7 +84,7 @@
               <input 
                 v-model="newTag" 
                 type="text" 
-                placeholder="输入标签后按回车添加"
+                placeholder="输入标签"
                 @keyup.enter="addTag"
                 class="tag-input"
               />
@@ -147,7 +146,7 @@
                         v-model="actor.role" 
                         type="text" 
                         placeholder="如：主演、配角、幕后等"
-                        required
+                    
                         class="actor-input"
                       />
                     </div>
@@ -157,7 +156,7 @@
                         v-model="actor.description" 
                         type="text" 
                         placeholder="描述演员在该电影中的表现"
-                        required
+                        
                         class="actor-input"
                       />
                     </div>
@@ -172,11 +171,9 @@
           <label>海报图URL </label>
           <ImageUploader
             v-model="form.poster"
-            placeholder="请点击上传海报图片"
+            placeholder="请点击上传海报图片或输入URL"
             upload-type="image"
             button-text="上传海报"
-            :disable-url-input="true"
-            required
           />
         </div>
 
@@ -184,7 +181,7 @@
           <label>简介 </label>
           <textarea 
             v-model="form.summary" 
-            required 
+         
             rows="4"
             placeholder="请输入电影简介"
           ></textarea>
@@ -206,10 +203,9 @@
               <div v-for="(photo, index) in form.photos" :key="index" class="photo-item">
                 <ImageUploader
                   v-model="form.photos[index]"
-                  placeholder="请点击上传照片"
+                  placeholder="请点击上传照片或输入URL"
                   upload-type="image"
                   button-text="上传照片"
-                  :disable-url-input="true"
                 />
                 <button type="button" @click="removePhoto(index)" class="photo-remove">删除</button>
               </div>
