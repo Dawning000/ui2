@@ -405,6 +405,14 @@ onMounted(() => {
       }
     }
     
+    // 暗色模式下的Logo样式
+    :root.dark & .brand-icon {
+      background: linear-gradient(135deg, #c2410c 0%, #9a3412 50%, #7f1d1d 100%);
+      box-shadow: 0 8px 24px rgba(194, 65, 12, 0.3), 
+                  0 2px 8px rgba(194, 65, 12, 0.2),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
     .brand-text {
       display: flex;
       flex-direction: column;
@@ -491,6 +499,15 @@ onMounted(() => {
       
       i {
         font-size: 16px;
+      }
+    }
+    
+    // 暗色模式下的搜索按钮
+    :root.dark & .search-btn {
+      background: #c2410c;
+      
+      &:hover {
+        background: #9a3412;
       }
     }
   }
@@ -797,6 +814,7 @@ onMounted(() => {
       &.register-btn {
         color: white;
         background: var(--primary-color);
+        transition: all 0.3s ease;
         
         &:hover {
           background: var(--primary-dark);
@@ -804,6 +822,16 @@ onMounted(() => {
           box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
         }
       }
+    }
+  }
+  
+  // 暗色模式下的注册按钮
+  :root.dark & .register-btn {
+    background: #c2410c;
+    
+    &:hover {
+      background: #9a3412;
+      box-shadow: 0 8px 20px rgba(194, 65, 12, 0.4);
     }
   }
   
