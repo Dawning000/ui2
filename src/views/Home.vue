@@ -276,7 +276,7 @@ const categories = ref([
     icon: 'icon-film',
     chipText: '光影臻藏',
     description: '最新院线大片/冷门佳片合集',
-    postsCount: 1234,
+    postsCount: 0,
     gradient: ['#ff8a00', '#ff5100']
   },
   {
@@ -286,7 +286,7 @@ const categories = ref([
     icon: 'icon-tv',
     chipText: '剧荒救星',
     description: '热播剧集/经典老剧/海外剧集',
-    postsCount: 856,
+    postsCount: 0,
     gradient: ['#ff6b1a', '#f43f5e']
   },
   {
@@ -296,7 +296,7 @@ const categories = ref([
     icon: 'icon-variety',
     chipText: '综娱盛宴',
     description: '热门综艺节目/脱口秀/选秀/音乐节目',
-    postsCount: 432,
+    postsCount: 0,
     gradient: ['#ffa62e', '#f97316']
   }
 ])
@@ -501,11 +501,42 @@ async function loadStatistics() {
   }
 }
 
+/**
+ * 加载可观看内容统计数据
+ */
+async function loadWatchablesStatistics() {
+  try {
+    const response = await http('/statistics/watchables')
+    
+    if (response && response.data) {
+      const data = response.data
+      // 更新分类数据
+      const movieCategory = categories.value.find(cat => cat.slug === 'movie')
+      if (movieCategory) {
+        movieCategory.postsCount = data.filmCount || 0
+      }
+      
+      const tvCategory = categories.value.find(cat => cat.slug === 'tv')
+      if (tvCategory) {
+        tvCategory.postsCount = data.tvShowCount || 0
+      }
+      
+      const varietyCategory = categories.value.find(cat => cat.slug === 'variety')
+      if (varietyCategory) {
+        varietyCategory.postsCount = data.varietyCount || 0
+      }
+    }
+  } catch (error) {
+    console.error('加载可观看内容统计数据失败:', error)
+  }
+}
+
 onMounted(() => {
   loadMovies()
   loadMaoyanMovies()
   loadRandomPosts()
   loadStatistics()
+  loadWatchablesStatistics()
 
   observer = new IntersectionObserver(
     (entries) => {
