@@ -32,18 +32,33 @@
         >
           <div class="video-thumbnail">
             <video 
+              v-if="video.isSupported !== false"
               :src="video.url" 
               :poster="video.thumbnail"
               preload="metadata"
               @loadedmetadata="onVideoLoaded"
             ></video>
-            <div class="play-overlay">
+            <div v-else class="unsupported-format">
+              <div class="format-icon">📹</div>
+              <div class="format-label">{{ video.format || '视频' }}</div>
+              <div class="format-tip">格式不支持在线播放</div>
+            </div>
+            <div class="play-overlay" v-if="video.isSupported !== false">
               <div class="play-button">
                 <span>▶</span>
               </div>
             </div>
+            <div class="download-overlay" v-else>
+              <div class="download-button" @click.stop="downloadVideo(video)">
+                <span>⬇</span>
+                <span>下载</span>
+              </div>
+            </div>
             <div class="video-duration" v-if="video.duration">
               {{ formatDuration(video.duration) }}
+            </div>
+            <div class="format-badge" v-if="video.isSupported === false">
+              {{ video.format }}
             </div>
           </div>
           <div class="video-info">
@@ -66,12 +81,32 @@
         <button class="modal-close" @click="closeModal">×</button>
         <div class="video-player-wrapper">
           <video 
+            v-if="selectedVideo.isSupported !== false"
             ref="videoPlayer"
             :src="selectedVideo.url" 
             controls
             autoplay
             class="video-player"
           ></video>
+          <div v-else class="unsupported-player">
+            <div class="unsupported-content">
+              <div class="unsupported-icon">📹</div>
+              <h3>此视频格式不支持在线播放</h3>
+              <p class="format-info">格式：{{ selectedVideo.format || '未知' }}</p>
+              <p class="unsupported-tip">该格式（{{ selectedVideo.format || '未知' }}）需要下载后使用本地播放器观看</p>
+              <a 
+                :href="selectedVideo.url" 
+                :download="selectedVideo.name"
+                class="download-link"
+                target="_blank"
+              >
+                <button class="download-btn">
+                  <span>⬇</span>
+                  下载视频
+                </button>
+              </a>
+            </div>
+          </div>
         </div>
         <div class="video-modal-info">
           <h2 class="modal-title">{{ selectedVideo.displayName }}</h2>
@@ -108,14 +143,27 @@ async function loadVideos() {
 // 选择视频
 function selectVideo(video) {
   selectedVideo.value = video
-  // 确保视频元素存在后再播放
-  setTimeout(() => {
-    if (videoPlayer.value) {
-      videoPlayer.value.play().catch(err => {
-        console.error('自动播放失败:', err)
-      })
-    }
-  }, 100)
+  // 确保视频元素存在后再播放（仅支持格式）
+  if (video.isSupported !== false) {
+    setTimeout(() => {
+      if (videoPlayer.value) {
+        videoPlayer.value.play().catch(err => {
+          console.error('自动播放失败:', err)
+        })
+      }
+    }, 100)
+  }
+}
+
+// 下载视频
+function downloadVideo(video) {
+  const link = document.createElement('a')
+  link.href = video.url
+  link.download = video.name
+  link.target = '_blank'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 // 关闭模态框
