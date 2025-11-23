@@ -260,6 +260,7 @@ import { useUserStore } from '@/stores/user'
 import Carousel from '../components/Carousel.vue'
 import { fetchMovies } from '@/api/movies'
 import { fetchRandomPosts, getCategoryName, extractExcerpt } from '@/api/posts'
+import { http } from '@/api/http'
 
 // 响应式数据
 const router = useRouter()
@@ -305,10 +306,10 @@ const hotPosts = ref([])
 const latestMovies = ref([])
 
 const stats = ref({
-  totalUsers: 125678,
-  totalPosts: 45678,
-  totalComments: 234567,
-  onlineUsers: 1234
+  totalUsers: 0,
+  totalPosts: 0,
+  totalComments: 0,
+  onlineUsers: 0
 })
 
 const heroBadges = computed(() => {
@@ -479,10 +480,32 @@ async function loadMaoyanMovies() {
   }
 }
 
+/**
+ * 加载统计数据
+ */
+async function loadStatistics() {
+  try {
+    const response = await http('/statistics/dashboard')
+    
+    if (response && response.data) {
+      const data = response.data
+      stats.value = {
+        totalUsers: data.userCount || 0,
+        totalPosts: data.postCount || 0,
+        totalComments: data.commentCount || 0,
+        onlineUsers: data.activeSessions || 0
+      }
+    }
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+  }
+}
+
 onMounted(() => {
   loadMovies()
   loadMaoyanMovies()
   loadRandomPosts()
+  loadStatistics()
 
   observer = new IntersectionObserver(
     (entries) => {

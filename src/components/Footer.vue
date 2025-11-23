@@ -94,11 +94,7 @@
               橘橙影志版权所有，未经许可禁止转载。
             </p>
           </div>
-          <div class="footer-stats">
-            <span>在线用户: {{ onlineUsers }}</span>
-            <span>今日发帖: {{ todayPosts }}</span>
-            <span>总帖子数: {{ totalPosts }}</span>
-          </div>
+          
         </div>
       </div>
 
