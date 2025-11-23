@@ -74,6 +74,19 @@
             QQ登录
           </button>
         </div>
+        
+        <div class="divider">
+          <span>测试账号</span>
+        </div>
+        
+        <div class="test-login">
+          <button class="test-btn guest" @click="handleGuestLogin" :disabled="loading">
+            普通用户登录 (guest/123456)
+          </button>
+          <button class="test-btn admin" @click="handleAdminLogin" :disabled="loading">
+            管理员登录 (admin/123456)
+          </button>
+        </div>
       </div>
       
       <div class="login-image">
@@ -204,6 +217,21 @@ const handleLogin = async () => {
 // QQ登录
 const handleQQLogin = () => {
   window.location.href = `${API_BASE}/oauth2/qq`
+}
+
+// 测试账号登录
+const handleGuestLogin = async () => {
+  form.username = 'guest'
+  form.password = '123456'
+  form.remember = false
+  await handleLogin()
+}
+
+const handleAdminLogin = async () => {
+  form.username = 'admin'
+  form.password = '123456'
+  form.remember = false
+  await handleLogin()
 }
 </script>
 
@@ -635,6 +663,81 @@ const handleQQLogin = () => {
   }
 }
 
+.test-login {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.test-btn {
+  width: 100%;
+  padding: 10px;
+  border: 2px dashed var(--border-color);
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  
+  &:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: #f0f9ff;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  // 暗色模式下的测试按钮样式
+  :root.dark & {
+    border-color: var(--border-color);
+    color: var(--text-light);
+    
+    &:hover:not(:disabled) {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      background: rgba(59, 130, 246, 0.1);
+    }
+  }
+  
+  &.guest {
+    &:hover:not(:disabled) {
+      border-color: #10b981;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.05);
+    }
+    
+    :root.dark & {
+      &:hover:not(:disabled) {
+        border-color: #10b981;
+        color: #10b981;
+        background: rgba(16, 185, 129, 0.1);
+      }
+    }
+  }
+  
+  &.admin {
+    &:hover:not(:disabled) {
+      border-color: #f59e0b;
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.05);
+    }
+    
+    :root.dark & {
+      &:hover:not(:disabled) {
+        border-color: #f59e0b;
+        color: #f59e0b;
+        background: rgba(245, 158, 11, 0.1);
+      }
+    }
+  }
+}
+
 .login-image {
   background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
   color: white;
@@ -706,6 +809,10 @@ const handleQQLogin = () => {
   }
   
   .social-login {
+    flex-direction: column;
+  }
+  
+  .test-login {
     flex-direction: column;
   }
 }
